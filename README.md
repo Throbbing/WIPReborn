@@ -32,3 +32,4 @@
 # 截图
 
 ![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
+![](https://github.com/wubugui/FXXKTracer/raw/master/pic/l.gif)
