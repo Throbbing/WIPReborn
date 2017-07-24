@@ -31,4 +31,4 @@
    
 # 截图
 
-![](https://github.com/wubugui/WIP/blob/master/pic/1%20(1).png)
+![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
