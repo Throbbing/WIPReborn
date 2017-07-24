@@ -1,0 +1,8 @@
+#source dir
+AUX_SOURCE_DIRECTORY(src DIR_MATH_SRCS)
+
+FILE(GLOB  MHEADERS "./Inc/*.h")
+message(STATUS  "files: ${MHEADERS}")  
+SOURCE_GROUP("inc" FILES ${MHEADERS})
+
+ADD_LIBRARY ( rbmath ${DIR_MATH_SRCS} ${MHEADERS})

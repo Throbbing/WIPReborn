@@ -1,0 +1,43 @@
+[head]
+texture = jiangshi_bleft.png
+total_frame = 1
+
+[1]
+lb_x = 0 
+lb_y = 0 
+lt_x = 0 
+lt_y = 0.25
+rt_x = 0.25 
+rt_y = 0.25
+rb_x = 0.25 
+rb_y = 0 
+
+[2]
+lb_x = 0.25
+lb_y = 0
+lt_x = 0.25
+lt_y = 0.25
+rt_x = 0.5
+rt_y = 0.25
+rb_x = 0.5
+rb_y = 0
+
+[3]
+lb_x = 0.5
+lb_y = 0
+lt_x = 0.5
+lt_y = 0.25
+rt_x = 0.75
+rt_y = 0.25
+rb_x = 0.75
+rb_y = 0
+
+[4]
+lb_x = 0.75
+lb_y = 0
+lt_x = 0.75
+lt_y = 0.25
+rt_x = 1
+rt_y = 0.25
+rb_x = 1
+rb_y = 0

@@ -1,0 +1,21 @@
+#version 120
+
+
+varying vec4 out_color;
+varying vec3 out_normal;
+varying vec2 out_texcoord;
+
+uniform sampler2D in_texture;
+
+void main()
+{
+	gl_FragColor = texture2D(in_texture, out_texcoord);
+if(	gl_FragColor.a <=0.0001)
+{
+gl_FragColor.a = 1;
+gl_FragColor.r = 1;
+gl_FragColor.g = 1;
+gl_FragColor.b = 1;
+}
+	gl_FragColor = out_color*gl_FragColor;
+}
