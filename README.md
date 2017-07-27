@@ -30,8 +30,9 @@
 
 # Demo
 
-[Release](https://github.com/wubugui/WIPReborn/releases)
-[百度云](http://pan.baidu.com/s/1slLPCz7)
+-  [Release](https://github.com/wubugui/WIPReborn/releases)
+
+-  [百度云](http://pan.baidu.com/s/1slLPCz7)
 
 -  WASD移动，鼠标滚轮缩放镜头，X清空所有地图碰撞，鼠标左键放置地图碰撞
    
