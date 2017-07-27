@@ -11,11 +11,11 @@
 
 # TODO
 
--  脚本系统
--  物理
--  声音(目前仅windows支持FMOD)
+-  ~脚本系统~
+-  ~物理(已经初步集成Box2D)~
+-  声音
 -  RPG游戏实例
--  完善动画系统(帧动画，状态机，transform动画，动画事件等)
+-  完善动画系统(~帧动画~，状态机，transform动画，动画事件等)
 -  Profile与性能优化
 -  D3D11支持
 -  基本编辑器
@@ -25,11 +25,17 @@
 
 -  参考CMakelists.txt在对应的目录配置库.
 -  使用CMAKE
-   -  WIN32生成VS2013,编译.
+   -  WIN32生成VS2013.
    -  Linux生成Unix style make,直接make.
 
+# Demo
+
+![Release](https://github.com/wubugui/WIPReborn/releases)
+![百度云](http://pan.baidu.com/s/1slLPCz7)
+
+-  WASD移动，鼠标滚轮缩放镜头，X清空所有地图碰撞，鼠标左键放置地图碰撞
    
 # 截图
 
 ![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
-![](https://github.com/wubugui/FXXKTracer/raw/master/pic/l.gif)
+![](https://github.com/wubugui/FXXKTracer/raw/master/pic/ll.gif)

@@ -14,10 +14,12 @@
 #include "../InputManager.h"
 #include "../Input.h"
 #include "../Camera.h"
+#include "../PhysicsManager.h"
 #ifndef _WIN32
 #include "unistd.h"
 #endif
 
+#include "UserComponent.h"
 
 int GLFWApp::pack_sprite(const WIPSprite **sprite, void *mem, int n, int offset_n)
 {
@@ -135,7 +137,7 @@ bool GLFWApp::init()
 {
 	window_w = 1024;
 	window_h = 768;
-	bool ret = create_window("test");
+	bool ret = create_window("Demo");
 
 	WIPFileSystem &fs = *g_filesystem;
 	std::string cur_path = fs.get_current_dir();
@@ -156,6 +158,7 @@ bool GLFWApp::init()
 		WIPIniHelper::get_string("Common", "script_init", lua_ini_path);
 		WIPIniHelper::get_string("Common", "log", log_path);
 		WIPIniHelper::close();
+		LOG_INFO("Reading ini file...");
 	}
 	else
 	{
@@ -163,11 +166,18 @@ bool GLFWApp::init()
 		require_exit();
 	}
 
+	LOG_INFO("Logger start up...");
 	g_logger->startup(log_path.c_str());
+	
 	g_logger->new_log();
+
+	LOG_INFO("Logger start up success...");
+
 
 	g_script_manager->startup();
 	g_script_manager->load_file(lua_project_path.c_str());
+	LOG_INFO("Script start up...");
+
 
 	times = new TimeSource();
 	RBClock::init(times);
@@ -177,21 +187,44 @@ bool GLFWApp::init()
 	clock->set_filtering(10, 1.f / fps);
 	lastTime = timer->get_time();
 	clock->update();
+	LOG_INFO("Time start up...");
+
 
 	_frame = 1.f / fps;
 
 	g_rhi->init();
+	LOG_INFO("RHI start up...");
 
 
 	scene = new WIPScene();
 	scene->init(1, 1, 6);
+	LOG_INFO("Creating scene...");
 
 
 	world_renderer = new WorldRender();
 	world_renderer->init();
 	world_renderer->set_world(scene);
+	LOG_INFO("Renderer start up...");
+
+
+	g_physics_manager->startup();
+	LOG_INFO("Physics start up...");
+
+
+	g_input_manager->startup("");
+	LOG_INFO("Input start up...");
+
+	g_animation_manager->startup(0.15);
+	LOG_INFO("Animation start up...");
+
 
 	
+
+	cameras.push_back(scene->create_camera(20.f, 20.f, window_w, window_h, window_w, window_h));
+	cameras[0]->move_to(5.f, 5.f);
+
+	g_physics_manager->set_debug_camera(cameras[0]);
+
 
 	clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
 	clip1 = WIPAnimationClip::create_with_atlas("walk_left", "./clips/2.clip");
@@ -252,35 +285,52 @@ bool GLFWApp::init()
 	WIPSpriteCreator ctor_man(3.f*rot, 3.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_man.texture = tex2d;
 	ctor_man.world_render = world_renderer;
+	ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+	ctor_man.collider_sx = 0.5f;
+	ctor_man.collider_sy = 0.2f;
 
 	WIPSpriteCreator ctor_mask(40.f, 30.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_mask.texture = tex2d1mask;
 	ctor_mask.world_render = world_renderer;
-
+	ctor_mask.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 
 	WIPSpriteCreator ctor_bg(40.f, 30.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_bg.texture = tex2d1;
 	ctor_bg.world_render = world_renderer;
+	ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+
 
 	WIPSpriteCreator ctor_fog(20.f, 20.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_fog.texture = tex2d_fog;
 	ctor_fog.world_render = world_renderer;
+	ctor_fog.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+
 
 	WIPSpriteCreator ctor_li(3.f*rotli, 3.5f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_li.texture = tex2d_lixiaoyao;
 	ctor_li.world_render = world_renderer;
+	ctor_li.collider_sx = 0.5f;
+	ctor_li.collider_sy = 0.2f;
 
 	WIPSpriteCreator ctor_zaji1(1.2f*1.5f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_zaji1.texture = tex2d_zaji1;
 	ctor_zaji1.world_render = world_renderer;
+	ctor_zaji1.collider_sx = 0.5f;
+	ctor_zaji1.collider_sy = 0.2f;
 
 	WIPSpriteCreator ctor_zaji2(1.8f*1.2f, 2.4f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_zaji2.texture = tex2d_zaji2;
 	ctor_zaji2.world_render = world_renderer;
+	ctor_zaji2.collider_sx = 0.5f;
+	ctor_zaji2.collider_sy = 0.2f;
 
 	WIPSpriteCreator ctor_crowd(6*1.2f, 6.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_crowd.texture = tex2d_crowd;
 	ctor_crowd.world_render = world_renderer;
+	ctor_crowd.collider_sx = 0.85f;
+	ctor_crowd.collider_sy = 0.4f;
+
+
 
 	man_lixiaoyao = WIPSpriteFactory::create_sprite(ctor_li);
 	man_lixiaoyao->_animation->add_clip(clip, clip->name);
@@ -292,49 +342,47 @@ bool GLFWApp::init()
 	man_lixiaoyao->_animation->add_clip(clip2_s, clip2_s->name);
 	man_lixiaoyao->_animation->add_clip(clip3_s, clip3_s->name);
 	man_lixiaoyao->_animation->play(clip1_s);
+	man_lixiaoyao->set_anchor(0.5f, 0);
 
 	zaji1 = WIPSpriteFactory::create_sprite(ctor_zaji1);
 	zaji1->_animation->add_clip(clip, clip->name);
 	zaji1->_animation->play(clip, true);
+	zaji1->set_anchor(0.5f, 0);
+
 
 	zaji2 = WIPSpriteFactory::create_sprite(ctor_zaji2);
 	zaji2->_animation->add_clip(clip, clip->name);
 	zaji2->_animation->play(clip, true);
+	zaji2->set_anchor(0.5f, 0);
 
 
 	crowd = WIPSpriteFactory::create_sprite(ctor_crowd);
 	crowd->_animation->add_clip(clip_s, clip_s->name);
 	crowd->_animation->play(clip_s);
+	crowd->set_anchor(0.4f, 0.2f);
 
 
 	bg = WIPSpriteFactory::create_sprite(ctor_bg);
+	MapComponent* mc = new MapComponent(bg);
+	bg->add_tick_component(mc);
+	mc->cam = cameras[0];
+	mc->scene = scene;
 	bg_mask = WIPSpriteFactory::create_sprite(ctor_mask);
 	man = WIPSpriteFactory::create_sprite(ctor_man);
-	//clip->bloop = true;
 	man->_animation->add_clip(clip, clip->name);
-	//clip1->bloop = true;
-
 	man->_animation->add_clip(clip1, clip1->name);
-	//clip2->bloop = true;
-
 	man->_animation->add_clip(clip2, clip2->name);
-	//clip3->bloop = true;
-
 	man->_animation->add_clip(clip3, clip3->name);
-
-
 	man->_animation->add_clip(clip_s, clip_s->name);
-	//clip1->bloop = true;
-
 	man->_animation->add_clip(clip1_s, clip1_s->name);
-	//clip2->bloop = true;
-
 	man->_animation->add_clip(clip2_s, clip2_s->name);
-	//clip3->bloop = true;
-
 	man->_animation->add_clip(clip3_s, clip3_s->name);
+	mc->man = man;
 
 	man->_animation->play(clip_s);
+	man->set_anchor(0.5f, 0);
+
+
 	bg->set_tag("bg");
 	bg_mask->set_tag("mask");
 	man->set_tag("man");
@@ -343,8 +391,15 @@ bool GLFWApp::init()
 	zaji2->set_tag("zaji2");
 	crowd->set_tag("crowd");
 
+	
+	bg->set_type_tag("scene");
+	bg_mask->set_type_tag("scene");
 
-
+	man->set_type_tag("character");
+	man_lixiaoyao->set_type_tag("character");
+	zaji1->set_type_tag("character");
+	zaji2->set_type_tag("character");
+	crowd->set_type_tag("character");
 
 	scene->add_sprite(bg);
 	scene->add_sprite(bg_mask);
@@ -358,39 +413,60 @@ bool GLFWApp::init()
 	zaji1->set_z_order(0.4f);
 	zaji2->set_z_order(0.4f);
 	crowd->set_z_order(0.4f);
+	std::vector<const WIPSprite*> sp;
+	scene->quad_tree->get_all_nodes(sp);
+	sp.clear();
 
-	man_lixiaoyao->translate_to(5, 2);
-	zaji1->translate_to(-3, 3);
-	zaji2->translate_to(-1,3);
-	crowd->translate_to(-2, -2);
+	man_lixiaoyao->translate_to(5, 1);
+	scene->quad_tree->get_all_nodes(sp);
+	sp.clear();
+	zaji1->translate_to(-5, 2);
+	scene->quad_tree->get_all_nodes(sp);
+	sp.clear();
+	zaji2->translate_to(-3,2);
+	scene->quad_tree->get_all_nodes(sp);
+	sp.clear();
+	crowd->translate_to(-4, -3);
+	scene->quad_tree->get_all_nodes(sp);
+	sp.clear();
 
+	
+	
 
 	fogs = WIPSpriteFactory::create_sprite(ctor_fog);
 	scene->add_sprite(fogs);
-
+	fogs->set_type_tag("scene");
 	fogs->translate_to(0.f, 0.f);
 	fogs->set_z_order(0.05);
+	mc->fogs = fogs;
+
+
 
 	bg->translate_to(0.f, 0.f);
 	bg_mask->translate_to(0.f, 0.f);
-	man->translate_to(5.f, 5.f);
-	bg->set_z_order(0.5f);
+	man->translate_to(8.f, 1.f);
+	bg->set_z_order(0.9f);
 	man->set_z_order(0.4f);
 	bg_mask->set_z_order(0.1f);
 
-	cameras.push_back(scene->create_camera(20.f, 20.f, window_w, window_h));
-	cameras[0]->move_to(5.f, 5.f);
+	
 
 	//g_res_manager->free(res_handle1, res_handle1->size);
-	g_input_manager->startup("");
-	g_animation_manager->startup(0.15);
+	
 
+	//use a big delta time to play first frame
+	g_animation_manager->update(1);
 	pre_clip = nullptr;
+
+	scene->init_components();
+
 	return ret;
 }
 
-void GLFWApp::run() {
-	while (!glfwWindowShouldClose(window))
+void GLFWApp::run() 
+{
+	
+	while (((!glfwWindowShouldClose(window))&& (!_exit_requist)))
 	{
 		if (_exit_requist)
 			break;
@@ -417,12 +493,11 @@ void GLFWApp::run() {
 
 			glfwPollEvents();
 			//////////////////////////////////////////////////////////////////////////
-			//LOG_NOTE("%f",clock->get_frame_time());
-			g_animation_manager->update(clock->get_frame_time());
+			
 			// update physics
 			g_script_manager->call("main_logic");
 
-			//glDepthMask(GL_TRUE);
+			//todo:move to camera::clear add rhi!
 			glViewport(0, 0, window_w, window_h);
 			glClearColor(0.85, 0.85, 0.85, 1);
 			glClearDepth(1);
@@ -432,83 +507,25 @@ void GLFWApp::run() {
 			//g_rhi->set_shader(0);
 			g_rhi->begin_debug_context();
 			g_rhi->change_debug_color(RBColorf::red);
-			//quad_tree->debug_draw();
-			g_rhi->debug_draw_aabb2d(RBVector2(-1, -1), RBVector2(0.99f, 0.99f), 1, 1);
+			//scene->quad_tree->debug_draw(cameras[0]);
+			//g_rhi->debug_draw_aabb2d(RBVector2(-0.5f, -0.5f), RBVector2(0.5f, 0.5f), cameras[0]);
 			g_rhi->debug_submit();
 			g_rhi->end_debug_context();
 
-			cameras[0]->zoomin(Input::get_mouse_scroller()*0.1);
-
-
+			
 			f32 dt = clock->get_frame_time();
 
-			fogs->translate(dt*0.2, dt*0.2);
 
-			//man->translate(dt*-0.1, 0);
-			float speed = 3.2f;
-			if (Input::get_key_pressed(WIP_W))
-			{
-				man->translate(0, speed*dt);
-				if (man->_animation->play(clip3))
-				{
-					pre_clip = clip3;
-				}
-				//cameras[0]->move(0,speed*dt);
-				man_state = ManState::E_UP;
-			}
-			else if (Input::get_key_pressed(WIP_A))
-			{
-				man->translate( -speed*dt,0);
-				if(man->_animation->play(clip1))
-				{
-					pre_clip = clip1;
-				}
-				man_state = ManState::E_LEFT;
+			
 
-				//cameras[0]->move(-speed*dt, 0);
-			}
-			else if (Input::get_key_pressed(WIP_S))
-			{
-				man->translate(0, -speed*dt);
-				if(man->_animation->play(clip))
-				{
-					pre_clip = clip;
-				}
-				man_state = ManState::E_DOWN;
+			scene->update(dt);
 
-				//cameras[0]->move(0,-speed*dt);
-			}
-			else if (Input::get_key_pressed(WIP_D))
-			{
-				man->translate(speed*dt, 0);
-				if(man->_animation->play(clip2))
-				{
-					pre_clip = clip2;
-				}
-				man_state = ManState::E_RIGHT;
+			scene->fix_update(dt);
 
-				//cameras[0]->move(speed*dt, 0);
-			}
-			else
-			{
-				switch (man_state)
-				{
-				case ManState::E_DOWN:
-					man->_animation->play(clip_s);
-					break;
-				case ManState::E_LEFT:
-					man->_animation->play(clip1_s);
-					break;
-				case ManState::E_RIGHT:
-					man->_animation->play(clip2_s);
-					break;
-				case ManState::E_UP:
-					man->_animation->play(clip3_s);
-					break;
-				}
-				//man->_animation->play(clip2);
-			}
 
+			g_animation_manager->update(clock->get_frame_time());
+			//not work
+			g_physics_manager->update(scene,clock->get_frame_time());
 
 			for (auto i : cameras)
 				world_renderer->render(i);
@@ -525,7 +542,8 @@ void GLFWApp::run() {
 			// for glfw
 			g_input_manager->clear_scroller();
 		}
-		else {
+		else 
+		{
 #ifdef _WIN32
 			Sleep(0);
 #else
@@ -533,12 +551,16 @@ void GLFWApp::run() {
 #endif
 		}
 	}
+
 }
 
 GLFWApp::~GLFWApp()
 {
+	
+	g_physics_manager->shutdown();
 	g_script_manager->shutdown();
 	g_logger->shutdown();
+	g_res_manager->shutdown();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }

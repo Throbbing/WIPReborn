@@ -1,4 +1,5 @@
 #include "OpenGLRHI.h"
+#include "Camera.h"
 
 GLIndexBuffer::GLIndexBuffer() : ibo(0) { glGenBuffers(1, &ibo); }
 
@@ -498,28 +499,17 @@ void GLDynamicRHI::change_debug_color(const RBColorf& color)
 	glUniform4f(locc,color.r,color.g,color.b,color.a);
 }
 
-void GLDynamicRHI::debug_draw_aabb2d(const RBVector2& minp, const RBVector2& maxp, int w, int h) 
+void GLDynamicRHI::debug_draw_aabb2d(const RBVector2& minp, const RBVector2& maxp, const WIPCamera* cam)
 {
-	if (!_active_view_port)
-		return;
 
-	int ow = w * 0.5;
-	int oh = h * 0.5;
-	float vert[] = { 
-		minp.x + ow, minp.y + oh, 0.0f, maxp.x + ow, minp.y + oh, 0.0f,
-		minp.x + ow, minp.y + oh, 0.0f, minp.x + ow, maxp.y + oh, 0.0f,
-		maxp.x + ow, maxp.y + oh, 0.0f, minp.x + ow, maxp.y + oh, 0.0f,
-		maxp.x + ow, maxp.y + oh, 0.0f, maxp.x + ow, minp.y + oh, 0.0f
-	};
+	RBVector2 vert[4];
+	vert[0] = minp;
+	vert[1] = RBVector2(maxp.x,minp.y);
+	vert[2] = maxp;
+	vert[3] = RBVector2(minp.x, maxp.y);
 
-	//submit vertices if overflowed!
-	if ((_debug_update_count + 24)*sizeof(float) > _debug_buffer_size)
-	{
-		LOG_NOTE("Debug buffer overflowed!");
-		debug_submit();
-	}
-	memcpy(_debug_vertex_buffer + _debug_update_count*sizeof(float), vert, 24 * sizeof(float));
-	_debug_update_count += 24;
+
+	debug_draw_box(vert, cam);
 	
 }
 
@@ -532,7 +522,7 @@ void GLDynamicRHI::debug_submit()
 	unlock_vertex_buffer(_debug_vb);
 	glLineWidth(1);
 
-	glDrawArrays(GL_LINES, 0, _debug_update_count);
+	glDrawArrays(GL_LINES, 0, _debug_update_count/3);
 
 	_debug_update_count = 0;
 }
@@ -573,8 +563,52 @@ void GLDynamicRHI::set_blend_function() const
 }
 
 
+//lb rb rt lt
+void GLDynamicRHI::debug_draw_box(const RBVector2* v, const WIPCamera* cam)
+{
 
+	float zoom = cam->_zoom;
+	float w1 = 1.f / (cam->world_w*0.5f*zoom);
+	float w2 = 1.f / (cam->world_h*0.5f*zoom);
 
+	RBVector2 vert[4];
+
+	RBVector2 cam_pos(cam->world_x, cam->world_y);
+	vert[0] = v[0] - cam_pos;
+	vert[1] = v[1] - cam_pos;
+	vert[2] = v[2] - cam_pos;
+	vert[3] = v[3] - cam_pos;
+
+	vert[0].x*=w1;
+	vert[0].y*=w2;
+	vert[1].x*=w1;
+	vert[1].y*=w2;
+	vert[2].x*=w1;
+	vert[2].y*=w2;
+	vert[3].x*=w1;
+	vert[3].y*=w2;
+
+	//lb rb
+	//lb lt
+	//rt lt
+	//rt rb
+	float vert1[] = {
+		vert[0].x, vert[0].y, 0.0f, vert[1].x, vert[1].y, 0.0f,
+		vert[0].x, vert[0].y, 0.0f, vert[3].x, vert[3].y, 0.0f,
+		vert[2].x, vert[2].y, 0.0f, vert[3].x, vert[3].y, 0.0f,
+		vert[2].x, vert[2].y, 0.0f, vert[1].x, vert[1].y, 0.0f
+	};
+
+	//submit vertices if overflowed!
+	if ((_debug_update_count + 24)*sizeof(float) > _debug_buffer_size)
+	{
+		LOG_NOTE("Debug buffer overflowed!");
+		debug_submit();
+		return;
+	}
+	memcpy(_debug_vertex_buffer + _debug_update_count*sizeof(float), vert1, 24 * sizeof(float));
+	_debug_update_count += 24;
+}
 
 
 

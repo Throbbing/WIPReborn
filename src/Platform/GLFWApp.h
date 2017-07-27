@@ -11,12 +11,7 @@ class WIPCamera;
 #define MEMSIZE 1024*1024
 
 
-enum class ManState
-{
-	E_LEFT,
-	E_RIGHT,
-	E_UP,E_DOWN
-};
+
 
 class GLFWApp : public WIPApp 
 {
@@ -113,5 +108,5 @@ private:
   WIPSprite* crowd;
   WIPSprite* fogs;
 
-  ManState man_state;
+  
 };

@@ -130,11 +130,12 @@ void WIPLogger::new_log()
 	sprintf(date,"%04d_%02d_%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
 	char tim[9];
 	sprintf(tim,"%02d:%02d:%02d", t->tm_hour,t->tm_min,t->tm_sec);
-
+	
 	if(!m_initialized)
 		return;
 	if(outfile.is_open())
 		outfile.close();
+	
 	string timeinfo = string(date)+"-"+tim;
 	int n = timeinfo.length();
 	for(int i=0;i<n;++i)
@@ -146,6 +147,7 @@ void WIPLogger::new_log()
 
 	m_initialized = true;
 	outfile.open(file_path,ios::out|ios::app);
+	
 }
 
 void WIPLogger::debug( unsigned int flags,char* buffer,... )

@@ -178,7 +178,10 @@ public:
 
 	virtual void change_debug_color(const RBColorf& color);
 
-	virtual void debug_draw_aabb2d(const RBVector2& window_minp, const RBVector2& window_maxp, int w, int h) ;
+	virtual void debug_draw_aabb2d(const RBVector2& window_minp, const RBVector2& window_maxp, const class WIPCamera* cam);
+
+	//lb rb rt lt
+	virtual void debug_draw_box(const RBVector2* v, const class WIPCamera* cam);
 
 	virtual void debug_submit();
 

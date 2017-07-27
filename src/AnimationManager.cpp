@@ -117,12 +117,8 @@ void WIPAnimationManager::update(f32 dt)
 		_clip_queue.remove(_remove_list[i]);
 	}
 	_remove_list.clear();
-		//Mark recycling to prevent the iterator to be invalid
-		//_clip_queue.recycle();
 
-#ifdef _DEBUG
-//	CHECK(_queue_szie==_clip_queue.size());
-#endif
+
 }
 
 void WIPAnimationManager::add_clip(WIPClipInstance* clip)
@@ -132,6 +128,7 @@ void WIPAnimationManager::add_clip(WIPClipInstance* clip)
 		return;
 	*/
 	clip->bplaying = true;
+	//clip->cur_dt = _delta_t + 0.001;
 	//_clip_queue.push_back(clip);
 	///++_queue_szie;
 	_clip_queue.push_back(clip);
@@ -141,12 +138,14 @@ void WIPAnimationManager::add_clip(WIPClipInstance* clip)
 void WIPAnimationManager::add_clip_back(WIPClipInstance* clip)
 {
 	clip->bplaying = true;
+	//clip->cur_dt = _delta_t + 0.001;
 	_clip_queue.push_back(clip);
 }
 
 void WIPAnimationManager::add_clip_front(WIPClipInstance* clip)
 {
 	clip->bplaying = true;
+	//clip->cur_dt = _delta_t + 0.001;
 	_clip_queue.push_front(clip);
 }
 

@@ -138,7 +138,7 @@ class WIPViewPort
 {
 public:
 	WIPViewPort(int ix, int iy, float iw, float ih) :
-		x(ix), y(iy), w(iw), h(iw){}
+		x(ix), y(iy), w(iw), h(ih){}
 	float x, y;
 	float w, h;
 

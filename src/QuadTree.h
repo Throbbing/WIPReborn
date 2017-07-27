@@ -26,6 +26,14 @@ public:
 	WIPQuadTreeNode* child[4];
 };
 
+/*
+TODO:
+use aabb2d.is_contain(aabb)
+the object belongs to the node when the object intersect with its two children or more.
+or
+push the object to children just when the children totally contain it.
+if we do like above, objects can store just only once in the tree.
+*/
 class WIPQuadTree
 {
 public:
@@ -233,21 +241,21 @@ public:
 			_get_near_node(root->child[3],sprite_bound,rbb,id,out_index);
 		}
 	}
-	void debug_draw()
+	void debug_draw(const WIPCamera* cam)
 	{
 		RBAABB2D world_aabb(world_bound);
 		//ofPushStyle();
 		//ofSetColor(ofColor::blue);
-		_debug_draw(&root,world_aabb);
+		_debug_draw(&root,world_aabb,cam);
 		//ofPopStyle();
 	}
-	void _debug_draw(WIPQuadTreeNode* root,const RBAABB2D& aabb)
+	void _debug_draw(WIPQuadTreeNode* root,const RBAABB2D& aabb,const WIPCamera*cam)
 	{
 		if(root->leaf)
 		{
 			RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
 
-			g_rhi->debug_draw_aabb2d(aabb.min,aabb.max,800,600);
+			g_rhi->debug_draw_aabb2d(aabb.min,aabb.max,cam);
 			
 			return;
 		}
@@ -257,10 +265,10 @@ public:
 		RBAABB2D ltb(aabb.min.x,c.y,c.x,aabb.max.y);
 		RBAABB2D rtb(c.x,c.y,aabb.max.x,aabb.max.y);
 		RBAABB2D rbb(c.x,aabb.min.y,aabb.max.x,c.y);
-		_debug_draw(root->child[0],lbb);
-		_debug_draw(root->child[1],ltb);
-		_debug_draw(root->child[2],rtb);
-		_debug_draw(root->child[3],rbb);
+		_debug_draw(root->child[0],lbb,cam);
+		_debug_draw(root->child[1],ltb,cam);
+		_debug_draw(root->child[2],rtb,cam);
+		_debug_draw(root->child[3],rbb,cam);
 
 	}
 	void remove_change(const WIPSprite& sprite)

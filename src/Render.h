@@ -76,7 +76,8 @@ public:
 
 	virtual void begin_debug_context() = 0;
 	virtual void change_debug_color(const RBColorf& color) = 0;
-	virtual void debug_draw_aabb2d(const RBVector2& minp,const RBVector2& maxp,int w,int h) =0;
+	virtual void debug_draw_aabb2d(const RBVector2& minp, const RBVector2& maxp, const class WIPCamera* cam) = 0;
+	virtual void debug_draw_box(const RBVector2* v,const class WIPCamera* cam) = 0;
 	virtual void debug_submit()=0;
 	virtual void end_debug_context() = 0;
 

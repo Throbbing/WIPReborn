@@ -5,6 +5,7 @@
 #include "Render.h"
 #include <string>
 #include <map>
+#include "Box2D/Box2D.h"
 
 //message dispatch
 class WIPObject
@@ -139,16 +140,34 @@ private:
 	
 };
 
+//system component
 class WIPComponent : public WIPObject
 {
 public:
+	WIPComponent(class WIPSprite* s);
+	WIPComponent();
+	virtual ~WIPComponent() = 0;
+	class WIPSprite* host_object;
+	void set_host(class WIPSprite* ho);
 
 };
 
+//user component
+class WIPTickComponent : public WIPComponent
+{
+public:
+	WIPTickComponent(class WIPSprite* host);
+	virtual ~WIPTickComponent() = 0;
+	virtual void init() = 0;
+	virtual void update(f32 dt)=0;
+	virtual void fix_update(f32 dt)=0;
+	virtual void destroy() = 0;
+};
 
 class WIPRenderComponent : public WIPComponent
 {
 public:
+	~WIPRenderComponent(){}
 	WIPRenderComponent(float w,float h):mesh(w,h){}
 	WIPMaterial material;
 	WIPMesh mesh;
@@ -233,14 +252,14 @@ public:
 		_last_clip = it->second;
 		return true;
 	}
-	bool play(std::string name, bool loop = false)
+	bool play_name(std::string name, bool loop )
 	{
 		WIPClipInstance* clip = _internal_clip_queue[name];
 		if(clip)
 			return play(clip,loop);
 		return false;
 	}
-	bool play(bool loop=false)
+	bool play(bool loop)
 	{
 		if (_internal_clip_queue.empty())
 			return false;
@@ -364,19 +383,98 @@ private:
 
 };
 
+class WIPPhysicsManager;
+//todo 独立的碰撞mesh
 class WIPCollider:public WIPComponent
 {
 public:
+	enum _FrictionTypes
+	{
+		E_DYNAMIC = 1,
+		E_STATIC,
+		E_FRICTION_COUNT,
+	};
 
+	enum _ShapeTypes
+	{
+		E_POLYGON = 1,
+		E_CIRCLE,
+		E_SHAPE_COUNT,
+	};
+
+	enum _CollisionTypes
+	{
+		//
+		E_STATIC_RIGIDBODY = 0,
+		E_GHOST,
+		E_RIGIDBODY,
+		E_NOTUSE,
+		//参加碰撞检测但是没有物理
+		E_NO_PHYSICS,
+		//不参加碰撞检测没有物理	
+		E_COLIISION_COUNT,
+	};
+
+	//now noly support polygon shape
+	static WIPCollider* create_collider(WIPSprite* m, WIPCollider::_CollisionTypes tp);
+	static WIPCollider* create_collider(std::vector<RBVector2>& poly);
+	WIPCollider();
+	~WIPCollider();
+	//n is vertex number v contains 2*v elements
+	void reset_polygon_vertices(WIPSprite* v, i32 n = 4);
+	void reset_polygon_position(f32 x, f32 y);
+	void reset_polygon_density(f32 density);
+
+	void reset_body_rad(f32 rad);
+	void reset_body_restitution(f32 restitution);
+	void reset_body_friction(f32 v, _FrictionTypes type);
+
+	void set_mesh_box(f32 sx, f32 sy)
+	{
+		_cb_scale_x = sx;
+		_cb_scale_y = sy;
+	}
+	void reset_body_type(_CollisionTypes type);
+
+	void add_force(f32 x, f32 y);
+
+	void update_out(WIPMesh& mesh, f32& rad, f32& x, f32 &y);
+	void update_in(WIPMesh* mesh, f32 rad, f32 x, f32 y);
+
+	i32 get_collision_list_size();
+
+	b2Body* get_collision_index_body(i32 i);
+
+	bool is_collision_list_empty();
+
+	void set_density(f32 density);
+
+	f32 get_speed_x();
+	f32 get_speed_y();
+	void set_active(bool v);
+	void set_sprite(class WIPSprite* sprite);
+protected:
+
+
+private:
+	friend WIPPhysicsManager;
+	friend WIPSprite;
+	b2PolygonShape* _polygon_shape;
+	b2Body* _body;
+	bool _active;
+	f32 _cb_scale_x;
+	f32 _cb_scale_y;
 };
 
 
 class WIPTransform : public WIPComponent
 {
 public:
+	~WIPTransform(){}
 	f32 world_x,world_y;
 	f32 z_order;
 	//CCW is positive
+	//rad
 	f32 rotation;
 	f32 scale_x,scale_y;
 	f32 anchor_x;
@@ -390,14 +488,24 @@ class WIPScene;
 class WIPSprite : public WIPObject
 {
 public:
-	static WIPSprite* create(f32 width,f32 height)
+	static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY,f32 sx=1.f,f32 sy=1.f)
 	{
 		WIPSprite* ret = new WIPSprite();
 		ret->_transform = new WIPTransform();
 		ret->_render = new WIPRenderComponent(width,height);
 		ret->_animation = new WIPAnimation();
-		ret->_collider = new WIPCollider();
+		if (tp != 4)
+		{
+			ret->_collider = WIPCollider::create_collider(ret, tp);
+			ret->_collider->set_sprite(ret);
+			ret->_collider->set_mesh_box(sx,sy);
+		}
+		else
+		{
+			ret->_collider = nullptr;
+		}
 		ret->_tag = "NONAME";
+		ret->_type_tag = "NOTAG";
 		return ret;
 	}
 	//use for lua
@@ -417,10 +525,7 @@ private:
 	WIPSprite()
 	{
 	}
-	~WIPSprite()
-	{
-
-	}
+	~WIPSprite();
 
 public:
 	
@@ -490,7 +595,38 @@ public:
 	{
 		return _tag;
 	}
-	//lt lb rt rb
+	void set_type_tag(std::string s)
+	{
+		_type_tag = s;
+	}
+	inline std::string get_type_tag()
+	{
+		return _type_tag;
+	}
+	RBVector2 get_anchor_world_position()
+	{
+		return RBVector2(_transform->world_x,_transform->world_y);
+	}
+	//lt lb rt rb,regard anchor as center
+	//mesh regard 0.5,0.5 as center
+	void get_anchor_vertices(RBVector2* vertices) const
+	{
+		if (!vertices)
+			return;
+
+		f32 ax = (_transform->anchor_x - 0.5f)*_render->mesh.get_witdh();
+		f32 ay = (_transform->anchor_y - 0.5f)*_render->mesh.get_height();
+		RBVector2 lb1 = _render->mesh.lb -RBVector2(ax, ay);
+		RBVector2 lt1 = _render->mesh.lt -RBVector2(ax, ay);
+		RBVector2 rb1 = _render->mesh.rb -RBVector2(ax, ay);
+		RBVector2 rt1 = _render->mesh.rt -RBVector2(ax, ay);
+
+		vertices[0] = lt1;
+		vertices[1] = lb1;
+		vertices[2] = rt1;
+		vertices[3] = rb1;
+	}
+	//lt lb rb rt
 	void get_world_position(RBVector2* vertices) const
 	{
 		if(!vertices)
@@ -547,6 +683,48 @@ public:
 	}
 	void add_to_scene(WIPScene* scene);
 	void leave_scene(WIPScene* scene);
+	void add_component(WIPComponent* c)
+	{
+		components.push_back(c);
+		c->set_host(this);
+	}
+	void add_tick_component(WIPTickComponent* tc)
+	{
+		tick_components.push_back(tc);
+		tc->set_host(this);
+	}
+
+
+	void update(f32 dt)
+	{
+		for (auto i : tick_components)
+		{
+			i->update(dt);
+		}
+	}
+	void fix_update(f32 dt)
+	{
+		for (auto i : tick_components)
+		{
+			i->fix_update(dt);
+		}
+	}
+
+	void init_components()
+	{
+		for (auto i : tick_components)
+		{
+			i->init();
+		}
+	}
+
+	void destroy_components()
+	{
+		for (auto i : tick_components)
+		{
+			i->destroy();
+		}
+	}
 
 public:
 	WIPTransform* _transform;
@@ -556,18 +734,26 @@ public:
 
 	std::string _tag;
 	std::vector<WIPScene*> related_scenes;
+	//todo:hash
+	std::string _type_tag;
 
+	std::vector<WIPComponent* > components;
+	std::vector<WIPTickComponent* > tick_components;
 
 };
 
 struct WIPSpriteCreator
 {
 	WIPSpriteCreator(f32 iw,f32 ih,WIPMaterialType mtp = WIPMaterialType::E_OPAQUE)
-		:mt(mtp), world_render(nullptr), texture(nullptr), w(iw), h(ih)
+		:mt(mtp), world_render(nullptr), texture(nullptr), w(iw), h(ih), body_tp(WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY),
+		collider_sx(1.f), collider_sy(1.f)
 	{}
 	WIPMaterialType mt;
 	WorldRender* world_render;
 	WIPTexture2D* texture;
+	WIPCollider::_CollisionTypes body_tp;
+	f32 collider_sx;
+	f32 collider_sy;
 	float w, h;
 };
 

@@ -424,6 +424,10 @@ struct RBAABB2D
     return (v.x >= min.x) && (v.x <= max.x) &&
       (v.y >= min.y) && (v.y <= max.y);
   }
+  bool is_contain(const RBAABB2D& v) const
+  {
+	  return (is_contain(v.min)&&is_contain(v.max));
+  }
 };
 
 template <> struct TIsPODType<RBAABB2D> { enum { v = true }; };

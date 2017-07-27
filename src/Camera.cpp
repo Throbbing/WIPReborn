@@ -9,13 +9,15 @@
 
 
 
-WIPCamera::WIPCamera(f32 w, f32 h, f32 sw, f32 sh)
+WIPCamera::WIPCamera(f32 w, f32 h, f32 sw, f32 sh, int iww, int iwh)
 {
 	world_x = world_y = 0.f;
 	world_h = h;
 	world_w = w;
 	_active = true;
 	_zoom = 1.f;
+	window_h = iwh;
+	window_w = iww;
 	viewport = g_rhi->RHICreateViewPort(0, 0, sw, sh);
 }
 
@@ -38,6 +40,17 @@ RBVector2 WIPCamera::camera_to_world(const RBVector2& camera_pos)
 RBVector2 WIPCamera::world_to_camera(const RBVector2& world_pos)
 {
 	return RBVector2(world_pos.x-world_x,world_pos.y-world_y);
+}
+
+RBVector2 WIPCamera::screen_to_world(const RBVector2I& screen_pos)
+{
+	int x = screen_pos.x;
+	int y = window_h - screen_pos.y;
+	f32 ndcx = (x - viewport->x)*2.f/viewport->w-1.f;
+	f32 ndcy = (y - viewport->y)*2.f/viewport->h-1.f;
+	f32 w1 = world_w*0.5f*_zoom;
+	f32 w2 = world_h*0.5f*_zoom;
+	return RBVector2(ndcx*w1+world_x,ndcy*w2 + world_y);
 }
 
 void WIPCamera::set_background_color(const WIPColorf& color)
