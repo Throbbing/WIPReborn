@@ -29,7 +29,7 @@ public:
   GLTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples, void *data,int flag);
   virtual void *get_rhi_resource() const;
 
-private:
+public:
   GLint _gl_internalformat;
   GLenum _gl_format;
   GLenum _gl_type;
@@ -49,6 +49,7 @@ public:
 
 private:
   void generate_texture(void *data = 0);
+public:
   GLint _gl_internalformat;
   GLenum _gl_format;
   GLenum _gl_type;
@@ -125,6 +126,10 @@ public:
 	
 	virtual WIPTexture2D* RHICreateTexture2D(uint32 SizeX, uint32 SizeY, void* data,uint8 Format=0, uint32 NumMips=0, uint32 NumSamples=0, uint32 Flags=0);
 	
+	virtual void update_texture(WIPTexture2D* texture, void* data) const;
+
+	virtual void update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const;
+
 	virtual WIPVertexShader*  RHICreateVertexShader(const char* text) const;
 	
 	virtual WIPPixelShader*  RHICreatePixelShader(const char* text) const;
@@ -148,6 +153,8 @@ public:
 	virtual WIPViewPort* RHICreateViewPort(int x, int y, int w, int h);
 
 	virtual WIPViewPort* change_viewport(WIPViewPort* viewport);
+
+	virtual void set_uniform4f(const char* uniform_name, const RBColorf& c);
 	
 	virtual void set_uniform_texture(const char* uniform_name,int tex_loc,const WIPBaseTexture* texture);
 	

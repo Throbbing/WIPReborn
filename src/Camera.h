@@ -40,9 +40,11 @@ public:
 	void clear();
 	//keep width fixed
 	void reset_ratio(f32 ratio);
-	RBVector2 camera_to_world(const RBVector2& camera_pos);
-	RBVector2 world_to_camera(const RBVector2& world_pos);
-	RBVector2 screen_to_world(const RBVector2I& screen_pos);
+	RBVector2 camera_to_world(const RBVector2& camera_pos) const;
+	RBVector2 world_to_camera(const RBVector2& world_pos) const;
+	RBVector2 screen_to_world(const RBVector2I& screen_pos) const;
+	RBVector2 screen_to_camera(const RBVector2I& screen_pos) const;
+	RBVector2 screen_to_ndc(const RBVector2I& screen_pos) const;
 	void set_background_color(const WIPColorf& color);
 	void move(f32 x,f32 y);
 	void move_to(f32 x,f32 y);

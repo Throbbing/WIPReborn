@@ -37,11 +37,14 @@ INCLUDE_DIRECTORIES(
 	src
 	src/thirdpart
 	src/Platform
+	src/flyUI
 	libs/glfw/include/GLFW
 	src/thirdpart/glad/include/glad
 	src/thirdpart/glad/include/KHR
 	src/thirdpart/Box2D
 	libs/FreeImage/include
+	libs/freetype
+	libs/freetype/include
     ${RHI_INC}
 )
 
@@ -61,9 +64,12 @@ AUX_SOURCE_DIRECTORY(src/thirdpart/Box2D/Collision/Shapes DIR_SRCS_BOX2D)
 
 AUX_SOURCE_DIRECTORY(src/thirdpart/glad/src DIR_SRCS_LIB_GLAD)
 
+AUX_SOURCE_DIRECTORY(src/flyUI DIR_UI)
+
 list( APPEND DIR_SRCS ${DIR_SRCS_BOX2D})
 list( APPEND DIR_SRCS ${DIR_SRCS_LIB_GLAD})
 list( APPEND DIR_SRCS ${RHI_SRC})
+list( APPEND DIR_SRCS ${DIR_UI})
 MESSAGE(STATUS "${DIR_SRCS}")
 
 IF (WIN32)
@@ -82,6 +88,7 @@ ${PROJECT_SOURCE_DIR}/libs/FreeImage/lib/win32/zlib.lib
 )
 set(LUA_LIBRARY ${PROJECT_SOURCE_DIR}/libs/lua523/lib/win32/lua.lib)
 
+set(FREETYPE_LIBRARY ${PROJECT_SOURCE_DIR}/libs/freetype/lib/freetype.lib)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /machine:x86" )
 set(CMAKE_VS_PLATFORM_TOOLSET "v120" CACHE STRING "Platform Toolset" FORCE)
@@ -115,6 +122,7 @@ IF(MSVC)
 	FILE(GLOB  HEADERS "src/*.h")
 	SOURCE_GROUP("inc" FILES ${HEADERS})
 	SOURCE_GROUP("box2d" FILES ${DIR_SRCS_BOX2D})
+	SOURCE_GROUP("ui" FILES ${DIR_UI})
 	SOURCE_GROUP("glad" FILES ${DIR_SRCS_LIB_GLAD})
 ENDIF()
 
@@ -140,6 +148,7 @@ ENDIF()
 list( APPEND DEBUG_LIBS ${GLFW3_LIBRARY})
 list( APPEND DEBUG_LIBS ${FREEIMAGE_LIBRARY})
 list( APPEND DEBUG_LIBS ${LUA_LIBRARY})
+list( APPEND DEBUG_LIBS ${FREETYPE_LIBRARY})
 
 find_package (Threads REQUIRED)
 

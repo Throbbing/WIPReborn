@@ -21,117 +21,6 @@
 
 #include "UserComponent.h"
 
-int GLFWApp::pack_sprite(const WIPSprite **sprite, void *mem, int n, int offset_n)
-{
-	float *p = (float*)mem;
-	float s[sizeof(float) * 44];
-	int k = -1 + offset_n;
-	while (n--)
-	{
-		k++;
-		float w1 = ofGetWindowWidth() / 2;
-		float w2 = ofGetWindowHeight() / 2;
-		//03
-		//12
-		// todo:padding 1 float
-
-		if (!sprite[k])
-			continue;
-		/*
-		if(sprite[k]->handled)
-		continue;
-		*/
-		RBVector2 vert[4];
-		sprite[k]->get_world_position(vert);
-		s[0] = vert[0].x / w1*zoom;
-		s[1] = vert[0].y / w2*zoom;
-		s[2] = sprite[k]->_transform->z_order;
-		s[3] = sprite[k]->_render->material.vert_color[0].r;
-		s[4] = sprite[k]->_render->material.vert_color[0].g;
-		s[5] = sprite[k]->_render->material.vert_color[0].b;
-		s[6] = 0;
-		s[7] = 0;
-		s[8] = 1;
-		// from framebox
-		s[9] = sprite[k]->_animation->_framebox_ref.lb.x;//0
-		s[10] = sprite[k]->_animation->_framebox_ref.lb.y;//0
-
-		s[11] = vert[1].x / w1*zoom;
-		s[12] = vert[1].y / w2*zoom;
-		s[13] = sprite[k]->_transform->z_order;
-		s[14] = sprite[k]->_render->material.vert_color[0].r;
-		s[15] = sprite[k]->_render->material.vert_color[0].g;
-		s[16] = sprite[k]->_render->material.vert_color[0].b;
-		s[17] = 0;
-		s[18] = 0;
-		s[19] = 1;
-		// from framebox
-		s[20] = sprite[k]->_animation->_framebox_ref.lt.x;//0
-		s[21] = sprite[k]->_animation->_framebox_ref.lt.y;//1
-
-		s[22] = vert[2].x / w1*zoom;
-		s[23] = vert[2].y / w2*zoom;
-		s[24] = sprite[k]->_transform->z_order;
-		s[25] = sprite[k]->_render->material.vert_color[0].r;
-		s[26] = sprite[k]->_render->material.vert_color[0].g;
-		s[27] = sprite[k]->_render->material.vert_color[0].b;
-		s[28] = 0;
-		s[29] = 0;
-		s[30] = 1;
-		// from framebox
-		s[31] = sprite[k]->_animation->_framebox_ref.rt.x;//1
-		s[32] = sprite[k]->_animation->_framebox_ref.rt.y;//1
-
-		s[33] = vert[3].x / w1*zoom;
-		s[34] = vert[3].y / w2*zoom;
-		s[35] = sprite[k]->_transform->z_order;
-		s[36] = sprite[k]->_render->material.vert_color[0].r;
-		s[37] = sprite[k]->_render->material.vert_color[0].g;
-		s[38] = sprite[k]->_render->material.vert_color[0].b;
-		s[39] = 0;
-		s[40] = 0;
-		s[41] = 1;
-		// from framebox
-		s[42] = sprite[k]->_animation->_framebox_ref.rb.x;//1
-		s[43] = sprite[k]->_animation->_framebox_ref.rb.y;//1
-		memcpy(p, s, sizeof(float) * 44);
-		p += 44;
-		//LOG_WARN("%d",p-mem);
-		if ((int)(p + 44 - (float*)mem) >= MEMSIZE / sizeof(float))
-		{
-			//LOG_WARN("Copy overflow!Break!");
-			return k + 1;
-		}
-	}
-	//draw done!
-	return -1;
-}
-
-/*
-03
-12
-*/
-void GLFWApp::pack_index(void *mem, int n)
-{
-	unsigned int* p = (unsigned int*)mem;
-	unsigned int s[6];
-	int k = -1;
-	int off = 0;
-	while (n--)
-	{
-		++k;
-		s[0] = 0 + off;
-		s[1] = 1 + off;
-		s[2] = 3 + off;
-		s[3] = 1 + off;
-		s[4] = 2 + off;
-		s[5] = 3 + off;
-		off += 4;
-		memcpy(p, s, 6 * sizeof(unsigned int));
-		p += 6;
-	}
-}
-
 
 bool GLFWApp::init()
 {
@@ -197,7 +86,7 @@ bool GLFWApp::init()
 
 
 	scene = new WIPScene();
-	scene->init(1, 1, 6);
+	scene->init(1, 1, 4);
 	LOG_INFO("Creating scene...");
 
 
@@ -206,6 +95,11 @@ bool GLFWApp::init()
 	world_renderer->set_world(scene);
 	LOG_INFO("Renderer start up...");
 
+	text_renderer = new TextRender(512,512);
+	text_renderer->init();
+	text_renderer->load_font("./font/simkai.ttf", 25, 25);
+
+	
 
 	g_physics_manager->startup();
 	LOG_INFO("Physics start up...");
@@ -223,10 +117,15 @@ bool GLFWApp::init()
 	cameras.push_back(scene->create_camera(20.f, 20.f, window_w, window_h, window_w, window_h));
 	cameras[0]->move_to(5.f, 5.f);
 
+	ui_renderer = new UIRender();
+	ui_renderer->init(cameras[0]);
+
+
 	g_physics_manager->set_debug_camera(cameras[0]);
 
 
 	clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
+	
 	clip1 = WIPAnimationClip::create_with_atlas("walk_left", "./clips/2.clip");
 	clip2 = WIPAnimationClip::create_with_atlas("walk_right", "./clips/3.clip");
 	clip3 = WIPAnimationClip::create_with_atlas("walk_up", "./clips/4.clip");
@@ -274,15 +173,17 @@ bool GLFWApp::init()
 
 	tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
 
-	tex2d_lixiaoyao = g_rhi->RHICreateTexture2D(wli, hli, res_lixiaoyao->ptr,0,0,0,1);
+	tex2d_lixiaoyao = g_rhi->RHICreateTexture2D(wli, hli, res_lixiaoyao->ptr);
 	tex2d_zaji1 = g_rhi->RHICreateTexture2D(wzaji1, hzaji1, res_zaji1->ptr);
 	tex2d_zaji2 = g_rhi->RHICreateTexture2D(wzaji2, hzaji2, res_zaji2->ptr);
 	tex2d_crowd = g_rhi->RHICreateTexture2D(wcrow, hcrow, res_crowd->ptr);
 
+	auto res_face = g_res_manager->load_resource("./pic/face.png", WIPResourceType::TEXTURE);
+	int fw = ((TextureData *)(res_face->extra))->width;
+	int fh = ((TextureData *)(res_face->extra))->height;
+	face = g_rhi->RHICreateTexture2D(fw, fh, res_face->ptr);
 
-
-
-	WIPSpriteCreator ctor_man(3.f*rot, 3.f, WIPMaterialType::E_TRANSLUCENT);
+	WIPSpriteCreator ctor_man(3.6f*rot, 3.6f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_man.texture = tex2d;
 	ctor_man.world_render = world_renderer;
 	ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
@@ -312,19 +213,19 @@ bool GLFWApp::init()
 	ctor_li.collider_sx = 0.5f;
 	ctor_li.collider_sy = 0.2f;
 
-	WIPSpriteCreator ctor_zaji1(1.2f*1.5f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+	WIPSpriteCreator ctor_zaji1(1.2f*2.5f*1.2f, 3.6f*1.2f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_zaji1.texture = tex2d_zaji1;
 	ctor_zaji1.world_render = world_renderer;
 	ctor_zaji1.collider_sx = 0.5f;
 	ctor_zaji1.collider_sy = 0.2f;
 
-	WIPSpriteCreator ctor_zaji2(1.8f*1.2f, 2.4f, WIPMaterialType::E_TRANSLUCENT);
+	WIPSpriteCreator ctor_zaji2(1.8f*1.2f, 3.4f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_zaji2.texture = tex2d_zaji2;
 	ctor_zaji2.world_render = world_renderer;
 	ctor_zaji2.collider_sx = 0.5f;
 	ctor_zaji2.collider_sy = 0.2f;
 
-	WIPSpriteCreator ctor_crowd(6*1.2f, 6.f, WIPMaterialType::E_TRANSLUCENT);
+	WIPSpriteCreator ctor_crowd(6*1.2f, 8.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_crowd.texture = tex2d_crowd;
 	ctor_crowd.world_render = world_renderer;
 	ctor_crowd.collider_sx = 0.85f;
@@ -346,13 +247,15 @@ bool GLFWApp::init()
 
 	zaji1 = WIPSpriteFactory::create_sprite(ctor_zaji1);
 	zaji1->_animation->add_clip(clip, clip->name);
+	zaji1->_animation->set_clip_instance_speed(clip->name
+		, 0.2);
 	zaji1->_animation->play(clip, true);
 	zaji1->set_anchor(0.5f, 0);
 
 
 	zaji2 = WIPSpriteFactory::create_sprite(ctor_zaji2);
-	zaji2->_animation->add_clip(clip, clip->name);
-	zaji2->_animation->play(clip, true);
+	zaji2->_animation->add_clip(clip1_s, clip1_s->name);
+	zaji2->_animation->play(clip1_s, true);
 	zaji2->set_anchor(0.5f, 0);
 
 
@@ -417,16 +320,16 @@ bool GLFWApp::init()
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
 
-	man_lixiaoyao->translate_to(5, 1);
+	man_lixiaoyao->translate_to(-3, 1);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
-	zaji1->translate_to(-5, 2);
+	zaji1->translate_to(-5, 0);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
-	zaji2->translate_to(-3,2);
+	zaji2->translate_to(-4,-2);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
-	crowd->translate_to(-4, -3);
+	crowd->translate_to(-8, 3);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
 
@@ -527,10 +430,29 @@ void GLFWApp::run()
 			//not work
 			g_physics_manager->update(scene,clock->get_frame_time());
 
+			
 			for (auto i : cameras)
 				world_renderer->render(i);
 
+			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3, 0.3, 0.5, 0.5));
+			ui_renderer->render_pic(700, 50, face->get_width(), face->get_height(), face);
 
+				
+			wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
+				L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
+				L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"
+				L"我们的游戏中需要对渲染字体做勾边处理，有种简单的方法是将字体多画几遍，向各个方向偏移一两个像素用黑色各画一遍，然后再用需要的颜色画一遍覆盖上去。这个方法的缺点是一个字就要画多次，影响渲染效\n"
+				L"前几年有人发明了另一种方法，google 一下 Signed Distance Field Font Rendering 就可以找到大量的资料。大体原理是把字体数据预处理一遍，把每个像素离笔画的距离用灰度的形式记录在贴图上，然后写一个专门的 shader 来渲染字体。好处是字体可以缩放而不产生锯齿，也比较容易缺点边界做勾边处理。缺点是字模数据需要离线预处理。\n"
+				L"我们的手游项目以及 3d 端游项目都大量使用了勾边字体，我希望直接利用系统字体而不用离线预处理字体把字体文件打包到客户端中。前段时间还专门实现了一个动态字体的贴图管理模块 。btw, 苹果的平台提供了高层 API 可以直接生成带勾边效果的字模。\n"
+				L"但是，勾过边的字模信息中同时包含了轮廓信息和字模主体信息，看起来似乎很难用单通道记录整个字模数据了。这给染色也带来了麻烦。\n"
+				L"见这张图，是一张带勾边信息的字模。轮廓是黑色的，字体是白色的。从颜色通道上看，有黑白灰的过渡。但灰色部分 alpha 通道对应量却不相等。轮廓向字体主干过渡的地方，色彩是灰色的，但是 alpha 值为 1.0 。也就是说，alpha 通道是独立的。\n"
+				L"我们需要两个通道，颜色通道和 alpha 通道，来保存完整的字模信息才能在最后正确的渲染到屏幕上。很多显卡硬件并不支持两通道贴图，所以要么我们用一个 RGBA 四通道贴图来保存，要么用两张单通道贴图。\n"
+				L"我想了个简单的方法只用一个通道就可以保存全部信息，那就是把 alpha 为 1.0 的像素的灰度影射到 0.5 到 1 的区间；把 alpha < 1.0 的部分像素的 alpha 值影射到 0 到 0.5 的区间。这样做可行是因为，经过勾黑边的白字，其 alpha 小于 1.0 的像素一定都是黑色的，也就是 RGBA 都相等。所以信息只损失了一个 bit 就保存了下来。";
+
+			wchar_t words1[] = L"趙靈兒:\n好……放了他，我就跟你們走……";
+
+			text_renderer->render_text(200, 200, words1,  wcslen(words1), window_w, cameras[0]);
+			text_renderer->render(cameras[0]);
 			// g_script_manager->call("debug_draw");
 
 			lastTime = curTime;

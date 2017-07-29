@@ -32,17 +32,17 @@ void WIPCamera::reset_ratio(f32 ratio)
 	world_h = height;
 }
 
-RBVector2 WIPCamera::camera_to_world(const RBVector2& camera_pos)
+RBVector2 WIPCamera::camera_to_world(const RBVector2& camera_pos) const 
 {
 	return RBVector2(world_x+camera_pos.x,world_y+camera_pos.y);
 }
 
-RBVector2 WIPCamera::world_to_camera(const RBVector2& world_pos)
+RBVector2 WIPCamera::world_to_camera(const RBVector2& world_pos) const
 {
 	return RBVector2(world_pos.x-world_x,world_pos.y-world_y);
 }
 
-RBVector2 WIPCamera::screen_to_world(const RBVector2I& screen_pos)
+RBVector2 WIPCamera::screen_to_world(const RBVector2I& screen_pos) const
 {
 	int x = screen_pos.x;
 	int y = window_h - screen_pos.y;
@@ -51,6 +51,28 @@ RBVector2 WIPCamera::screen_to_world(const RBVector2I& screen_pos)
 	f32 w1 = world_w*0.5f*_zoom;
 	f32 w2 = world_h*0.5f*_zoom;
 	return RBVector2(ndcx*w1+world_x,ndcy*w2 + world_y);
+}
+
+RBVector2 WIPCamera::screen_to_camera(const RBVector2I& screen_pos) const
+{
+	int x = screen_pos.x;
+	int y = window_h - screen_pos.y;
+	f32 ndcx = (x - viewport->x)*2.f / viewport->w - 1.f;
+	f32 ndcy = (y - viewport->y)*2.f / viewport->h - 1.f;
+	f32 w1 = world_w*0.5f*_zoom;
+	f32 w2 = world_h*0.5f*_zoom;
+	return RBVector2(ndcx*w1, ndcy*w2);
+}
+
+RBVector2 WIPCamera::screen_to_ndc(const RBVector2I& screen_pos) const
+{
+#ifndef USE_D3D
+	int x = screen_pos.x;
+	int y = window_h - screen_pos.y;
+	f32 ndcx = (x - viewport->x)*2.f / viewport->w - 1.f;
+	f32 ndcy = (y - viewport->y)*2.f / viewport->h - 1.f;
+	return RBVector2(ndcx, ndcy);
+#endif
 }
 
 void WIPCamera::set_background_color(const WIPColorf& color)

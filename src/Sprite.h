@@ -208,6 +208,10 @@ public:
 	{
 		_internal_clip_queue.erase(name);
 	}
+	void set_clip_instance_speed(std::string name, f32 speed)
+	{
+		_internal_clip_queue[name]->speed = speed;
+	}
 	inline bool play(WIPClipInstance* clip_instance,bool loop=false)
 	{
 		if(clip_instance->bplaying)

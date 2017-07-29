@@ -23,12 +23,15 @@ WIPResourceManager* WIPResourceManager::get_instance()
 
 bool WIPResourceManager::startup()
 {
+	//初始化FreeImage
+	FreeImage_Initialise(TRUE);
 	return true;
 }
 
 void WIPResourceManager::shutdown()
 {
 	free_all();
+	FreeImage_DeInitialise();
 }
 
 //return NULL if fail
@@ -150,11 +153,16 @@ void WIPResourceManager::free_resource(ResHandler* handler)
 		//FreeImage_Unload((FIBITMAP*)handler->ptr_1);
 		delete[](unsigned char*)handler->ptr;
 		delete (TextureData *)handler->extra;
-		//delete_handler(handler);
 		break;
 	case SOUND:
 	{
 
+	}
+	case EFont:
+	{
+		delete[](unsigned char*)handler->ptr;
+		delete (TextData*)handler->extra;
+		break;
 	}
 	default:
 		printf("open a unkown type resource!\n");
@@ -221,8 +229,7 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 	case TEXTURE:
 	{
 		TextureData *data = new TextureData;
-		//初始化FreeImage
-		FreeImage_Initialise(TRUE);
+		
 
 		FIBITMAP* bmpConverted = NULL;
 		FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -324,6 +331,37 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 	{
 
 	}
+	break;
+	case EFont:
+	{
+		TextData *data = new TextData;
+		data->conten_type = TextData::E_STRING;
+
+		std::ifstream fin(filename, std::ios::binary);
+		if (!fin)
+		{
+			printf("read %s failed!\n", filename);
+			return nullptr;
+		}
+		fin.seekg(0, fin.end);
+		int read_size = fin.tellg();
+		fin.seekg(0, fin.beg);
+		char* mem = new char[read_size];
+		fin.read(mem, read_size);
+		fin.close();
+
+		res->file_name = filename;
+		res->type = EFont;
+		res->extra = data;
+		res->nref = 1;
+		res->ptr = mem;
+		res->size = read_size;
+
+		_map[filename] = res;
+
+		return res;
+	}
+	break;
 	default:
 		return res;
 		break;

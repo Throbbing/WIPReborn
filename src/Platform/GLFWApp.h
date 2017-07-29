@@ -6,10 +6,7 @@
 //#include "../thirdpart/glad/include/glad/glad.h"
 
 class WIPCamera;
-
-#define MAXN 100
-#define MEMSIZE 1024*1024
-
+class WIPSprite;
 
 
 
@@ -23,14 +20,6 @@ public:
 
   virtual void run();
 
-  inline int ofGetWindowHeight()
-  {
-    return window_h;
-  }
-  inline int ofGetWindowWidth()
-  {
-    return window_w;
-  }
   bool init_gl(const char *title, int width, int height);
   bool create_window(const char *title) 
   {
@@ -69,6 +58,7 @@ private:
 	class WIPTexture2D* tex2d_zaji1;
 	class WIPTexture2D* tex2d_zaji2;
 	class WIPTexture2D* tex2d_crowd;
+	class WIPTexture2D* face;
 
 	class WIPAnimationClip* clip;
 	class WIPAnimationClip* clip1;
@@ -81,9 +71,9 @@ private:
 	class WIPAnimationClip* pre_clip;
 
 	class WorldRender* world_renderer;
-	
+	class TextRender* text_renderer;
+	class UIRender* ui_renderer;
 
-	class WIPSprite* sprites[MAXN];
 	int draw_state;
 
 	std::vector<int> get_ids;
@@ -91,8 +81,7 @@ private:
 
 	class WIPQuadTree* quad_tree;
 	bool debug;
-  int pack_sprite(const WIPSprite **sprite, void *mem, int n,int offset_n);
-  void pack_index(void *mem, int n);
+
 
   float zoom;
 

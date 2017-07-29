@@ -40,7 +40,7 @@ WIPPixelShader *WIPDynamicRHI::get_pixel_shader(const string &name) {
 #include <algorithm>
 
 
-void WorldRender::init()
+void WorldRender::init(const WIPCamera* cam )
 {
 	scene_ref = nullptr;
 	vertex_buffer_size = 1024 * 1024;
@@ -76,7 +76,7 @@ void WorldRender::set_world(const WIPScene* scene)
 {
 	scene_ref = scene;
 }
-void WorldRender::render(WIPCamera* cam)
+void WorldRender::render(const WIPCamera* cam)
 {
 	if (!scene_ref)
 		return;
@@ -289,7 +289,7 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		s[41] = 1;
 		// from framebox
 		s[42] = blend_objects[k]->_animation->_framebox_ref.rb.x;//1
-		s[43] = blend_objects[k]->_animation->_framebox_ref.rb.y;//1
+		s[43] = blend_objects[k]->_animation->_framebox_ref.rb.y;//0
 		memcpy(p, s, sizeof(float) * 44);
 		p += 44;
 		//LOG_WARN("%d",p-mem);
@@ -425,4 +425,140 @@ void WorldRender::sort_by_texture()
 void WorldRender::sort_by_zorder()
 {
 	std::sort(blend_objects.begin(), blend_objects.end(), comp_greater);
+}
+
+
+
+
+
+void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int maxw, const WIPCamera* cam)
+{
+	int x = px;
+	int y = py;
+	for (int i = 0; i < len; ++i)
+	{
+		wchar_t ch = chs[i];
+		if (ch == L'\n')
+		{
+			x = px;
+			y -= text_h;
+			continue;
+		}
+		if (x+20 >= maxw)
+		{
+			x = px;
+			y -= text_h;
+			continue;
+		}
+		TextNode* node = get_node(ch);
+		if (!node)
+			return;
+
+		int draw_px = x + node->offx;
+		int draw_py = y + node->offy;
+
+		RBVector2 lb = cam->screen_to_ndc(RBVector2I(draw_px, cam->window_h-draw_py));
+		RBVector2 lt = cam->screen_to_ndc(RBVector2I(draw_px, cam->window_h - draw_py - node->text_height));
+		RBVector2 rt = cam->screen_to_ndc(RBVector2I(draw_px + node->text_width, cam->window_h - draw_py - node->text_height));
+		RBVector2 rb = cam->screen_to_ndc(RBVector2I(draw_px + node->text_width, cam->window_h - draw_py));
+
+		f32 iw = 1.f / cache_w;
+		f32 ih = 1.f / cache_h;
+
+
+		f32 tx = node->texture_x*iw;;
+		f32 ty = node->texture_y*ih;
+		f32 tw = node->text_width*iw;
+		f32 th = node->text_height*ih;
+
+
+		f32 vert[] = {
+			lb.x, lb.y, tx, ty + th,//lb
+			lt.x, lt.y, tx, ty,//lt
+			rt.x, rt.y, tx + tw, ty ,//rt
+			rb.x, rb.y, tx + tw, ty + th//rb
+		};
+
+		x += node->text_advance;
+
+		if (((text_to_render + 1) * 16) > cache_h*cache_w)
+		{
+			render(cam);
+			//texture_change = false;
+			//text_to_render = 0;
+			continue;
+		}
+
+		memcpy(text_vertex_buffer + text_to_render * 16 * sizeof(f32), vert, 16 * sizeof(f32));
+
+		text_to_render++;
+
+		if (texture_change)
+		{
+			render(cam);
+			//texture_change = false;
+			//text_to_render = 0;
+		}
+	}
+}
+
+void TextRender::render(const WIPCamera* cam)
+{
+	g_rhi->update_texture(text_lut_buffer, text_cache);
+	void* p = g_rhi->lock_vertex_buffer(vb);
+	memcpy(p, text_vertex_buffer, text_to_render* sizeof(f32) * 16);
+	g_rhi->unlock_vertex_buffer(vb);
+	p = g_rhi->lock_index_buffer(ib);
+	_pack_index(p, text_to_render);
+	g_rhi->unlock_index_buffer(ib);
+
+	g_rhi->disable_depth_test();
+	g_rhi->enable_blend();
+	g_rhi->set_blend_function();
+	g_rhi->set_shader(bound_shader);
+	g_rhi->set_index_buffer(ib);
+	g_rhi->set_vertex_buffer(vb);
+	g_rhi->set_vertex_format(vf);
+	g_rhi->set_uniform_texture("in_texture", 0, text_lut_buffer);
+	g_rhi->set_uniform4f("in_color", RBColorf::black);
+	g_rhi->draw_triangles(6*text_to_render, 0);
+
+	g_rhi->enable_depth_test();
+	texture_change = false;
+	text_to_render = 0;
+}
+
+
+
+void UIRender::render_pic(int px, int py, int w, int h, const WIPTexture2D* tex)
+{
+	f32 draw_px = px;
+	f32 draw_py = py;
+	RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+	RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+	RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+	RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
+
+	f32 vert[] = {
+		lb.x, lb.y, 0, 1,//lb
+		lt.x, lt.y, 0, 0,//lt
+		rt.x, rt.y, 1, 0,//rt
+		rb.x, rb.y, 1, 1//rb
+	};
+	void* p = g_rhi->lock_vertex_buffer(vb);
+	memcpy(p, vert, sizeof(f32) * 16);
+	g_rhi->unlock_vertex_buffer(vb);
+
+	g_rhi->disable_depth_test();
+	g_rhi->enable_blend();
+	g_rhi->set_blend_function();
+	g_rhi->set_shader(bound_shader_pic);
+	g_rhi->set_index_buffer(ib);
+	g_rhi->set_vertex_buffer(vb);
+	g_rhi->set_vertex_format(vf);
+	g_rhi->set_uniform_texture("in_texture", 0, tex);
+	g_rhi->set_uniform4f("in_color", RBColorf::white);
+	g_rhi->draw_triangles(6, 0);
+
+	g_rhi->enable_depth_test();
 }

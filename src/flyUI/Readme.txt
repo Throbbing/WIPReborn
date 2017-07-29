@@ -1,0 +1,6 @@
+ActiveDrawableRect类带有可编辑函数，用于调节位置和输出调试信息。
+每个类的draw_internal()函数画fbo，draw()函数把fbo画出来。
+BasePanel和BaseWidget两个类的draw函数大致是一样的。
+update函数最后调用draw_internal,最先调用ActiveDrawableRect::update(dt);
+说明带有static的类都只在初始化时候和必要时候画fbo一次，
+不会实时更新，这些类都带有static_init()函数，在初始化时调用这些函数。

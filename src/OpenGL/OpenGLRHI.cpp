@@ -36,13 +36,14 @@ GLTexture2D::GLTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples,
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, flag==2?GL_RED:GL_RGBA, w, h, 0, flag==2?GL_RED:GL_RGBA, GL_UNSIGNED_BYTE,
 		data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	_gl_internalformat = GL_RGBA;
-	_gl_format = GL_RGBA;
+	_gl_internalformat = (flag == 2 ? GL_RED : GL_RGBA);
+	_gl_format = (flag == 2 ? GL_RED : GL_RGBA);
 	_gl_type = GL_UNSIGNED_BYTE;
 }
 
@@ -318,6 +319,12 @@ WIPViewPort* GLDynamicRHI::change_viewport(WIPViewPort* viewport)
 	return old;
 }
 
+void GLDynamicRHI::set_uniform4f(const char* uniform_name, const RBColorf& color)
+{
+	GLint locc = glGetUniformLocation(_bound_shader, uniform_name);
+	glUniform4f(locc, color.r, color.g, color.b, color.a);
+}
+
 WIPTexture2D *GLDynamicRHI::RHICreateTexture2D(uint32 SizeX, uint32 SizeY,
 	void *data, uint8 Format,
 	uint32 NumMips,
@@ -325,6 +332,35 @@ WIPTexture2D *GLDynamicRHI::RHICreateTexture2D(uint32 SizeX, uint32 SizeY,
 	uint32 Flags) {
 	return new GLTexture2D(SizeX, SizeY, NumMips, NumSamples, data,Flags);
 }
+
+
+void GLDynamicRHI::update_texture(WIPTexture2D* texture,void* data) const
+{
+	void *s = texture->get_rhi_resource();
+	GLuint &id = *((GLuint *)(&s));
+	GLTexture2D* gl_tex = (GLTexture2D*)texture;
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->get_width(),texture->get_height()
+		, gl_tex->_gl_format,gl_tex->_gl_type, data);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+}
+
+void GLDynamicRHI::update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const
+{
+	void *s = texture->get_rhi_resource();
+	GLuint &id = *((GLuint *)(&s));
+	GLTexture2D* gl_tex_ = (GLTexture2D*)texture;
+	glBindTexture(GL_TEXTURE_2D, id);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h
+		,gl_tex_->_gl_format, gl_tex_->_gl_type, data);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
 WIPVertexShader *GLDynamicRHI::RHICreateVertexShader(const char *text) const {
 	auto ret = new GLVertexShader();
 	if (!ret->load_and_compile(text)) {
@@ -467,9 +503,9 @@ void GLDynamicRHI::set_index_buffer(const WIPIndexBuffer *ib) const {
 	// glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id1);
 }
-void GLDynamicRHI::draw_triangles(int vertex_count, int offset_add) const{
+void GLDynamicRHI::draw_triangles(int index_count, int offset_add) const{
 	// glDrawElements(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, (void*)offset);
-	glDrawElementsBaseVertex(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, 0,
+	glDrawElementsBaseVertex(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, 0,
 		offset_add);
 }
 
