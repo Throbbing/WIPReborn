@@ -45,6 +45,9 @@ INCLUDE_DIRECTORIES(
 	libs/FreeImage/include
 	libs/freetype
 	libs/freetype/include
+	libs/fmod_studio/inc
+	libs/fmod_lowlevel/inc
+	lib/fmod_fsbank/inc
     ${RHI_INC}
 )
 
@@ -87,6 +90,12 @@ ${PROJECT_SOURCE_DIR}/libs/FreeImage/lib/win32/tiff.lib
 ${PROJECT_SOURCE_DIR}/libs/FreeImage/lib/win32/zlib.lib
 )
 set(LUA_LIBRARY ${PROJECT_SOURCE_DIR}/libs/lua523/lib/win32/lua.lib)
+
+set(FMOD_LIBRARY 
+${PROJECT_SOURCE_DIR}/libs/fmod_fsbank/lib/fsbank_vc.lib
+${PROJECT_SOURCE_DIR}/libs/fmod_lowlevel/lib/fmod_vc.lib
+${PROJECT_SOURCE_DIR}/libs/fmod_studio/lib/fmodstudio_vc.lib
+)
 
 set(FREETYPE_LIBRARY ${PROJECT_SOURCE_DIR}/libs/freetype/lib/freetype.lib)
 
@@ -149,6 +158,7 @@ list( APPEND DEBUG_LIBS ${GLFW3_LIBRARY})
 list( APPEND DEBUG_LIBS ${FREEIMAGE_LIBRARY})
 list( APPEND DEBUG_LIBS ${LUA_LIBRARY})
 list( APPEND DEBUG_LIBS ${FREETYPE_LIBRARY})
+list( APPEND DEBUG_LIBS ${FMOD_LIBRARY})
 
 find_package (Threads REQUIRED)
 

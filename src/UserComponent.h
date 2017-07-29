@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "Render.h"
 #include <fstream>
+#include "AudioManager.h"
+#include "Sound.h"
 
 class MapGrid
 {
@@ -126,6 +128,11 @@ public:
 		newpy = 0;
 		fog_dir = RBVector2(1.f, 1.f);
 		fog_dir.normalize();
+
+		g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
+		g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
+		sound = g_audio_manager->CreateSound("event:/bgm");
+		g_audio_manager->Play(sound);
 	}
 	void destroy()
 	{
@@ -349,4 +356,6 @@ public:
 	bool draw_debug;
 	f32 newpx;
 	f32 newpy;
+
+	StudioSound* sound;
 };

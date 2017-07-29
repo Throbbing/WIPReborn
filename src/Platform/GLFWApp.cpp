@@ -20,7 +20,7 @@
 #endif
 
 #include "UserComponent.h"
-
+#include "AudioManager.h"
 
 bool GLFWApp::init()
 {
@@ -454,6 +454,8 @@ void GLFWApp::run()
 			text_renderer->render_text(200, 200, words1,  wcslen(words1), window_w, cameras[0]);
 			text_renderer->render(cameras[0]);
 			// g_script_manager->call("debug_draw");
+
+			g_audio_manager->Update();
 
 			lastTime = curTime;
 			clock->update();
