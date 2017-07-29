@@ -11,7 +11,7 @@ bool FMOD_CHECK_fn(FMOD_RESULT result, const char *file, int line);
 #ifdef _DEBUG
 #define FMOD_CHECK(_result) FMOD_CHECK_fn(_result, __FILE__, __LINE__)
 #else
-#define FMOD_CHECK(_result)
+#define FMOD_CHECK(_result) true
 #endif // PUBLISH_BUILD
 
 typedef FMOD_RESULT RESULT;

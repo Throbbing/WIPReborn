@@ -22,8 +22,36 @@
 #include "UserComponent.h"
 #include "AudioManager.h"
 
+#ifdef _WIN32
+#include "windows.h"
+#endif // _WIN32
+
+
+void open_explorer(const wchar_t* path)
+{
+#ifdef WIN32
+	ShellExecuteW(0, L"open", 0, 0, path, SW_SHOWNORMAL);
+#endif
+}
+
+std::wstring to_wstring(const std::string &str)
+{
+	std::wstring wstr(str.length(), L' ');
+	std::copy(str.begin(), str.end(), wstr.begin());
+	return wstr;
+}
+
+//只拷贝低字节至string中
+std::string to_string(const std::wstring &wstr)
+{
+	std::string str(wstr.length(), ' ');
+	std::copy(wstr.begin(), wstr.end(), str.begin());
+	return str;
+}
+
 bool GLFWApp::init()
 {
+	scoller_y = 0;
 	window_w = 1024;
 	window_h = 768;
 	bool ret = create_window("Demo");
@@ -39,6 +67,8 @@ bool GLFWApp::init()
 	std::string log_path;
 	f32 fps;
 
+	std::string apath;
+
 	std::string path = "WIPCFG.ini";
 	if (WIPIniHelper::reset_ini_file(path.data()))
 	{
@@ -46,6 +76,7 @@ bool GLFWApp::init()
 		WIPIniHelper::get_string("Common", "project", lua_project_path);
 		WIPIniHelper::get_string("Common", "script_init", lua_ini_path);
 		WIPIniHelper::get_string("Common", "log", log_path);
+
 		WIPIniHelper::close();
 		LOG_INFO("Reading ini file...");
 	}
@@ -285,6 +316,7 @@ bool GLFWApp::init()
 	man->_animation->play(clip_s);
 	man->set_anchor(0.5f, 0);
 
+	mc->ui_renderer = ui_renderer;
 
 	bg->set_tag("bg");
 	bg_mask->set_tag("mask");
@@ -363,8 +395,25 @@ bool GLFWApp::init()
 
 	scene->init_components();
 
+	/*
+	std::vector<std::string> res;
+
+	g_filesystem->scan_dir(res, apath.c_str(), ".jpg", SCAN_FILES, true);
+	for (int i = 0; i < res.size(); ++i)
+	{
+		auto res_handler = g_res_manager->load_resource((apath + res[i]).c_str());
+		TextureData* d = (TextureData*)(res_handler->extra);
+		textures.push_back(g_rhi->RHICreateTexture2D(d->width, d->height, res_handler->ptr));
+		string ss = g_filesystem->get_path(std::string(apath + res[i]));
+		paths.push_back(to_wstring(ss));
+	}
+	*/
+	//g_res_manager->free_all();
+
 	return ret;
 }
+
+
 
 void GLFWApp::run() 
 {
@@ -437,7 +486,41 @@ void GLFWApp::run()
 			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3, 0.3, 0.5, 0.5));
 			ui_renderer->render_pic(700, 50, face->get_width(), face->get_height(), face);
 
+			/*
+			scoller_y += Input::get_mouse_scroller()*100;
+			int w = (cameras[0]->window_w >> 1)*0.8f;
+			int h = w * textures[0]->get_height() / (f32)textures[0]->get_width();
+			*/
+
+			
+			/*
+			int s = -1;
+			for (int i = 0; i < textures.size(); ++i)
+			{
 				
+				int x = i % 2 * w+100;
+				int y = i / 2 * h - scoller_y;
+				RBAABB2D aabb(RBVector2(x, y), RBVector2(x + w, y + h));
+				RBAABB2D aabbcams(RBVector2(0, 0), RBVector2(cameras[0]->window_w, cameras[0]->window_h));
+				RBVector2 mpos(Input::get_mouse_x(), cameras[0]->window_h-Input::get_mouse_y());
+				if (aabb.is_contain(mpos))
+				{
+					s = i;
+				}
+				if (aabbcams.intersection(aabb))
+				{
+					ui_renderer->render_pic(x, y, w, h, textures[i]);
+				}
+			}
+			if (Input::get_sys_key_up(WIP_MOUSE_LBUTTON))
+			{
+				if (s!=-1)
+					open_explorer(paths[s].c_str());
+			}
+			*/
+
+			
+
 			wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
 				L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
 				L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"

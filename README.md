@@ -15,6 +15,7 @@
 -  ~脚本系统~
 -  ~物理(已经初步集成Box2D)~
 -  ~声音(FMOD)~
+-  使用RHI嵌入IMGUI
 -  RPG游戏实例
 -  完善动画系统(~帧动画~，状态机，transform动画，动画事件等)
 -  Profile与性能优化
@@ -33,8 +34,6 @@
 # Demo
 
 -  [Release](https://github.com/wubugui/WIPReborn/releases)
-
--  [百度云](http://pan.baidu.com/s/1slLPCz7)
 
 -  WASD移动，鼠标滚轮缩放镜头，X清空所有地图碰撞，鼠标左键放置地图碰撞
    

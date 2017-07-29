@@ -1,4 +1,4 @@
-#include "AudioManager.h"
+﻿#include "AudioManager.h"
 #include "Sound.h"
 #include "AudioFmodSystem.h"
 #include "ResourceManager.h"
@@ -105,7 +105,6 @@ void AudioStudioManager::Update()
         return;
     }
     FMOD_CHECK(event_->getDescription(&desc));
-    char str[128];
     int s = 0;
     StudioSound* sound_ = nullptr;
     FMOD_CHECK(event_->getUserData((void **)&sound_));
@@ -115,6 +114,7 @@ void AudioStudioManager::Update()
       LOG_WARN("Invalid UserData sound:%d,sound inst:%d,inst valid:%s!\n", p_, p_->_inst, !p_->_inst->isValid()?"true":"false");
       return;
     }
+	char str[128];
     FMOD_CHECK(desc->getPath(str, 128, &s));
     switch (type){
     case FMOD_STUDIO_EVENT_CALLBACK_STARTED:
@@ -141,14 +141,23 @@ bool AudioStudioManager::LoadBank(const std::string& filename, bool async){
 	auto res_handler = g_res_manager->load_resource(filename.c_str(), WIPResourceType::EFont);
     FMOD::Studio::Bank* bank = nullptr;
     //if (FMOD_OK != _studio_system->loadBankFile(filename.GetCstd::string(), FMOD_STUDIO_LOAD_BANK_NONBLOCKING, &bank))
-     if ( !FMOD_CHECK(_studio_system->loadBankMemory((const char*)res_handler->ptr, res_handler->size, 
-       FMOD_STUDIO_LOAD_MEMORY, async ? 
-     FMOD_STUDIO_LOAD_BANK_NONBLOCKING :
-       FMOD_STUDIO_LOAD_BANK_NORMAL, &bank))){
+	FMOD_RESULT res = _studio_system->loadBankMemory
+		(
+		(const char*)res_handler->ptr,
+		res_handler->size,
+		FMOD_STUDIO_LOAD_MEMORY,
+		async ? FMOD_STUDIO_LOAD_BANK_NONBLOCKING : FMOD_STUDIO_LOAD_BANK_NORMAL,
+		&bank
+		);
+     if ( 
+		 !FMOD_CHECK(res)
+		 )
+	 {
       LOG_ERROR("[C2]FMOD loadBankMemory failed!\n");
       ret = false;
       break;
     }
+
     FMOD_CHECK( _studio_system->flushCommands());
      FMOD_STUDIO_LOADING_STATE st;
      FMOD_CHECK( bank->getLoadingState(&st));

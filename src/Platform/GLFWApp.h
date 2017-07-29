@@ -87,7 +87,7 @@ private:
 
   std::vector<WIPCamera*> cameras;
   class WIPScene* scene;
-
+  std::vector<std::wstring> resw;
   WIPSprite* bg;
   WIPSprite* bg_mask;
   WIPSprite* man;
@@ -96,7 +96,8 @@ private:
   WIPSprite* zaji2;
   WIPSprite* crowd;
   WIPSprite* fogs;
+  int scoller_y;
 
-
-  
+  std::vector<WIPTexture2D*> textures;
+  std::vector<std::wstring> paths;
 };

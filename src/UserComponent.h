@@ -118,6 +118,7 @@ public:
 	}
 	void init()
 	{
+		
 		pre_clip = nullptr;
 		bg = host_object;
 		old_pos = RBVector2::zero_vector;
@@ -133,6 +134,8 @@ public:
 		g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
 		sound = g_audio_manager->CreateSound("event:/bgm");
 		g_audio_manager->Play(sound);
+
+		
 	}
 	void destroy()
 	{
@@ -326,12 +329,15 @@ public:
 
 		scene->update_zorder_by_type_tag("character");
 
+		
 		//grid->clear_data();
 	}
 	void fix_update(f32 dt)
 	{
 
 	}
+
+	
 
 	WIPSprite* man;
 	WIPSprite* fogs;
@@ -358,4 +364,8 @@ public:
 	f32 newpy;
 
 	StudioSound* sound;
+
+	
+
+	UIRender* ui_renderer;
 };
