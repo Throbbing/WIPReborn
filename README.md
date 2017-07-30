@@ -15,7 +15,7 @@
 -  ~脚本系统~
 -  ~物理(已经初步集成Box2D)~
 -  ~声音(FMOD)~
--  使用RHI嵌入IMGUI
+-  ~嵌入IMGUI~
 -  RPG游戏实例
 -  完善动画系统(~帧动画~，状态机，transform动画，动画事件等)
 -  Profile与性能优化
