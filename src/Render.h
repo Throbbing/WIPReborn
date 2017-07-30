@@ -375,6 +375,7 @@ public:
 			}
 			return lru_header->nex_node;
 		}
+		return nullptr;
 	}
 
 	int get_link_len()

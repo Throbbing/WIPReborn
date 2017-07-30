@@ -116,8 +116,10 @@ private:
 	int _debug_vertex_buffer_size;
 	int get_gl_version(const GLubyte* ver);
 	void load_shaders();
-
 public:
+
+	int get_gl_version(){ return _gl_version; }
+
 	virtual void init();
 	
 	virtual void post_init();

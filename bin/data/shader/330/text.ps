@@ -10,8 +10,6 @@ uniform vec4 in_color;
 void main()
 {
 	frag_color = texture(in_texture, out_texcoord);
-	frag_color.g = frag_color.r;
-	frag_color.b = frag_color.r;
 	frag_color.a = frag_color.r;
-	frag_color = in_color*frag_color;
+	frag_color.rgb = in_color.rgb;
 }

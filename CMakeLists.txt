@@ -48,6 +48,7 @@ INCLUDE_DIRECTORIES(
 	libs/fmod_studio/inc
 	libs/fmod_lowlevel/inc
 	lib/fmod_fsbank/inc
+	src/thirdpart/imgui
     ${RHI_INC}
 )
 
@@ -69,10 +70,13 @@ AUX_SOURCE_DIRECTORY(src/thirdpart/glad/src DIR_SRCS_LIB_GLAD)
 
 AUX_SOURCE_DIRECTORY(src/flyUI DIR_UI)
 
+AUX_SOURCE_DIRECTORY(src/thirdpart/imgui DIR_IMGUI)
+
 list( APPEND DIR_SRCS ${DIR_SRCS_BOX2D})
 list( APPEND DIR_SRCS ${DIR_SRCS_LIB_GLAD})
 list( APPEND DIR_SRCS ${RHI_SRC})
 list( APPEND DIR_SRCS ${DIR_UI})
+list( APPEND DIR_SRCS ${DIR_IMGUI})
 MESSAGE(STATUS "${DIR_SRCS}")
 
 IF (WIN32)

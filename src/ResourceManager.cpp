@@ -23,7 +23,6 @@ WIPResourceManager* WIPResourceManager::get_instance()
 
 bool WIPResourceManager::startup()
 {
-	//初始化FreeImage
 	FreeImage_Initialise(TRUE);
 	return true;
 }
@@ -45,23 +44,12 @@ ResHandler* WIPResourceManager::load_resource(const char* filename, WIPResourceT
 		return it->second;
 	}
 	ResHandler* res = alloc(filename, type);
-
-
-
-
 	if (!res)
 	{
-
 		return NULL;
 	}
 	_map[filename] = res;
 	return res;
-
-	/*
-	char* file = _map.find(filename)->first;
-	void* file_ptr = _map.find(filename)->second;
-	*/
-
 }
 
 ResHandler* WIPResourceManager::clone(ResHandler* handler)
@@ -264,7 +252,6 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 			int x, y;
 			RGBQUAD m_rgb;
 
-			//获取图片长宽
 			int width = (int)FreeImage_GetWidth(dib);
 			int height = (int)FreeImage_GetHeight(dib);
 
@@ -275,13 +262,11 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 			bool is_tr = (FreeImage_IsTransparent(dib)!=0);
 
 			bool is_little = (FreeImage_IsLittleEndian()!=0);
-			//获取图片数据
-			//按RGBA格式保存到数组中
+
 			for (y = 0; y < height; y++)
 			{
 				for (x = 0; x < width; x++)
 				{
-					//获取像素值
 					FreeImage_GetPixelColor(dib, x, y, &m_rgb);
 
 					if (is_little)
@@ -289,8 +274,6 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 						imgBuf[y*width * 4 + x * 4 + 0] = m_rgb.rgbRed;
 						imgBuf[y*width * 4 + x * 4 + 1] = m_rgb.rgbGreen;
 						imgBuf[y*width * 4 + x * 4 + 2] = m_rgb.rgbBlue;
-						//判断是否透明图片
-						//如果是就取alpha值保存
 						if (is_tr)
 							imgBuf[y*width * 4 + x * 4 + 3] = m_rgb.rgbReserved;
 						else
@@ -298,7 +281,6 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 					}
 					else
 					{
-						//大端警告!
 						//Big Endian Warnning!
 						printf("Note:This is a Big endian!\n");
 					}

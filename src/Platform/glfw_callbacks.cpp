@@ -4,6 +4,44 @@
 #include "../KeyDefinetions.h"
 #include "../Logger.h"
 
+#include "GlfwImguiRender.h"
+#include "imgui/imgui.h"
+
+
+
+void GlfwImguiRender::ImGui_ImplGlfwGL3_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (action == GLFW_PRESS && button >= 0 && button < 3)
+		g_MousePressed[button] = true;
+}
+
+void GlfwImguiRender::ImGui_ImplGlfwGL3_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	g_MouseWheel += (float)yoffset;
+}
+
+void GlfwImguiRender::ImGui_ImplGlfwGL3_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (action == GLFW_PRESS)
+		io.KeysDown[key] = true;
+	if (action == GLFW_RELEASE)
+		io.KeysDown[key] = false;
+
+	(void)mods; // Modifiers are not reliable across systems
+	io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+	io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+	io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+	io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+}
+
+void GlfwImguiRender::ImGui_ImplGlfwGL3_CharCallback(GLFWwindow* window, unsigned int c)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (c > 0 && c < 0x10000)
+		io.AddInputCharacter((unsigned short)c);
+}
+
 void glfw_error_callback(int error,const char* description)
 {
     LOG_ERROR("%s",description);
@@ -17,6 +55,8 @@ void glfw_mouse_pos_callback(GLFWwindow* windows,double x,double y)
 
 void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+	GlfwImguiRender::ImGui_ImplGlfwGL3_MouseButtonCallback(window, button, action, mods);
+
 	//GLFW_REPEAT is useless for mouse,so we use some other way to drive mouse.
 	int bits = g_input_manager->get_last_key_info()->key_bit;
 	int bits_c = g_input_manager->get_last_key_info()[1].key_bit;
@@ -67,6 +107,8 @@ void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int 
 
 void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	GlfwImguiRender::ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mods);
+
 	int bits = g_input_manager->get_last_key_info()->key_bit;
 	int bits_c = g_input_manager->get_last_key_info()[1].key_bit;
 	if(action==GLFW_REPEAT)
@@ -252,6 +294,7 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
 
 void glfw_scroll_callback(GLFWwindow* window, double x, double y)
 {
+	GlfwImguiRender::ImGui_ImplGlfwGL3_ScrollCallback(window, x, y);
 	//x not used.
 	int bits = g_input_manager->get_last_key_info()->key_bit;
 	int bits_c = g_input_manager->get_last_key_info()[1].key_bit;
@@ -268,3 +311,9 @@ void glfw_scroll_callback(GLFWwindow* window, double x, double y)
 	g_input_manager->update(bits_c,bits);
 	//printf("%08x at %0.3f: Scroll: %0.3f %0.3f\n", counter++, glfwGetTime(), x, y);
 }
+
+void glfw_char_callback(GLFWwindow* window, unsigned int c)
+{
+	GlfwImguiRender::ImGui_ImplGlfwGL3_CharCallback(window, c);
+}
+

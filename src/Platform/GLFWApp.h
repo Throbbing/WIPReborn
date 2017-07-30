@@ -3,6 +3,7 @@
 #include "../AppManager.h"
 #include "glfw_callbacks.h"
 #include <vector>
+#include "GlfwImguiRender.h"
 //#include "../thirdpart/glad/include/glad/glad.h"
 
 class WIPCamera;
@@ -33,6 +34,7 @@ public:
     glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
     glfwSetKeyCallback(window, glfw_key_callback);
     glfwSetScrollCallback(window, glfw_scroll_callback);
+	glfwSetCharCallback(window, glfw_char_callback);
     glfwGetWindowSize(window, &window_w,&window_h);
     return true;
   }
@@ -100,4 +102,6 @@ private:
 
   std::vector<WIPTexture2D*> textures;
   std::vector<std::wstring> paths;
+
+  GlfwImguiRender* imgui_renderer;
 };
