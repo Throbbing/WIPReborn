@@ -5,6 +5,7 @@
 #include "IniHelper.h"
 #include "Logger.h"
 
+//tansform coord to lb
 bool read_animation_atlas_file(const char* file_name,int& total_frame,float **out_uvs,std::string& texture_name)
 {
 	bool ret = true;
@@ -38,6 +39,17 @@ bool read_animation_atlas_file(const char* file_name,int& total_frame,float **ou
 		WIPIniHelper::get_float(s,"rb_y",(*out_uvs)[i*8+5]);
 		WIPIniHelper::get_float(s,"rt_x",(*out_uvs)[i*8+6]);
 		WIPIniHelper::get_float(s,"rt_y",(*out_uvs)[i*8+7]);
+		(*out_uvs)[i * 8 + 1] = 1 - (*out_uvs)[i * 8 + 1];
+		(*out_uvs)[i * 8 + 3] = 1 - (*out_uvs)[i * 8 + 3];
+		(*out_uvs)[i * 8 + 5] = 1 - (*out_uvs)[i * 8 + 5];
+		(*out_uvs)[i * 8 + 7] = 1 - (*out_uvs)[i * 8 + 7];
+		f32 temp = (*out_uvs)[i * 8 + 1];
+		(*out_uvs)[i * 8 + 1] = (*out_uvs)[i * 8 + 3];
+		(*out_uvs)[i * 8 + 3] = temp;
+		temp = (*out_uvs)[i * 8 + 5];
+		(*out_uvs)[i * 8 + 5] = (*out_uvs)[i * 8 + 7];
+		(*out_uvs)[i * 8 + 7] = temp;
+
 	}
 	
 	WIPIniHelper::close();

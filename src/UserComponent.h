@@ -20,6 +20,13 @@ public:
 		memset(bitmap, 0, sub*sub);
 		this->sub = sub;
 	}
+	void resize(int sub)
+	{
+		delete[] bitmap;
+		bitmap = new char[sub*sub];
+		memset(bitmap, 0, sub*sub);
+		this->sub = sub;
+	}
 	void load_mask_data(const char* filename)
 	{
 		std::ifstream fin(filename, std::ios::binary);
@@ -59,6 +66,26 @@ public:
 	void clear_data()
 	{
 		memset(bitmap, 0, sub*sub);
+	}
+	void debug_draw(const WIPCamera* cam, const RBVector2& minp1)
+	{
+		f32 dx = w / sub;
+		f32 dy = h / sub;
+		RBVector2 v[4];
+		bg->get_world_position(v);
+		RBVector2 lb = v[1];
+		RBVector2 minp;
+
+		minp.y = minp1.y - lb.y;
+		minp.x = minp1.x - lb.x;
+
+		minp.y = ((int)(minp.y / dy))*dy + lb.y;
+		minp.x = ((int)(minp.x / dx))*dx + lb.x;
+		g_rhi->begin_debug_context();
+		g_rhi->change_debug_color(RBColorf::blue);
+		g_rhi->debug_draw_aabb2d(minp, minp+RBVector2(dx,dy), cam);
+		g_rhi->debug_submit();
+		g_rhi->end_debug_context();
 	}
 	void debug_draw(const WIPCamera* cam, char tag)
 	{
@@ -135,6 +162,8 @@ public:
 		sound = g_audio_manager->CreateSound("event:/bgm");
 		g_audio_manager->Play(sound);
 
+		edit_mode = false;
+		gsize = 0;
 		
 	}
 	void destroy()
@@ -180,4 +209,8 @@ public:
 
 	UIRender* ui_renderer;
 	TextRender* text_renderer;
+
+	bool edit_mode;
+
+	int gsize;
 };

@@ -249,8 +249,8 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		s[7] = 0;
 		s[8] = 1;
 		// from framebox
-		s[9] = blend_objects[k]->_animation->_framebox_ref.lb.x;//0
-		s[10] = blend_objects[k]->_animation->_framebox_ref.lb.y;//0
+		s[9] = blend_objects[k]->_animation->_framebox_ref.lt.x;//0
+		s[10] = blend_objects[k]->_animation->_framebox_ref.lt.y;//0
 
 		s[11] = vert[1].x * w1;
 		s[12] = vert[1].y * w2;
@@ -262,8 +262,8 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		s[18] = 0;
 		s[19] = 1;
 		// from framebox
-		s[20] = blend_objects[k]->_animation->_framebox_ref.lt.x;//0
-		s[21] = blend_objects[k]->_animation->_framebox_ref.lt.y;//1
+		s[20] = blend_objects[k]->_animation->_framebox_ref.lb.x;//0
+		s[21] = blend_objects[k]->_animation->_framebox_ref.lb.y;//1
 
 		s[22] = vert[2].x * w1;
 		s[23] = vert[2].y * w2;
@@ -275,8 +275,8 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		s[29] = 0;
 		s[30] = 1;
 		// from framebox
-		s[31] = blend_objects[k]->_animation->_framebox_ref.rt.x;//1
-		s[32] = blend_objects[k]->_animation->_framebox_ref.rt.y;//1
+		s[31] = blend_objects[k]->_animation->_framebox_ref.rb.x;//1
+		s[32] = blend_objects[k]->_animation->_framebox_ref.rb.y;//1
 
 		s[33] = vert[3].x * w1;
 		s[34] = vert[3].y * w2;
@@ -288,8 +288,8 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		s[40] = 0;
 		s[41] = 1;
 		// from framebox
-		s[42] = blend_objects[k]->_animation->_framebox_ref.rb.x;//1
-		s[43] = blend_objects[k]->_animation->_framebox_ref.rb.y;//0
+		s[42] = blend_objects[k]->_animation->_framebox_ref.rt.x;//1
+		s[43] = blend_objects[k]->_animation->_framebox_ref.rt.y;//0
 		memcpy(p, s, sizeof(float) * 44);
 		p += 44;
 		//LOG_WARN("%d",p-mem);
@@ -355,8 +355,8 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 		s[7] = 0;
 		s[8] = 1;
 		// from framebox
-		s[9] = opaque_objects[k]->_animation->_framebox_ref.lb.x;//0
-		s[10] = opaque_objects[k]->_animation->_framebox_ref.lb.y;//0
+		s[9] = opaque_objects[k]->_animation->_framebox_ref.lt.x;//0
+		s[10] = opaque_objects[k]->_animation->_framebox_ref.lt.y;//0
 
 		s[11] = vert[1].x * w1;
 		s[12] = vert[1].y * w2;
@@ -368,8 +368,8 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 		s[18] = 0;
 		s[19] = 1;
 		// from framebox
-		s[20] = opaque_objects[k]->_animation->_framebox_ref.lt.x;//0
-		s[21] = opaque_objects[k]->_animation->_framebox_ref.lt.y;//1
+		s[20] = opaque_objects[k]->_animation->_framebox_ref.lb.x;//0
+		s[21] = opaque_objects[k]->_animation->_framebox_ref.lb.y;//1
 
 		s[22] = vert[2].x * w1;
 		s[23] = vert[2].y * w2;
@@ -381,8 +381,8 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 		s[29] = 0;
 		s[30] = 1;
 		// from framebox
-		s[31] = opaque_objects[k]->_animation->_framebox_ref.rt.x;//1
-		s[32] = opaque_objects[k]->_animation->_framebox_ref.rt.y;//1
+		s[31] = opaque_objects[k]->_animation->_framebox_ref.rb.x;//1
+		s[32] = opaque_objects[k]->_animation->_framebox_ref.rb.y;//1
 
 		s[33] = vert[3].x * w1;
 		s[34] = vert[3].y * w2;
@@ -394,8 +394,8 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 		s[40] = 0;
 		s[41] = 1;
 		// from framebox
-		s[42] = opaque_objects[k]->_animation->_framebox_ref.rb.x;//1
-		s[43] = opaque_objects[k]->_animation->_framebox_ref.rb.y;//1
+		s[42] = opaque_objects[k]->_animation->_framebox_ref.rt.x;//1
+		s[43] = opaque_objects[k]->_animation->_framebox_ref.rt.y;//1
 		memcpy(p, s, sizeof(float) * 44);
 		p += 44;
 		//LOG_WARN("%d",p-mem);
@@ -473,10 +473,10 @@ void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int max
 
 
 		f32 vert[] = {
-			lb.x, lb.y, tx, ty + th,//lb
-			lt.x, lt.y, tx, ty,//lt
-			rt.x, rt.y, tx + tw, ty ,//rt
-			rb.x, rb.y, tx + tw, ty + th//rb
+			lb.x, lb.y, tx, ty +th,//lb
+			lt.x, lt.y, tx, ty ,//lt
+			rt.x, rt.y, tx + tw, ty  ,//rt
+			rb.x, rb.y, tx + tw, ty +th//rb
 		};
 
 		x += node->text_advance;
@@ -540,10 +540,43 @@ void UIRender::render_pic(int px, int py, int w, int h, const WIPTexture2D* tex)
 	RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
 
 	f32 vert[] = {
-		lb.x, lb.y, 0, 1,//lb
-		lt.x, lt.y, 0, 0,//lt
-		rt.x, rt.y, 1, 0,//rt
-		rb.x, rb.y, 1, 1//rb
+		lb.x, lb.y, 0, 0,//lb
+		lt.x, lt.y, 0, 1,//lt
+		rt.x, rt.y, 1, 1,//rt
+		rb.x, rb.y, 1, 0//rb
+	};
+	void* p = g_rhi->lock_vertex_buffer(vb);
+	memcpy(p, vert, sizeof(f32) * 16);
+	g_rhi->unlock_vertex_buffer(vb);
+
+	g_rhi->disable_depth_test();
+	g_rhi->enable_blend();
+	g_rhi->set_blend_function();
+	g_rhi->set_shader(bound_shader_pic);
+	g_rhi->set_index_buffer(ib);
+	g_rhi->set_vertex_buffer(vb);
+	g_rhi->set_vertex_format(vf);
+	g_rhi->set_uniform_texture("in_texture", 0, tex);
+	g_rhi->set_uniform4f("in_color", RBColorf::white);
+	g_rhi->draw_triangles(6, 0);
+
+	g_rhi->enable_depth_test();
+}
+
+void UIRender::render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex)
+{
+	f32 draw_px = px;
+	f32 draw_py = py;
+	RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+	RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+	RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+	RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
+
+	f32 vert[] = {
+		lb.x, lb.y, 0, 0,//lb
+		lt.x, lt.y, 0, 1,//lt
+		rt.x, rt.y, 1, 1,//rt
+		rb.x, rb.y, 1, 0//rb
 	};
 	void* p = g_rhi->lock_vertex_buffer(vb);
 	memcpy(p, vert, sizeof(f32) * 16);

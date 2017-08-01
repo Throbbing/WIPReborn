@@ -49,6 +49,8 @@ public:
 
 
 	virtual WIPTexture2D* RHICreateTexture2D(uint32 SizeX, uint32 SizeY,  void* data,uint8 Format=0, uint32 NumMips=0, uint32 NumSamples=0, uint32 Flags=0) = 0;
+	virtual WIPRenderTexture2D* RHICreateRenderTexture2D(uint32 SizeX, uint32 SizeY, const RBColorf& data, uint8 Format = 0,
+		uint32 NumMips = 0, uint32 NumSamples = 0, uint32 Flags = 0) = 0;
 	virtual void update_texture(WIPTexture2D* texture, void* data) const = 0;
 	virtual void update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const = 0;
 	virtual WIPVertexShader*  RHICreateVertexShader(const char* text) const=0;
@@ -62,10 +64,14 @@ public:
 	virtual void unlock_index_buffer(WIPIndexBuffer* buffer) const=0;
 	virtual WIPVertexFormat* RHICreateVertexFormat()=0;
 	virtual WIPViewPort* RHICreateViewPort(int x, int y, int w, int h) = 0;
-	virtual WIPViewPort* change_viewport(WIPViewPort* viewport) = 0;
 
+	virtual WIPViewPort* change_viewport(WIPViewPort* viewport) = 0;
+	virtual void set_back_buffer(const WIPRenderTexture2D* render_texture) const = 0;
+	virtual void set_main_back_buffer() const = 0;
+	virtual void clear_back_buffer(const RBColorf& c) const = 0;
 	virtual void set_uniform4f(const char* uniform_name,const RBColorf& c)=0;
 	virtual void set_uniform_texture(const char* uniform_name,int loc,const WIPBaseTexture* texture)=0;
+	virtual void set_uniform_texture(const char* uniform_name, int loc, const WIPRenderTexture2D* texture) = 0;
 	virtual void set_shader(const WIPBoundShader* shader)=0;
 	virtual void set_vertex_format(const WIPVertexFormat* vf) const=0;
 	virtual void set_vertex_buffer(const WIPVertexBuffer* vb) const=0;
@@ -158,6 +164,8 @@ public:
 	}
 
 	void render_pic(int px, int py, int w, int h, const WIPTexture2D* tex);
+	void render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex);
+
 
 	virtual void destroy()
 	{

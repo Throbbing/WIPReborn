@@ -238,7 +238,7 @@ ResHandler* WIPResourceManager::alloc(const char* filename, WIPResourceType type
 			}
 
 			// we are top left, FIBITMAP is bottom left
-			FreeImage_FlipVertical(dib);
+			//FreeImage_FlipVertical(dib);
 			//get infomation
 			FREE_IMAGE_TYPE imgType = FreeImage_GetImageType(dib);
 			FREE_IMAGE_COLOR_TYPE colorType = FreeImage_GetColorType(dib);

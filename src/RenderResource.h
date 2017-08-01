@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-
+//screen coord is lb
 using std::string;
 
 //base class
@@ -46,10 +46,6 @@ public:
 		WIPBaseTexture(in_mips,in_samples,ccolor),w(inw),h(inh){}
 	virtual inline u32 get_width(){return w;};
 	virtual inline u32 get_height(){return h;};
-	virtual void clear()=0;
-	virtual void begin()=0;
-	virtual void end()=0;
-	virtual void resize(u32 nw,u32 nh)=0;
 
 protected:
 	u32 w,h;

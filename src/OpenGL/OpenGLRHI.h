@@ -38,23 +38,23 @@ public:
 
 class GLRenderTexture2D : public WIPRenderTexture2D {
 public:
-  GLRenderTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples,
+	struct GLRenderTexture2DRHI
+	{
+		GLuint _frame_buffer;
+		GLuint _texture;
+	};
+  GLRenderTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples,int flag,
                     const RBColorf &ccolor);
   ~GLRenderTexture2D();
-  virtual void clear() {}
-  virtual void begin() {}
-  virtual void end() {}
-  virtual void resize(u32 nw, u32 nh);
   virtual void *get_rhi_resource() const;
-
+  void resize(u32 nw, u32 nh);
 private:
   void generate_texture(void *data = 0);
 public:
   GLint _gl_internalformat;
   GLenum _gl_format;
   GLenum _gl_type;
-  GLuint _frame_buffer;
-  GLuint _texture;
+  GLRenderTexture2DRHI _rhi_res;
 };
 
 class GLVertexShader : public WIPVertexShader {
@@ -83,7 +83,8 @@ private:
   unsigned int _ps;
 };
 
-class GLBoundShader : public WIPBoundShader {
+class GLBoundShader : public WIPBoundShader 
+{
 public:
   GLBoundShader(WIPVertexShader *shader_v, WIPPixelShader *shader_p);
   ~GLBoundShader();
@@ -126,6 +127,9 @@ public:
 	
 	virtual void shutdown();
 	
+	virtual WIPRenderTexture2D* RHICreateRenderTexture2D(uint32 SizeX, uint32 SizeY, const RBColorf& data, uint8 Format = 0, 
+		uint32 NumMips = 0, uint32 NumSamples = 0, uint32 Flags = 0);
+
 	virtual WIPTexture2D* RHICreateTexture2D(uint32 SizeX, uint32 SizeY, void* data,uint8 Format=0, uint32 NumMips=0, uint32 NumSamples=0, uint32 Flags=0);
 	
 	virtual void update_texture(WIPTexture2D* texture, void* data) const;
@@ -156,10 +160,18 @@ public:
 
 	virtual WIPViewPort* change_viewport(WIPViewPort* viewport);
 
+	virtual void set_back_buffer(const WIPRenderTexture2D* render_texture) const;
+
+	virtual void set_main_back_buffer() const;
+
+	virtual void clear_back_buffer(const RBColorf& c) const;
+
 	virtual void set_uniform4f(const char* uniform_name, const RBColorf& c);
 	
 	virtual void set_uniform_texture(const char* uniform_name,int tex_loc,const WIPBaseTexture* texture);
-	
+
+	virtual void set_uniform_texture(const char* uniform_name, int loc, const WIPRenderTexture2D* texture);
+
 	virtual void set_shader(const WIPBoundShader* shader);
 	
 	virtual void set_vertex_format(const WIPVertexFormat* vf) const;

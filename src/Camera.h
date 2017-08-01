@@ -3,7 +3,7 @@
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include "RBMath/Inc/Vector2.h"
 
-class WIPRenderTexture;
+class WIPRenderTexture2D;
 class WIPLayer;
 class WIPRenderBatch;
 class WIPShader;

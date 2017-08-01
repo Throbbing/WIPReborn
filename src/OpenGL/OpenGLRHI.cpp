@@ -3,11 +3,11 @@
 
 GLIndexBuffer::GLIndexBuffer() : ibo(0) { glGenBuffers(1, &ibo); }
 
-void *GLIndexBuffer::get_rhi_resource() const { return (void *)ibo; }
+void *GLIndexBuffer::get_rhi_resource() const { return (void*)&ibo; }
 
 GLVertexBuffer::GLVertexBuffer() : vbo(0) { glGenBuffers(1, &vbo); }
 
-void *GLVertexBuffer::get_rhi_resource() const { return (void *)vbo; }
+void *GLVertexBuffer::get_rhi_resource() const { return (void*)&vbo; }
 
 GLVertexFormat::GLVertexFormat() : WIPVertexFormat() {}
 
@@ -47,44 +47,49 @@ GLTexture2D::GLTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples,
 	_gl_type = GL_UNSIGNED_BYTE;
 }
 
-void *GLTexture2D::get_rhi_resource() const { return (void *)_texture; }
+void *GLTexture2D::get_rhi_resource() const { return (void*)&_texture; }
 
 GLRenderTexture2D::GLRenderTexture2D(u32 inw, u32 inh, u32 in_mips,
-	u32 in_samples, const RBColorf &ccolor)
+	u32 in_samples, int flag,const RBColorf &ccolor)
 	: WIPRenderTexture2D(inw, inh, in_mips, in_samples, ccolor) {
 	_gl_internalformat = GL_RGBA;
 	_gl_format = GL_RGBA;
 	_gl_type = GL_UNSIGNED_BYTE;
+	_rhi_res._frame_buffer = 0;
+	_rhi_res._texture = 0;
 	generate_texture();
 }
 
-GLRenderTexture2D::~GLRenderTexture2D() {
-	glDeleteTextures(1, &_texture);
-	glDeleteFramebuffers(1, &_frame_buffer);
+GLRenderTexture2D::~GLRenderTexture2D() 
+{
+	glDeleteTextures(1, &_rhi_res._texture);
+	glDeleteFramebuffers(1, &_rhi_res._frame_buffer);
 }
 
-void GLRenderTexture2D::resize(u32 nw, u32 nh) {
-	glDeleteTextures(1, &_texture);
-	glDeleteFramebuffers(1, &_frame_buffer);
+void GLRenderTexture2D::resize(u32 nw, u32 nh)
+{
+	glDeleteTextures(1, &_rhi_res._texture);
+	glDeleteFramebuffers(1, &_rhi_res._frame_buffer);
 	w = nw;
 	h = nh;
 	generate_texture();
 }
-void *GLRenderTexture2D::get_rhi_resource() const { return (void *)_texture; }
+void *GLRenderTexture2D::get_rhi_resource() const { return (void *)&_rhi_res; }
 
-void GLRenderTexture2D::generate_texture(void *data) {
-	glGenFramebuffers(1, &_frame_buffer);
-	glGenTextures(1, &_texture);
-	glBindTexture(GL_TEXTURE_2D, _texture);
+void GLRenderTexture2D::generate_texture(void *data) 
+{
+	glGenFramebuffers(1, &_rhi_res._frame_buffer);
+	glGenTextures(1, &_rhi_res._texture);
+	glBindTexture(GL_TEXTURE_2D, _rhi_res._texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, _gl_internalformat, w, h, 0, _gl_format,
 		_gl_type, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _rhi_res._frame_buffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-		_texture, 0);
+		_rhi_res._texture, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -124,7 +129,7 @@ bool GLVertexShader::load_and_compile(const char *text) {
 
 void GLVertexShader::set_uniform_texture(const char *uniform_name,
 	const WIPBaseTexture *texture) {}
-void *GLVertexShader::get_rhi_resource() const { return (void *)_vs; }
+void *GLVertexShader::get_rhi_resource() const { return (void*)&_vs; }
 
 GLPixelShader::GLPixelShader() : _ps(0) {}
 GLPixelShader::~GLPixelShader() {
@@ -161,7 +166,7 @@ bool GLPixelShader::load_and_compile(const char *text) {
 }
 void GLPixelShader::set_uniform_texture(const char *uniform_name,
 	const WIPBaseTexture *texture) {}
-void *GLPixelShader::get_rhi_resource() const { return (void *)_ps; }
+void *GLPixelShader::get_rhi_resource() const { return (void*)&_ps; }
 
 GLBoundShader::GLBoundShader(WIPVertexShader *shader_v,
 	WIPPixelShader *shader_p)
@@ -187,8 +192,8 @@ void GLBoundShader::bind_attribute(unsigned int location, const string &name) {
 bool GLBoundShader::compile() {
 	void *s1 = shader_v->get_rhi_resource();
 	void *s2 = shader_p->get_rhi_resource();
-	unsigned int rhi1 = *((unsigned int *)(&s1));
-	unsigned int rhi2 = *((unsigned int *)(&s2));
+	unsigned int rhi1 = *((unsigned int *)(s1));
+	unsigned int rhi2 = *((unsigned int *)(s2));
 	glAttachShader(_program, rhi1);
 	glAttachShader(_program, rhi2);
 	int linked = GL_FALSE;
@@ -215,7 +220,7 @@ bool GLBoundShader::compile() {
 	return true;
 }
 
-void *GLBoundShader::get_rhi_resource() const { return (void *)_program; }
+void *GLBoundShader::get_rhi_resource() const { return (void *)&_program; }
 
 //GLDynamicRHI::GLDynamicRHI() : _gl_version(-1) {}
 
@@ -304,6 +309,8 @@ void GLDynamicRHI::shutdown()
 	delete[] _debug_vertex_buffer;
 }
 
+
+
 WIPViewPort* GLDynamicRHI::RHICreateViewPort(int x, int y, int w, int h)
 {
 	return new WIPViewPort(x, y, w, h);
@@ -317,6 +324,23 @@ WIPViewPort* GLDynamicRHI::change_viewport(WIPViewPort* viewport)
 	glViewport(viewport->x,viewport->y,viewport->w,viewport->h);
 	_active_view_port = viewport;
 	return old;
+}
+
+void GLDynamicRHI::set_back_buffer(const WIPRenderTexture2D* render_texture) const
+{
+	GLRenderTexture2D::GLRenderTexture2DRHI* rhires = (GLRenderTexture2D::GLRenderTexture2DRHI*)render_texture->get_rhi_resource();
+	glBindFramebuffer(GL_FRAMEBUFFER, rhires->_frame_buffer);
+
+}
+
+void GLDynamicRHI::set_main_back_buffer() const
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLDynamicRHI::clear_back_buffer(const RBColorf& c) const
+{
+	glClearColor(c.r, c.g, c.b, c.a);
 }
 
 void GLDynamicRHI::set_uniform4f(const char* uniform_name, const RBColorf& color)
@@ -334,10 +358,15 @@ WIPTexture2D *GLDynamicRHI::RHICreateTexture2D(uint32 SizeX, uint32 SizeY,
 }
 
 
+WIPRenderTexture2D* GLDynamicRHI::RHICreateRenderTexture2D(uint32 SizeX, uint32 SizeY, const RBColorf& c, uint8 Format /*= 0*/, uint32 NumMips /*= 0*/, uint32 NumSamples /*= 0*/, uint32 Flags /*= 0*/)
+{
+	return new GLRenderTexture2D(SizeX, SizeY, NumMips, NumSamples, Flags,c);
+}
+
 void GLDynamicRHI::update_texture(WIPTexture2D* texture,void* data) const
 {
 	void *s = texture->get_rhi_resource();
-	GLuint &id = *((GLuint *)(&s));
+	GLuint &id = *((GLuint *)s);
 	GLTexture2D* gl_tex = (GLTexture2D*)texture;
 	glBindTexture(GL_TEXTURE_2D, id);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->get_width(),texture->get_height()
@@ -349,7 +378,7 @@ void GLDynamicRHI::update_texture(WIPTexture2D* texture,void* data) const
 void GLDynamicRHI::update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const
 {
 	void *s = texture->get_rhi_resource();
-	GLuint &id = *((GLuint *)(&s));
+	GLuint &id = *((GLuint *)(s));
 	GLTexture2D* gl_tex_ = (GLTexture2D*)texture;
 	glBindTexture(GL_TEXTURE_2D, id);
 	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -392,7 +421,7 @@ WIPVertexBuffer *GLDynamicRHI::RHICreateVertexBuffer(unsigned int size,
 	BufferType tp) {
 	WIPVertexBuffer *buffer = new GLVertexBuffer();
 	void *s = buffer->get_rhi_resource();
-	GLuint &vbo = *((GLuint *)(&s));
+	GLuint &vbo = *((GLuint *)(s));
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	GLenum gltp = GL_STATIC_DRAW;
 	switch (tp) {
@@ -411,7 +440,7 @@ WIPVertexBuffer *GLDynamicRHI::RHICreateVertexBuffer(unsigned int size,
 }
 void *GLDynamicRHI::lock_vertex_buffer(WIPVertexBuffer *buffer) const {
 	void *s = buffer->get_rhi_resource();
-	GLuint &vbo = *((GLuint *)(&s));
+	GLuint &vbo = *((GLuint *)(s));
 	glBindBuffer(GL_COPY_WRITE_BUFFER, vbo);
 	void *data = glMapBuffer(GL_COPY_WRITE_BUFFER, GL_WRITE_ONLY);
 	if (!data)
@@ -426,7 +455,7 @@ WIPIndexBuffer *GLDynamicRHI::RHICreateIndexBuffer(unsigned int size,
 	void *data, BufferType tp) {
 	WIPIndexBuffer *buffer = new GLIndexBuffer();
 	void *s = buffer->get_rhi_resource();
-	GLuint &ibo = *((GLuint *)(&s));
+	GLuint &ibo = *((GLuint *)(s));
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	GLenum gltp = GL_STATIC_DRAW;
 	switch (tp) {
@@ -445,7 +474,7 @@ WIPIndexBuffer *GLDynamicRHI::RHICreateIndexBuffer(unsigned int size,
 }
 void *GLDynamicRHI::lock_index_buffer(WIPIndexBuffer *buffer) const {
 	void *s = buffer->get_rhi_resource();
-	GLuint &ibo = *((GLuint *)(&s));
+	GLuint &ibo = *((GLuint *)(s));
 	glBindBuffer(GL_COPY_WRITE_BUFFER, ibo);
 	void *data = glMapBuffer(GL_COPY_WRITE_BUFFER, GL_WRITE_ONLY);
 	return data;
@@ -463,7 +492,18 @@ void GLDynamicRHI::set_uniform_texture(const char *uniform_name, int tex_loc,
 	glUniform1i(locc, tex_loc);
 	glActiveTexture(GL_TEXTURE0 + tex_loc);
 	void *s = texture->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
+	glBindTexture(GL_TEXTURE_2D, id1);
+}
+
+void GLDynamicRHI::set_uniform_texture(const char* uniform_name, int tex_loc, const WIPRenderTexture2D* texture)
+{
+	GLint locc = glGetUniformLocation(_bound_shader, uniform_name);
+	glUniform1i(locc, tex_loc);
+	glActiveTexture(GL_TEXTURE0 + tex_loc);
+	GLRenderTexture2D::GLRenderTexture2DRHI* s = 
+		(GLRenderTexture2D::GLRenderTexture2DRHI*) texture->get_rhi_resource();
+	GLuint id1 = s->_texture;
 	glBindTexture(GL_TEXTURE_2D, id1);
 }
 
@@ -473,7 +513,7 @@ void GLDynamicRHI::set_shader(const WIPBoundShader *shader) {
 		return;
 	}
 	void *s = shader->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
 	glUseProgram(id1);
 	_bound_shader = id1;
 }
@@ -491,7 +531,7 @@ void GLDynamicRHI::set_vertex_buffer(const WIPVertexBuffer *vb) const {
 	if (!vb)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	void *s = vb->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
 	glBindBuffer(GL_ARRAY_BUFFER, id1);
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO1);
 }
@@ -499,7 +539,7 @@ void GLDynamicRHI::set_index_buffer(const WIPIndexBuffer *ib) const {
 	if (!ib)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	void *s = ib->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
 	// glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id1);
 }
@@ -521,7 +561,7 @@ void GLDynamicRHI::begin_debug_context()
 	if (!_debug_shader)
 		return;
 	void *s = _debug_shader->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
 	glUseProgram(id1);
 
 	
@@ -530,7 +570,7 @@ void GLDynamicRHI::begin_debug_context()
 void GLDynamicRHI::change_debug_color(const RBColorf& color)
 {
 	void *s = _debug_shader->get_rhi_resource();
-	GLuint id1 = *((GLuint *)(&s));
+	GLuint id1 = *((GLuint *)(s));
 	GLint locc = glGetUniformLocation(id1, "in_color");
 	glUniform4f(locc,color.r,color.g,color.b,color.a);
 }
@@ -645,8 +685,6 @@ void GLDynamicRHI::debug_draw_box(const RBVector2* v, const WIPCamera* cam)
 	memcpy(_debug_vertex_buffer + _debug_update_count*sizeof(float), vert1, 24 * sizeof(float));
 	_debug_update_count += 24;
 }
-
-
 
 
 

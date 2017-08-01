@@ -104,4 +104,5 @@ private:
   std::vector<std::wstring> paths;
 
   GlfwImguiRender* imgui_renderer;
+  class WIPRenderTexture2D* render_texture2d;
 };

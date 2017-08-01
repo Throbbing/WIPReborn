@@ -21,8 +21,29 @@ void UnicodeToUTF_8(char* pOut, wchar_t* pText)
 	return;
 }
 
+char* get_utf8(wchar_t* text,char* buf)
+{
+	for (int i = 0; i < wcslen(text);++i)
+	{
+		UnicodeToUTF_8(&buf[i * 3], &text[i]);
+	}
+	return buf;
+}
 
 
+bool imgui_button_short(wchar_t* text)
+{
+	char t[15];
+	memset(t, 0, 15);
+	return ImGui::Button(get_utf8(text, t));
+}
+
+bool imgui_button_long(wchar_t* text)
+{
+	char t[512];
+	memset(t, 0, 512);
+	return ImGui::Button(get_utf8(text, t));
+}
 
 void MapComponent::update(f32 dt)
 {
@@ -93,28 +114,42 @@ void MapComponent::update(f32 dt)
 		}
 
 	}
-	if (Input::get_sys_key_pressed(WIP_MOUSE_LBUTTON))
+	if (edit_mode)
 	{
-		RBVector2 v = cam->screen_to_world(RBVector2I(Input::get_mouse_x(), Input::get_mouse_y()));
-		grid->set_debug_tag(v.x, v.y, 1);
-	}
-	if (Input::get_sys_key_pressed(WIP_MOUSE_RBUTTON))
-	{
-		RBVector2 v = cam->screen_to_world(RBVector2I(Input::get_mouse_x(), Input::get_mouse_y()));
-		grid->set_debug_tag(v.x, v.y, 0);
-	}
-	if (Input::get_sys_key_up(WIP_MOUSE_MBUTTON))
-	{
-		//grid->save_mask_data("./a.mask");
-		//LOG_INFO("Mask saved!");
-	}
-	if (Input::get_key_up(WIP_Z))
-	{
-		//draw_debug = !draw_debug;
-	}
-	if (Input::get_key_up(WIP_X))
-	{
-		//grid->clear_data();
+		if (!ImGui::IsMouseHoveringAnyWindow())
+		{
+			if (Input::get_sys_key_pressed(WIP_MOUSE_LBUTTON))
+			{
+				RBVector2 v = cam->screen_to_world(RBVector2I(Input::get_mouse_x(), Input::get_mouse_y()));
+				grid->set_debug_tag(v.x, v.y, 1);
+			}
+			if (Input::get_sys_key_pressed(WIP_MOUSE_RBUTTON))
+			{
+				RBVector2 v = cam->screen_to_world(RBVector2I(Input::get_mouse_x(), Input::get_mouse_y()));
+				grid->set_debug_tag(v.x, v.y, 0);
+			}
+			RBVector2 v = cam->screen_to_world(RBVector2I(Input::get_mouse_x(), Input::get_mouse_y()));
+			grid->debug_draw(cam, v);
+		}
+		ImGui::Begin("Editor");
+		ImGui::SliderInt("Size", &gsize, 1, 300);
+		if (imgui_button_short(L"重置尺寸"))
+		{
+			grid->resize(gsize);
+		}
+		if (imgui_button_short(L"储存碰撞"))
+		{
+			grid->save_mask_data("./a.mask");
+			//LOG_INFO("Mask saved!");
+		}
+		if (imgui_button_short(L"清除碰撞"))
+		{
+			grid->clear_data();
+		}
+		char text[256];
+		memset(text, 0, 256);
+		ImGui::Text(get_utf8(L"鼠标左键绘制碰撞，鼠标右键擦除碰撞",text));
+		ImGui::End();
 	}
 	fix_sprite_position(bg);
 	RBVector2 manpos(man->_transform->world_x, man->_transform->world_y);
@@ -207,7 +242,7 @@ void MapComponent::update(f32 dt)
 
 	}
 
-	if (draw_debug)
+	if (edit_mode)
 		grid->debug_draw(cam, 1);
 
 	scene->update_zorder_by_type_tag("character");
@@ -238,9 +273,13 @@ void MapComponent::update(f32 dt)
 
 	char t[9];
 	memset(t, 0, 9);
-	UnicodeToUTF_8(t, wbuf);
-	UnicodeToUTF_8(&t[3], &wbuf[1]);
 
-	ImGui::Button(t);
+
+
+	
+	if (imgui_button_short(L"编辑"))
+	{
+		edit_mode = !edit_mode;
+	}
 	//grid->clear_data();
 }

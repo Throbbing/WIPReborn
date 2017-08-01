@@ -157,6 +157,8 @@ bool GLFWApp::init()
 
 	g_physics_manager->set_debug_camera(cameras[0]);
 
+	render_texture2d = g_rhi->RHICreateRenderTexture2D(200, 200, RBColorf::black);
+
 
 	clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
 	
@@ -483,12 +485,24 @@ void GLFWApp::run()
 			//not work
 			g_physics_manager->update(scene,clock->get_frame_time());
 
-			
 			for (auto i : cameras)
 				world_renderer->render(i);
 
+			g_rhi->set_back_buffer(render_texture2d);
+			WIPViewPort vp(0, 0, render_texture2d->get_width(), render_texture2d->get_height());
+			g_rhi->change_viewport(&vp);
+			
+
+			for (auto i : cameras)
+				world_renderer->render(i);
+			
+			g_rhi->set_main_back_buffer();
+			g_rhi->change_viewport(cameras[0]->viewport);
+			
+			ui_renderer->render_pic(400, 400, render_texture2d->get_width(), render_texture2d->get_height(), render_texture2d);
 			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3, 0.3, 0.5, 0.5));
 			ui_renderer->render_pic(700, 50, face->get_width(), face->get_height(), face);
+
 
 		
 			/*
