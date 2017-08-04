@@ -3,6 +3,7 @@ out vec4 frag_color;
 
 in vec4 out_position;
 in vec2 out_texcoord;
+flat in float out_channel;
 
 uniform sampler2D in_texture;
 uniform vec4 in_color;
@@ -10,6 +11,7 @@ uniform vec4 in_color;
 void main()
 {
 	frag_color = texture(in_texture, out_texcoord);
-	frag_color.a = frag_color[0];
+	int c = int(out_channel);
+	frag_color.a = frag_color[c];
 	frag_color.rgb = in_color.rgb;
 }

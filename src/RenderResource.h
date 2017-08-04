@@ -106,9 +106,11 @@ public:
 	virtual void* get_rhi_resource() const=0;
 };
 
-enum class VertexType 
+enum VertexType 
 {
-	E_FLOAT
+	E_FLOAT = 0,
+	E_INT,
+	E_TOTAL
 };
 
 class WIPVertexElement
@@ -125,6 +127,7 @@ class WIPVertexFormat
 public:
 	WIPVertexFormat():total_count(0){}
 	virtual void add_float_vertex_attribute(int count)=0;
+	virtual void add_int_vertex_attribute(int count) = 0;
 	virtual void* get_rhi_resource() const=0;
 	std::vector<WIPVertexElement> elements;
 	int total_count;

@@ -128,12 +128,13 @@ bool GLFWApp::init()
 	world_renderer->init();
 	world_renderer->set_world(scene);
 	LOG_INFO("Renderer start up...");
-
+#ifdef Text1
+	text_renderer = new LargeTexture_TextRender(2048, 2048);
+#else
 	text_renderer = new TextRender(512,512);
+#endif
 	text_renderer->init();
-	text_renderer->load_font("./font/simkai.ttf", 25, 25);
-
-	
+	text_renderer->load_font("./font/simkai.ttf", 15, 15);
 
 	g_physics_manager->startup();
 	LOG_INFO("Physics start up...");
@@ -537,22 +538,84 @@ void GLFWApp::run()
 
 			
 
-			wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
-				L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
-				L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"
-				L"我们的游戏中需要对渲染字体做勾边处理，有种简单的方法是将字体多画几遍，向各个方向偏移一两个像素用黑色各画一遍，然后再用需要的颜色画一遍覆盖上去。这个方法的缺点是一个字就要画多次，影响渲染效\n"
-				L"前几年有人发明了另一种方法，google 一下 Signed Distance Field Font Rendering 就可以找到大量的资料。大体原理是把字体数据预处理一遍，把每个像素离笔画的距离用灰度的形式记录在贴图上，然后写一个专门的 shader 来渲染字体。好处是字体可以缩放而不产生锯齿，也比较容易缺点边界做勾边处理。缺点是字模数据需要离线预处理。\n"
-				L"我们的手游项目以及 3d 端游项目都大量使用了勾边字体，我希望直接利用系统字体而不用离线预处理字体把字体文件打包到客户端中。前段时间还专门实现了一个动态字体的贴图管理模块 。btw, 苹果的平台提供了高层 API 可以直接生成带勾边效果的字模。\n"
-				L"但是，勾过边的字模信息中同时包含了轮廓信息和字模主体信息，看起来似乎很难用单通道记录整个字模数据了。这给染色也带来了麻烦。\n"
-				L"见这张图，是一张带勾边信息的字模。轮廓是黑色的，字体是白色的。从颜色通道上看，有黑白灰的过渡。但灰色部分 alpha 通道对应量却不相等。轮廓向字体主干过渡的地方，色彩是灰色的，但是 alpha 值为 1.0 。也就是说，alpha 通道是独立的。\n"
-				L"我们需要两个通道，颜色通道和 alpha 通道，来保存完整的字模信息才能在最后正确的渲染到屏幕上。很多显卡硬件并不支持两通道贴图，所以要么我们用一个 RGBA 四通道贴图来保存，要么用两张单通道贴图。\n"
-				L"我想了个简单的方法只用一个通道就可以保存全部信息，那就是把 alpha 为 1.0 的像素的灰度影射到 0.5 到 1 的区间；把 alpha < 1.0 的部分像素的 alpha 值影射到 0 到 0.5 的区间。这样做可行是因为，经过勾黑边的白字，其 alpha 小于 1.0 的像素一定都是黑色的，也就是 RGBA 都相等。所以信息只损失了一个 bit 就保存了下来。";
+wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
+L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
+L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"
+L"我们的游戏中需要对渲染字体做勾边处理，有种简单的方法是将字体多画几遍，向各个方向偏移一两个像素用黑色各画一遍，然后再用需要的颜色画一遍覆盖上去。这个方法的缺点是一个字就要画多次，影响渲染效\n"
+L"前几年有人发明了另一种方法，google 一下 Signed Distance Field Font Rendering 就可以找到大量的资料。大体原理是把字体数据预处理一遍，把每个像素离笔画的距离用灰度的形式记录在贴图上，然后写一个专门的 shader 来渲染字体。好处是字体可以缩放而不产生锯齿，也比较容易缺点边界做勾边处理。缺点是字模数据需要离线预处理。\n"
+L"我们的手游项目以及 3d 端游项目都大量使用了勾边字体，我希望直接利用系统字体而不用离线预处理字体把字体文件打包到客户端中。前段时间还专门实现了一个动态字体的贴图管理模块 。btw, 苹果的平台提供了高层 API 可以直接生成带勾边效果的字模。\n"
+L"但是，勾过边的字模信息中同时包含了轮廓信息和字模主体信息，看起来似乎很难用单通道记录整个字模数据了。这给染色也带来了麻烦。\n"
+L"见这张图，是一张带勾边信息的字模。轮廓是黑色的，字体是白色的。从颜色通道上看，有黑白灰的过渡。但灰色部分 alpha 通道对应量却不相等。轮廓向字体主干过渡的地方，色彩是灰色的，但是 alpha 值为 1.0 。也就是说，alpha 通道是独立的。\n"
+L"我们需要两个通道，颜色通道和 alpha 通道，来保存完整的字模信息才能在最后正确的渲染到屏幕上。很多显卡硬件并不支持两通道贴图，所以要么我们用一个 RGBA 四通道贴图来保存，要么用两张单通道贴图。\n"
+L"我想了个简单的方法只用一个通道就可以保存全部信息，那就是把 alpha 为 1.0 的像素的灰度影射到 0.5 到 1 的区间；把 alpha < 1.0 的部分像素的 alpha 值影射到 0 到 0.5 的区间。这样做可行是因为，经过勾黑边的白字，其 alpha 小于 1.0 的像素一定都是黑色的，也就是 RGBA 都相等。所以信息只损失了一个 bit 就保存了下来。"
+L"之前对UE4 UI的绘制中合并DC的部分不是太了解；不得不说源码中各种理解的坑；稍微不注意有些东西是理解不到的。除非有目的的去找某个功能是怎么实现的，但是这样又会忽略其他功能的实现。我之前也经常看底层的代码绘制渲染的逻辑，但是每次看的感觉都会有新收获。之前没感觉有合并DC的操作，直到看了某人UOD上的UI优化的讲稿，觉得有必要仔细的追查一下。以下是结果："
+L"大概介绍绘制UI的过程先。绘制 UI的过程分三个部分："
+L"第一部分主要在SlateApplication中PrivateDrawWindow 主线程Tick驱动控件不断递归调用Paint和Onpaint搜集DrawElement，存入windowelementlist"
+
+L"第二部分 SlateRHIrender中调用FSlateRHIRenderer::DrawWindows_Private。 处理windowelementlist中的DrawElement；使用FSlateElementBatcher把DrawElement转化成FSlateBatchData批次数据，具体调用在FSlateElementBatcher::AddElements中；针对layer优化的代码和合并drawcall的代码在这部分代码中"
+
+L"第三部分 全渲染线程 使用上一步生成的FSlateBatchData生成renderbatch数据然后送进渲染的pipeline；在FSlateRHIRenderer::DrawWindow_RenderThread接口中"
+
+L"合并的过程发生在mainthread ，FSlateApplication执行DrawWindows的接口调用SlateRHIRender做RHI的处理的时候 ；算是第二个过程发生的时候。详细过程如下："
+
+L"FSlateElementBatcher在执行DrawElement向FSlataElementBatch转换的过程中，挨个遍历DrawElement，然后挨个转换，把生成的FSlataElementBatch以及对应的Layer关系存储进DrawLayer的Map中。存储的层级关系是FSlateElementBatcher（ElementBatcher）--》FSlateDrawLayer（DrawLayer） - 》FElementBatchMap（LayerToElementBatches）。"
+
+L"以下是FElementBatchMap的定义："
+
+L"class FElementBatchMap\n"
+L"{\n"
+L"public:\n"
+L"FElementBatchMap()\n"
+L"{\n"
+L"Reset();"
+L"在每次开始转换之前会先向FElementBatchMap查找是否有可以和当前合并的DrawElement对应的FSlateElementBatch，即查找相似的FSlateElementBatch是否在map中已经存在；如果存在就会把之前的FSlateElementBatch返回，然后再FSlateElementBatch对应的BatchData中拼接Vertices和Indices；从而完成合并DC的过程。"
+
+L"查找相似的FSlateElementBatch的过程如下以Simage的控件示例："
+
+L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
+L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
+
+L"FSlateElementBatch* ElementBatch = (*ElementBatches)->FindByKey(TempBatch);"
+
+L"然后从BatchData中找出FSlateElementBatch对应的FSlateVertexArray和FSlateIndexArray进行拼接 如下 ："
+
+L"FSlateElementBatch& ElementBatch = FindBatchForElement(Layer, FShaderParams(), Resource, ESlateDrawPrimitive::TriangleList, ESlateShader::Default, InDrawEffects, DrawFlags, DrawElement.GetScissorRect(), DrawElement.GetSceneIndex());"
+L"FSlateVertexArray& BatchVertices = BatchData->GetBatchVertexList(ElementBatch);"
+L"FSlateIndexArray& BatchIndices = BatchData->GetBatchIndexList(ElementBatch);"
+
+L"总结查找合并DC的条件 首先Layer相同，其次根据DrawElement生成的FSlateElementBatch相同"
+L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
+L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
+
+L"总结最后的对应关系 ："
+L"DrawElement（Draw的前期执行Paint和OnPaint生成，存储在WindowsList上）对应RHI过程生成layer 多对一"
+
+L"RHI过程生成的Layer和FSlateElementBatch为一对多的关系"
+
+L"DrawElement与RHI生成的FSlateElementBatch为多对一的关系；这步会发生DC的合并"
+
+L"FSlateElementBatch与RHI中添加到FSlateBatchData中的FSlateVertexArray和FSlateIndexArray是一对一的关系"
+
+L"render线程上FRenderBatch对应layer中的每个FSlateElementBatch 一一对应的关系"
+
+L"总结合并UI DC的注意事项："
+L"1、整合Layer有利于合并DC但不能保证一定能合并DC"
+L"2、不同的控件在RHI过程生成FSlateElementBatch的时候使用不同的接口；不同控件之间能合并DC的概率并不大"
+L"3、相同的控件只有在layer相同，TextureResouce相同，FShaderParams相同， ESlateShader相同，DrawFlag等才能合并DC"
+
+L"最后说下感想；看代码就像看文章，看的次数越多理解的越多。代码虐我千百遍我待代码如初恋！";
+
+
+
+
 
 			wchar_t words1[] = L"趙靈兒:\n好……放了他，我就跟你們走……";
 			//std::wstring wbuf = string_to_wstring(buf);
 
-			text_renderer->render_text(200, 200, words1, wcslen(words1), window_w, cameras[0]);
+			text_renderer->render_text(2, 700, words, wcslen(words), window_w, cameras[0]);
 			text_renderer->render(cameras[0]);
+
+
 			// g_script_manager->call("debug_draw");
 			ImGui::Render();
 			g_audio_manager->Update();

@@ -73,8 +73,15 @@ private:
 	class WIPAnimationClip* pre_clip;
 
 	class WorldRender* world_renderer;
+#define Text1
+#ifdef Text1
+	class LargeTexture_TextRender* text_renderer;
+#else
 	class TextRender* text_renderer;
+#endif
 	class UIRender* ui_renderer;
+	class LargeTexture_TextRender* text_renderer1;
+
 
 	int draw_state;
 

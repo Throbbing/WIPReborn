@@ -448,6 +448,7 @@ void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int max
 		{
 			x = px;
 			y -= text_h;
+			i--;
 			continue;
 		}
 		TextNode* node = get_node(ch);
@@ -594,4 +595,108 @@ void UIRender::render_pic(int px, int py, int w, int h, const WIPRenderTexture2D
 	g_rhi->draw_triangles(6, 0);
 
 	g_rhi->enable_depth_test();
+}
+
+
+void LargeTexture_TextRender::render_text(int px, int py, const wchar_t* chs, int len, int maxw, const WIPCamera* cam)
+{
+	if (index.empty())
+		return;
+	int x = px;
+	int y = py;
+	for (int i = 0; i < len; ++i)
+	{
+		wchar_t ch = chs[i];
+		if (ch == L'\n')
+		{
+			x = px;
+			y -= text_h;
+			continue;
+		}
+		//hard code padding
+		if (x + 20 >= maxw)
+		{
+			x = px;
+			y -= text_h;
+			i--;
+			continue;
+		}
+		IndexStructure* node = nullptr;
+		std::map<unsigned int,IndexStructure*>::iterator it = index.find(ch);
+		if (it != index.end())
+		{
+			node = it->second;
+		}
+		else
+		{
+			node = index[0x0030];
+		}
+		if (!node)
+			node = index[0x0030];
+
+		int draw_px = x + node->offx;
+		int draw_py = y + node->offy;
+
+		RBVector2 lb = cam->screen_to_ndc(RBVector2I(draw_px, cam->window_h - draw_py));
+		RBVector2 lt = cam->screen_to_ndc(RBVector2I(draw_px, cam->window_h - draw_py - node->text_height));
+		RBVector2 rt = cam->screen_to_ndc(RBVector2I(draw_px + node->text_width, cam->window_h - draw_py - node->text_height));
+		RBVector2 rb = cam->screen_to_ndc(RBVector2I(draw_px + node->text_width, cam->window_h - draw_py));
+
+		f32 iw = 1.f / cache_w;
+		f32 ih = 1.f / cache_h;
+
+
+		f32 tx = node->texture_x*iw;;
+		f32 ty = node->texture_y*ih;
+		f32 tw = node->text_width*iw;
+		f32 th = node->text_height*ih;
+
+		f32 channel = node->chanel_id + 0.1f;//reinterpret_cast<f32&>(node->chanel_id);
+
+		f32 vert[] = {
+			lb.x, lb.y, tx, ty + th, channel,//lb
+			lt.x, lt.y, tx, ty, channel,//lt
+			rt.x, rt.y, tx + tw, ty, channel,//rt
+			rb.x, rb.y, tx + tw, ty + th, channel//rb
+		};
+
+
+
+		x += node->text_advance;
+
+		if (((text_to_render + 1) * 20) > cache_h*cache_w)
+		{
+			render(cam);
+			continue;
+		}
+
+		memcpy(text_vertex_buffer + text_to_render * 20 * sizeof(f32), vert, 20 * sizeof(f32));
+
+		text_to_render++;
+
+	}
+}
+
+void LargeTexture_TextRender::render(const WIPCamera* cam)
+{
+	void* p = g_rhi->lock_vertex_buffer(vb);
+	memcpy(p, text_vertex_buffer, text_to_render* sizeof(f32) * 20);
+	g_rhi->unlock_vertex_buffer(vb);
+	p = g_rhi->lock_index_buffer(ib);
+	_pack_index(p, text_to_render);
+	g_rhi->unlock_index_buffer(ib);
+
+	g_rhi->disable_depth_test();
+	g_rhi->enable_blend();
+	g_rhi->set_blend_function();
+	g_rhi->set_shader(bound_shader);
+	g_rhi->set_index_buffer(ib);
+	g_rhi->set_vertex_buffer(vb);
+	g_rhi->set_vertex_format(vf);
+	g_rhi->set_uniform_texture("in_texture", 0, text_lut_buffer);
+	g_rhi->set_uniform4f("in_color", RBColorf::black);
+	g_rhi->draw_triangles(6 * text_to_render, 0);
+
+	g_rhi->enable_depth_test();
+	text_to_render = 0;
 }

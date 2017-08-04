@@ -1,0 +1,16 @@
+#version 120
+
+varying vec4 out_position;
+varying vec2 out_texcoord;
+flat varying float out_channel;
+
+uniform sampler2D in_texture;
+uniform vec4 in_color;
+
+void main()
+{
+	gl_FragColor = texture2D(in_texture, out_texcoord);
+	int c = int(out_channel);
+	gl_FragColor.a = gl_FragColor[c];
+	gl_FragColor.rgb = in_color.rgb;
+}

@@ -208,7 +208,12 @@ public:
 	
 
 	UIRender* ui_renderer;
-	TextRender* text_renderer;
+#define Text1
+#ifdef Text1
+	class LargeTexture_TextRender* text_renderer;
+#else
+	class TextRender* text_renderer;
+#endif
 
 	bool edit_mode;
 

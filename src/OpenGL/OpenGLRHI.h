@@ -17,10 +17,12 @@ public:
   unsigned int vbo;
 };
 
-class GLVertexFormat : public WIPVertexFormat {
+class GLVertexFormat : public WIPVertexFormat 
+{
 public:
   GLVertexFormat();
   virtual void add_float_vertex_attribute(int count);
+  virtual void add_int_vertex_attribute(int count);
   virtual void *get_rhi_resource() const;
 };
 
@@ -133,6 +135,8 @@ public:
 	virtual WIPTexture2D* RHICreateTexture2D(uint32 SizeX, uint32 SizeY, void* data,uint8 Format=0, uint32 NumMips=0, uint32 NumSamples=0, uint32 Flags=0);
 	
 	virtual void update_texture(WIPTexture2D* texture, void* data) const;
+
+	virtual void update_texture(WIPTexture2D* texture, int chanel, void* data) const;
 
 	virtual void update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const;
 

@@ -16,6 +16,12 @@ void GLVertexFormat::add_float_vertex_attribute(int count) {
 	total_count += count;
 }
 
+void GLVertexFormat::add_int_vertex_attribute(int count)
+{
+	elements.push_back(WIPVertexElement(count, VertexType::E_INT));
+	total_count += count;
+}
+
 void *GLVertexFormat::get_rhi_resource() const { return nullptr; }
 
 GLTexture2D::GLTexture2D(u32 inw, u32 inh, u32 in_mips, u32 in_samples,
@@ -375,6 +381,20 @@ void GLDynamicRHI::update_texture(WIPTexture2D* texture,void* data) const
 
 }
 
+void GLDynamicRHI::update_texture(WIPTexture2D* texture, int chanel, void* data) const
+{
+	//not work!
+	LOG_WARN("update channel not work!");
+	return;
+	void *s = texture->get_rhi_resource();
+	GLuint &id = *((GLuint *)s);
+	GLTexture2D* gl_tex = (GLTexture2D*)texture;
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->get_width(), texture->get_height()
+		, GL_RED + chanel, gl_tex->_gl_type, data);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void GLDynamicRHI::update_subrect_texture(WIPTexture2D* texture, int x, int y, int w, int h, void* data) const
 {
 	void *s = texture->get_rhi_resource();
@@ -517,12 +537,28 @@ void GLDynamicRHI::set_shader(const WIPBoundShader *shader) {
 	glUseProgram(id1);
 	_bound_shader = id1;
 }
-void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf) const {
+
+unsigned int vf_map[VertexType::E_TOTAL] =
+{
+	GL_FLOAT,
+	GL_UNSIGNED_INT
+};
+
+unsigned int vf_map_size[VertexType::E_TOTAL] =
+{
+	sizeof(float),
+	sizeof(unsigned int)
+};
+
+void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf) const 
+{
 	int tn = vf->total_count;
 	int off = 0;
 	for (int i = 0; i < vf->elements.size(); ++i) {
-		glVertexAttribPointer(i, vf->elements[i].count, GL_FLOAT, GL_FALSE,
-			tn * sizeof(float), (void *)(off * sizeof(float)));
+		glVertexAttribPointer(i, vf->elements[i].count, 
+			vf_map[vf->elements[i].type], GL_FALSE,
+			tn * vf_map_size[vf->elements[i].type], 
+			(void *)(off * vf_map_size[vf->elements[i].type]));
 		glEnableVertexAttribArray(i);
 		off += vf->elements[i].count;
 	}
