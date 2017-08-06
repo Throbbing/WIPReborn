@@ -21,6 +21,7 @@
 
 #include "UserComponent.h"
 #include "AudioManager.h"
+#include "RemoteryProfiler.h"
 
 #ifdef _WIN32
 #include "windows.h"
@@ -62,6 +63,8 @@ bool GLFWApp::init()
 	fs.set_current_dir("./data/");
 	LOG_NOTE("cur path:%s", fs.get_current_dir().c_str());
 
+	fs.get_relative_path(cur_path);
+
 	std::string lua_project_path;
 	std::string lua_ini_path;
 	std::string log_path;
@@ -89,7 +92,7 @@ bool GLFWApp::init()
 
 	LOG_INFO("Logger start up...");
 	g_logger->startup(log_path.c_str());
-	
+
 	g_logger->new_log();
 
 	LOG_INFO("Logger start up success...");
@@ -117,7 +120,7 @@ bool GLFWApp::init()
 	LOG_INFO("RHI start up...");
 
 	imgui_renderer = new GlfwImguiRender();
-	imgui_renderer->imgui_init(window, "./font/simkai.ttf",19);
+	imgui_renderer->imgui_init(window, "./font/simkai.ttf", 19);
 
 	scene = new WIPScene();
 	scene->init(1, 1, 4);
@@ -146,8 +149,7 @@ bool GLFWApp::init()
 	g_animation_manager->startup(0.15);
 	LOG_INFO("Animation start up...");
 
-
-	
+	RemoteryProfiler::startup();
 
 	cameras.push_back(scene->create_camera(20.f, 20.f, window_w, window_h, window_w, window_h));
 	cameras[0]->move_to(5.f, 5.f);
@@ -162,7 +164,7 @@ bool GLFWApp::init()
 
 
 	clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
-	
+
 	clip1 = WIPAnimationClip::create_with_atlas("walk_left", "./clips/2.clip");
 	clip2 = WIPAnimationClip::create_with_atlas("walk_right", "./clips/3.clip");
 	clip3 = WIPAnimationClip::create_with_atlas("walk_up", "./clips/4.clip");
@@ -206,7 +208,7 @@ bool GLFWApp::init()
 	tex2d = g_rhi->RHICreateTexture2D(ww, hh, res_handle1->ptr);
 	tex2d1 = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle2->ptr);
 	//issue:texture boarder
-	tex2d1mask = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle1mask->ptr , 0, 0, 0, 1);
+	tex2d1mask = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle1mask->ptr, 0, 0, 0, 1);
 
 	tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
 
@@ -262,7 +264,7 @@ bool GLFWApp::init()
 	ctor_zaji2.collider_sx = 0.5f;
 	ctor_zaji2.collider_sy = 0.2f;
 
-	WIPSpriteCreator ctor_crowd(6*1.2f, 8.f, WIPMaterialType::E_TRANSLUCENT);
+	WIPSpriteCreator ctor_crowd(6 * 1.2f, 8.f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_crowd.texture = tex2d_crowd;
 	ctor_crowd.world_render = world_renderer;
 	ctor_crowd.collider_sx = 0.85f;
@@ -333,7 +335,7 @@ bool GLFWApp::init()
 	zaji2->set_tag("zaji2");
 	crowd->set_tag("crowd");
 
-	
+
 	bg->set_type_tag("scene");
 	bg_mask->set_type_tag("scene");
 
@@ -365,15 +367,15 @@ bool GLFWApp::init()
 	zaji1->translate_to(-5, 0);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
-	zaji2->translate_to(-4,-2);
+	zaji2->translate_to(-4, -2);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
 	crowd->translate_to(-8, 3);
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
 
-	
-	
+
+
 
 	fogs = WIPSpriteFactory::create_sprite(ctor_fog);
 	scene->add_sprite(fogs);
@@ -391,10 +393,10 @@ bool GLFWApp::init()
 	man->set_z_order(0.4f);
 	bg_mask->set_z_order(0.1f);
 
-	
+
 
 	//g_res_manager->free(res_handle1, res_handle1->size);
-	
+
 
 	//use a big delta time to play first frame
 	g_animation_manager->update(1);
@@ -408,11 +410,11 @@ bool GLFWApp::init()
 	g_filesystem->scan_dir(res, apath.c_str(), ".jpg", SCAN_FILES, true);
 	for (int i = 0; i < res.size(); ++i)
 	{
-		auto res_handler = g_res_manager->load_resource((apath + res[i]).c_str());
-		TextureData* d = (TextureData*)(res_handler->extra);
-		textures.push_back(g_rhi->RHICreateTexture2D(d->width, d->height, res_handler->ptr));
-		string ss = g_filesystem->get_path(std::string(apath + res[i]));
-		paths.push_back(to_wstring(ss));
+	auto res_handler = g_res_manager->load_resource((apath + res[i]).c_str());
+	TextureData* d = (TextureData*)(res_handler->extra);
+	textures.push_back(g_rhi->RHICreateTexture2D(d->width, d->height, res_handler->ptr));
+	string ss = g_filesystem->get_path(std::string(apath + res[i]));
+	paths.push_back(to_wstring(ss));
 	}
 	*/
 	//g_res_manager->free_all();
@@ -422,20 +424,24 @@ bool GLFWApp::init()
 
 
 
-void GLFWApp::run() 
+void GLFWApp::run()
 {
-	
-	while (((!glfwWindowShouldClose(window))&& (!_exit_requist)))
+
+	while (((!glfwWindowShouldClose(window)) && (!_exit_requist)))
 	{
+
 		if (_exit_requist)
 			break;
 		curTime = times->get_time();
 		if (curTime - lastTime >= _frame)
 		{
+			rmt_BeginCPUSample(frame_time_avaliable, 0);
+
 			//////////////////////////////////////////////////////////////////////////
 			// only this order!!!!!
 			// only to put input handle here to keep everything right
 			{
+				rmt_BeginCPUSample(handle_input, RMTSF_Aggregate);
 
 				int bits = g_input_manager->get_last_key_info()->key_bit;
 				int bits_c = g_input_manager->get_last_key_info()[1].key_bit;
@@ -448,162 +454,183 @@ void GLFWApp::run()
 				if (mmouse_keep_going)
 					bits |= WIP_MOUSE_MBUTTON;
 				g_input_manager->update(bits_c, bits);
+
+				rmt_EndCPUSample();
 			}
 
+			rmt_BeginCPUSample(glfw_poll_event,0);
 			glfwPollEvents();
+			rmt_EndCPUSample();
 			//////////////////////////////////////////////////////////////////////////
 			imgui_renderer->imgui_new_frame();
-			// update physics
+			
+			rmt_BeginCPUSample(script_main,0);
 			g_script_manager->call("main_logic");
+			rmt_EndCPUSample();
 
 			//todo:move to camera::clear add rhi!
-			glViewport(0, 0, window_w, window_h);
-			glClearColor(0.85, 0.85, 0.85, 1);
+			g_rhi->change_viewport(cameras[0]->viewport);
+			g_rhi->clear_back_buffer(RBColorf::black);
+			//glViewport(0, 0, window_w, window_h);
+			//glClearColor(0.85, 0.85, 0.85, 1);
 			glClearDepth(1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 			//g_rhi->set_shader(0);
+			rmt_BeginCPUSample(debug_draw_cpu,0);
+			rmt_BeginOpenGLSample(debug_draw);
 			g_rhi->begin_debug_context();
 			g_rhi->change_debug_color(RBColorf::red);
-			//scene->quad_tree->debug_draw(cameras[0]);
+			scene->quad_tree->debug_draw(cameras[0]);
 			//g_rhi->debug_draw_aabb2d(RBVector2(-0.5f, -0.5f), RBVector2(0.5f, 0.5f), cameras[0]);
 			g_rhi->debug_submit();
 			g_rhi->end_debug_context();
+			rmt_EndOpenGLSample();
+			rmt_EndCPUSample();
 
-			
+			rmt_BeginCPUSample(get_time, RMTSF_Aggregate);
 			f32 dt = clock->get_frame_time();
+			rmt_EndCPUSample();
 
 
-			
 
+			rmt_BeginCPUSample(scene_update,0);
 			scene->update(dt);
 
 			scene->fix_update(dt);
+			rmt_EndCPUSample();
 
-
+			rmt_BeginCPUSample(animation_update,0);
 			g_animation_manager->update(clock->get_frame_time());
-			//not work
-			g_physics_manager->update(scene,clock->get_frame_time());
+			rmt_EndCPUSample();
+			rmt_BeginCPUSample(physics_update,0);
+			g_physics_manager->update(scene, dt);
+			rmt_EndCPUSample();
 
+			rmt_BeginCPUSample(begin_render,0);
 			for (auto i : cameras)
 				world_renderer->render(i);
+			rmt_EndCPUSample();
 
+			rmt_BeginCPUSample(begin_render_texture,0);
 			g_rhi->set_back_buffer(render_texture2d);
 			WIPViewPort vp(0, 0, render_texture2d->get_width(), render_texture2d->get_height());
 			g_rhi->change_viewport(&vp);
-			
+
 
 			for (auto i : cameras)
 				world_renderer->render(i);
-			
+
 			g_rhi->set_main_back_buffer();
 			g_rhi->change_viewport(cameras[0]->viewport);
-			
+			rmt_EndCPUSample();
+
+			rmt_BeginCPUSample(ui_render, 0);
 			ui_renderer->render_pic(400, 400, render_texture2d->get_width(), render_texture2d->get_height(), render_texture2d);
 			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3, 0.3, 0.5, 0.5));
 			ui_renderer->render_pic(700, 50, face->get_width(), face->get_height(), face);
+			rmt_EndCPUSample();
 
 
-		
 			/*
 			scoller_y += Input::get_mouse_scroller()*100;
 			int w = (cameras[0]->window_w >> 1)*0.8f;
 			int h = w * textures[0]->get_height() / (f32)textures[0]->get_width();
-			
+
 			int s = -1;
 			for (int i = 0; i < textures.size(); ++i)
 			{
-				
-				int x = i % 2 * w+100;
-				int y = i / 2 * h - scoller_y;
-				RBAABB2D aabb(RBVector2(x, y), RBVector2(x + w, y + h));
-				RBAABB2D aabbcams(RBVector2(0, 0), RBVector2(cameras[0]->window_w, cameras[0]->window_h));
-				RBVector2 mpos(Input::get_mouse_x(), cameras[0]->window_h-Input::get_mouse_y());
-				if (aabb.is_contain(mpos))
-				{
-					s = i;
-				}
-				if (aabbcams.intersection(aabb))
-				{
-					ui_renderer->render_pic(x, y, w, h, textures[i]);
-				}
+
+			int x = i % 2 * w+100;
+			int y = i / 2 * h - scoller_y;
+			RBAABB2D aabb(RBVector2(x, y), RBVector2(x + w, y + h));
+			RBAABB2D aabbcams(RBVector2(0, 0), RBVector2(cameras[0]->window_w, cameras[0]->window_h));
+			RBVector2 mpos(Input::get_mouse_x(), cameras[0]->window_h-Input::get_mouse_y());
+			if (aabb.is_contain(mpos))
+			{
+			s = i;
+			}
+			if (aabbcams.intersection(aabb))
+			{
+			ui_renderer->render_pic(x, y, w, h, textures[i]);
+			}
 			}
 			if (Input::get_sys_key_up(WIP_MOUSE_LBUTTON))
 			{
-				if (s!=-1)
-					open_explorer(paths[s].c_str());
+			if (s!=-1)
+			open_explorer(paths[s].c_str());
 			}
 			*/
 
-			
 
-wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
-L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
-L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"
-L"我们的游戏中需要对渲染字体做勾边处理，有种简单的方法是将字体多画几遍，向各个方向偏移一两个像素用黑色各画一遍，然后再用需要的颜色画一遍覆盖上去。这个方法的缺点是一个字就要画多次，影响渲染效\n"
-L"前几年有人发明了另一种方法，google 一下 Signed Distance Field Font Rendering 就可以找到大量的资料。大体原理是把字体数据预处理一遍，把每个像素离笔画的距离用灰度的形式记录在贴图上，然后写一个专门的 shader 来渲染字体。好处是字体可以缩放而不产生锯齿，也比较容易缺点边界做勾边处理。缺点是字模数据需要离线预处理。\n"
-L"我们的手游项目以及 3d 端游项目都大量使用了勾边字体，我希望直接利用系统字体而不用离线预处理字体把字体文件打包到客户端中。前段时间还专门实现了一个动态字体的贴图管理模块 。btw, 苹果的平台提供了高层 API 可以直接生成带勾边效果的字模。\n"
-L"但是，勾过边的字模信息中同时包含了轮廓信息和字模主体信息，看起来似乎很难用单通道记录整个字模数据了。这给染色也带来了麻烦。\n"
-L"见这张图，是一张带勾边信息的字模。轮廓是黑色的，字体是白色的。从颜色通道上看，有黑白灰的过渡。但灰色部分 alpha 通道对应量却不相等。轮廓向字体主干过渡的地方，色彩是灰色的，但是 alpha 值为 1.0 。也就是说，alpha 通道是独立的。\n"
-L"我们需要两个通道，颜色通道和 alpha 通道，来保存完整的字模信息才能在最后正确的渲染到屏幕上。很多显卡硬件并不支持两通道贴图，所以要么我们用一个 RGBA 四通道贴图来保存，要么用两张单通道贴图。\n"
-L"我想了个简单的方法只用一个通道就可以保存全部信息，那就是把 alpha 为 1.0 的像素的灰度影射到 0.5 到 1 的区间；把 alpha < 1.0 的部分像素的 alpha 值影射到 0 到 0.5 的区间。这样做可行是因为，经过勾黑边的白字，其 alpha 小于 1.0 的像素一定都是黑色的，也就是 RGBA 都相等。所以信息只损失了一个 bit 就保存了下来。"
-L"之前对UE4 UI的绘制中合并DC的部分不是太了解；不得不说源码中各种理解的坑；稍微不注意有些东西是理解不到的。除非有目的的去找某个功能是怎么实现的，但是这样又会忽略其他功能的实现。我之前也经常看底层的代码绘制渲染的逻辑，但是每次看的感觉都会有新收获。之前没感觉有合并DC的操作，直到看了某人UOD上的UI优化的讲稿，觉得有必要仔细的追查一下。以下是结果："
-L"大概介绍绘制UI的过程先。绘制 UI的过程分三个部分："
-L"第一部分主要在SlateApplication中PrivateDrawWindow 主线程Tick驱动控件不断递归调用Paint和Onpaint搜集DrawElement，存入windowelementlist"
+			rmt_BeginCPUSample(text_render, 0);
+			wchar_t words[] = L"我烦哦阿婆十一回“燕云十八飞骑奔腾如虎风烟举”。金庸，原名查良镛，1924年生于浙江海宁，后居香港，当代新派武侠小说家，代表作有《书剑恩仇录》《射雕英雄传》《神雕侠侣》《倚天屠龙记》《天龙八部》《笑傲江湖》《鹿鼎记》等。\n"
+				L"但听得蹄声如雷，十余乘马疾风般卷上山来。马上乘客一色都是玄色薄毡大氅，里面玄色布衣，但见人似虎，马如龙，人既矫捷，马亦雄骏，每一匹马都是高头长腿，通体黑毛，奔到近处，群雄眼前一亮，金光闪闪，却见每匹马的蹄铁竟然是黄金打就。来者一共是一十九骑，人数虽不甚多，气势之壮，却似有如千军万马一般，前面一十八骑奔到近处，拉马向两旁一分，最后一骑从中驰出。"
+				L"丐帮帮众之中，大群人猛地里高声呼叫：“乔帮主，乔帮主！”数百名帮众从人丛中疾奔出来，在那人马前躬身参见。\n"
+				L"我们的游戏中需要对渲染字体做勾边处理，有种简单的方法是将字体多画几遍，向各个方向偏移一两个像素用黑色各画一遍，然后再用需要的颜色画一遍覆盖上去。这个方法的缺点是一个字就要画多次，影响渲染效\n"
+				L"前几年有人发明了另一种方法，google 一下 Signed Distance Field Font Rendering 就可以找到大量的资料。大体原理是把字体数据预处理一遍，把每个像素离笔画的距离用灰度的形式记录在贴图上，然后写一个专门的 shader 来渲染字体。好处是字体可以缩放而不产生锯齿，也比较容易缺点边界做勾边处理。缺点是字模数据需要离线预处理。\n"
+				L"我们的手游项目以及 3d 端游项目都大量使用了勾边字体，我希望直接利用系统字体而不用离线预处理字体把字体文件打包到客户端中。前段时间还专门实现了一个动态字体的贴图管理模块 。btw, 苹果的平台提供了高层 API 可以直接生成带勾边效果的字模。\n"
+				L"但是，勾过边的字模信息中同时包含了轮廓信息和字模主体信息，看起来似乎很难用单通道记录整个字模数据了。这给染色也带来了麻烦。\n"
+				L"见这张图，是一张带勾边信息的字模。轮廓是黑色的，字体是白色的。从颜色通道上看，有黑白灰的过渡。但灰色部分 alpha 通道对应量却不相等。轮廓向字体主干过渡的地方，色彩是灰色的，但是 alpha 值为 1.0 。也就是说，alpha 通道是独立的。\n"
+				L"我们需要两个通道，颜色通道和 alpha 通道，来保存完整的字模信息才能在最后正确的渲染到屏幕上。很多显卡硬件并不支持两通道贴图，所以要么我们用一个 RGBA 四通道贴图来保存，要么用两张单通道贴图。\n"
+				L"我想了个简单的方法只用一个通道就可以保存全部信息，那就是把 alpha 为 1.0 的像素的灰度影射到 0.5 到 1 的区间；把 alpha < 1.0 的部分像素的 alpha 值影射到 0 到 0.5 的区间。这样做可行是因为，经过勾黑边的白字，其 alpha 小于 1.0 的像素一定都是黑色的，也就是 RGBA 都相等。所以信息只损失了一个 bit 就保存了下来。"
+				L"之前对UE4 UI的绘制中合并DC的部分不是太了解；不得不说源码中各种理解的坑；稍微不注意有些东西是理解不到的。除非有目的的去找某个功能是怎么实现的，但是这样又会忽略其他功能的实现。我之前也经常看底层的代码绘制渲染的逻辑，但是每次看的感觉都会有新收获。之前没感觉有合并DC的操作，直到看了某人UOD上的UI优化的讲稿，觉得有必要仔细的追查一下。以下是结果："
+				L"大概介绍绘制UI的过程先。绘制 UI的过程分三个部分："
+				L"第一部分主要在SlateApplication中PrivateDrawWindow 主线程Tick驱动控件不断递归调用Paint和Onpaint搜集DrawElement，存入windowelementlist"
 
-L"第二部分 SlateRHIrender中调用FSlateRHIRenderer::DrawWindows_Private。 处理windowelementlist中的DrawElement；使用FSlateElementBatcher把DrawElement转化成FSlateBatchData批次数据，具体调用在FSlateElementBatcher::AddElements中；针对layer优化的代码和合并drawcall的代码在这部分代码中"
+				L"第二部分 SlateRHIrender中调用FSlateRHIRenderer::DrawWindows_Private。 处理windowelementlist中的DrawElement；使用FSlateElementBatcher把DrawElement转化成FSlateBatchData批次数据，具体调用在FSlateElementBatcher::AddElements中；针对layer优化的代码和合并drawcall的代码在这部分代码中"
 
-L"第三部分 全渲染线程 使用上一步生成的FSlateBatchData生成renderbatch数据然后送进渲染的pipeline；在FSlateRHIRenderer::DrawWindow_RenderThread接口中"
+				L"第三部分 全渲染线程 使用上一步生成的FSlateBatchData生成renderbatch数据然后送进渲染的pipeline；在FSlateRHIRenderer::DrawWindow_RenderThread接口中"
 
-L"合并的过程发生在mainthread ，FSlateApplication执行DrawWindows的接口调用SlateRHIRender做RHI的处理的时候 ；算是第二个过程发生的时候。详细过程如下："
+				L"合并的过程发生在mainthread ，FSlateApplication执行DrawWindows的接口调用SlateRHIRender做RHI的处理的时候 ；算是第二个过程发生的时候。详细过程如下："
 
-L"FSlateElementBatcher在执行DrawElement向FSlataElementBatch转换的过程中，挨个遍历DrawElement，然后挨个转换，把生成的FSlataElementBatch以及对应的Layer关系存储进DrawLayer的Map中。存储的层级关系是FSlateElementBatcher（ElementBatcher）--》FSlateDrawLayer（DrawLayer） - 》FElementBatchMap（LayerToElementBatches）。"
+				L"FSlateElementBatcher在执行DrawElement向FSlataElementBatch转换的过程中，挨个遍历DrawElement，然后挨个转换，把生成的FSlataElementBatch以及对应的Layer关系存储进DrawLayer的Map中。存储的层级关系是FSlateElementBatcher（ElementBatcher）--》FSlateDrawLayer（DrawLayer） - 》FElementBatchMap（LayerToElementBatches）。"
 
-L"以下是FElementBatchMap的定义："
+				L"以下是FElementBatchMap的定义："
 
-L"class FElementBatchMap\n"
-L"{\n"
-L"public:\n"
-L"FElementBatchMap()\n"
-L"{\n"
-L"Reset();"
-L"在每次开始转换之前会先向FElementBatchMap查找是否有可以和当前合并的DrawElement对应的FSlateElementBatch，即查找相似的FSlateElementBatch是否在map中已经存在；如果存在就会把之前的FSlateElementBatch返回，然后再FSlateElementBatch对应的BatchData中拼接Vertices和Indices；从而完成合并DC的过程。"
+				L"class FElementBatchMap\n"
+				L"{\n"
+				L"public:\n"
+				L"FElementBatchMap()\n"
+				L"{\n"
+				L"Reset();"
+				L"在每次开始转换之前会先向FElementBatchMap查找是否有可以和当前合并的DrawElement对应的FSlateElementBatch，即查找相似的FSlateElementBatch是否在map中已经存在；如果存在就会把之前的FSlateElementBatch返回，然后再FSlateElementBatch对应的BatchData中拼接Vertices和Indices；从而完成合并DC的过程。"
 
-L"查找相似的FSlateElementBatch的过程如下以Simage的控件示例："
+				L"查找相似的FSlateElementBatch的过程如下以Simage的控件示例："
 
-L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
-L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
+				L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
+				L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
 
-L"FSlateElementBatch* ElementBatch = (*ElementBatches)->FindByKey(TempBatch);"
+				L"FSlateElementBatch* ElementBatch = (*ElementBatches)->FindByKey(TempBatch);"
 
-L"然后从BatchData中找出FSlateElementBatch对应的FSlateVertexArray和FSlateIndexArray进行拼接 如下 ："
+				L"然后从BatchData中找出FSlateElementBatch对应的FSlateVertexArray和FSlateIndexArray进行拼接 如下 ："
 
-L"FSlateElementBatch& ElementBatch = FindBatchForElement(Layer, FShaderParams(), Resource, ESlateDrawPrimitive::TriangleList, ESlateShader::Default, InDrawEffects, DrawFlags, DrawElement.GetScissorRect(), DrawElement.GetSceneIndex());"
-L"FSlateVertexArray& BatchVertices = BatchData->GetBatchVertexList(ElementBatch);"
-L"FSlateIndexArray& BatchIndices = BatchData->GetBatchIndexList(ElementBatch);"
+				L"FSlateElementBatch& ElementBatch = FindBatchForElement(Layer, FShaderParams(), Resource, ESlateDrawPrimitive::TriangleList, ESlateShader::Default, InDrawEffects, DrawFlags, DrawElement.GetScissorRect(), DrawElement.GetSceneIndex());"
+				L"FSlateVertexArray& BatchVertices = BatchData->GetBatchVertexList(ElementBatch);"
+				L"FSlateIndexArray& BatchIndices = BatchData->GetBatchIndexList(ElementBatch);"
 
-L"总结查找合并DC的条件 首先Layer相同，其次根据DrawElement生成的FSlateElementBatch相同"
-L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
-L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
+				L"总结查找合并DC的条件 首先Layer相同，其次根据DrawElement生成的FSlateElementBatch相同"
+				L"// Create a temp batch so we can use it as our key to find if the same batch already exists "
+				L"FSlateElementBatch TempBatch(InTexture, ShaderParams, ShaderType, PrimitiveType, DrawEffects, DrawFlags, ScissorRect, 0, 0, nullptr, SceneIndex);"
 
-L"总结最后的对应关系 ："
-L"DrawElement（Draw的前期执行Paint和OnPaint生成，存储在WindowsList上）对应RHI过程生成layer 多对一"
+				L"总结最后的对应关系 ："
+				L"DrawElement（Draw的前期执行Paint和OnPaint生成，存储在WindowsList上）对应RHI过程生成layer 多对一"
 
-L"RHI过程生成的Layer和FSlateElementBatch为一对多的关系"
+				L"RHI过程生成的Layer和FSlateElementBatch为一对多的关系"
 
-L"DrawElement与RHI生成的FSlateElementBatch为多对一的关系；这步会发生DC的合并"
+				L"DrawElement与RHI生成的FSlateElementBatch为多对一的关系；这步会发生DC的合并"
 
-L"FSlateElementBatch与RHI中添加到FSlateBatchData中的FSlateVertexArray和FSlateIndexArray是一对一的关系"
+				L"FSlateElementBatch与RHI中添加到FSlateBatchData中的FSlateVertexArray和FSlateIndexArray是一对一的关系"
 
-L"render线程上FRenderBatch对应layer中的每个FSlateElementBatch 一一对应的关系"
+				L"render线程上FRenderBatch对应layer中的每个FSlateElementBatch 一一对应的关系"
 
-L"总结合并UI DC的注意事项："
-L"1、整合Layer有利于合并DC但不能保证一定能合并DC"
-L"2、不同的控件在RHI过程生成FSlateElementBatch的时候使用不同的接口；不同控件之间能合并DC的概率并不大"
-L"3、相同的控件只有在layer相同，TextureResouce相同，FShaderParams相同， ESlateShader相同，DrawFlag等才能合并DC"
+				L"总结合并UI DC的注意事项："
+				L"1、整合Layer有利于合并DC但不能保证一定能合并DC"
+				L"2、不同的控件在RHI过程生成FSlateElementBatch的时候使用不同的接口；不同控件之间能合并DC的概率并不大"
+				L"3、相同的控件只有在layer相同，TextureResouce相同，FShaderParams相同， ESlateShader相同，DrawFlag等才能合并DC"
 
-L"最后说下感想；看代码就像看文章，看的次数越多理解的越多。代码虐我千百遍我待代码如初恋！";
+				L"最后说下感想；看代码就像看文章，看的次数越多理解的越多。代码虐我千百遍我待代码如初恋！";
 
 
 
@@ -614,20 +641,37 @@ L"最后说下感想；看代码就像看文章，看的次数越多理解的越
 
 			text_renderer->render_text(2, 700, words, wcslen(words), window_w, cameras[0]);
 			text_renderer->render(cameras[0]);
-
+			rmt_EndCPUSample();
 
 			// g_script_manager->call("debug_draw");
+			rmt_BeginCPUSample(render_imgui,0);
 			ImGui::Render();
+			rmt_EndCPUSample();
+
+			rmt_BeginCPUSample(audio_update,0);
 			g_audio_manager->Update();
+			rmt_EndCPUSample();
 
 			lastTime = curTime;
+			rmt_BeginCPUSample(get_time, RMTSF_Aggregate);
 			clock->update();
+			rmt_EndCPUSample();
 			// g_sound_palyer->update();
 
+			rmt_BeginCPUSample(swap_buffer_cpu, 0);
+			rmt_BeginOpenGLSample(swap_buffer_gpu);
 			glfwSwapBuffers(window);
+			rmt_EndOpenGLSample();
+			rmt_EndCPUSample();
+
+			rmt_BeginCPUSample(handle_input, RMTSF_Aggregate);
 			g_input_manager->clear_states();
 			// for glfw
 			g_input_manager->clear_scroller();
+			rmt_EndCPUSample();
+
+			rmt_EndCPUSample();
+
 		}
 		else 
 		{
@@ -637,12 +681,15 @@ L"最后说下感想；看代码就像看文章，看的次数越多理解的越
 			usleep(0);
 #endif
 		}
-	}
 
-}
+
+		}
+
+	}
 
 GLFWApp::~GLFWApp()
 {
+	RemoteryProfiler::shutdown();
 	imgui_renderer->imgui_shutdown();
 	g_physics_manager->shutdown();
 	g_script_manager->shutdown();

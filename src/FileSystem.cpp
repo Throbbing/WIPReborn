@@ -28,6 +28,22 @@ bool end_with (std::string const &fullString, std::string const &ending)
     }
 }
 
+void split(const std::string& s, const std::string& delim, std::vector< std::string >& ret)
+{
+	size_t last = 0;
+	size_t index = s.find_first_of(delim, last);
+	while (index != std::string::npos)
+	{
+		ret.push_back(s.substr(last, index - last));
+		last = index + 1;
+		index = s.find_first_of(delim, last);
+	}
+	if (index - last > 0)
+	{
+		ret.push_back(s.substr(last, index - last));
+	}
+}
+
 bool WIPFileSystem::set_current_dir(const std::string &path_name) 
 {
 #ifdef _WIN32
@@ -221,13 +237,63 @@ bool WIPFileSystem::is_absolute_path(const std::string& path_name)
 
     if (path[0] == '/')
         return true;
-/*
+
 #ifdef _WIN32
-    if (path.Length() > 1 && IsAlpha(path[0]) && path[1] == ':')
+    if (path.length() > 1 && (
+		(path[0] >= 0x61 && path[0] <= 0x7a) || (path[0]>=0x41&&path[0]<=0x5a)
+		) && path[1] == ':')
         return true;
 #endif
-*/
+
     return false;
+}
+
+std::string WIPFileSystem::get_relative_path(const std::string &path_name)
+{
+	if (!is_absolute_path(path_name))
+		return path_name;
+	string cur_path = remove_trailing_slash( get_current_dir());
+	string path_name_c = remove_trailing_slash(path_name);
+
+	if (cur_path[0] != path_name_c[0])
+		return path_name;
+
+	vector<string> ret_cur;
+	vector<string> ret_path;
+
+	split(cur_path, "/", ret_cur);
+	split(path_name_c, "/", ret_path);
+
+	bool in = false;
+	if (ret_cur[0] == ret_path[0])
+		in = true;
+	int i = 0;
+	vector<string>& use = ret_path.size() > ret_cur.size() ? ret_cur: ret_path;
+	for (i = 0; i < use.size(); ++i)
+	{
+		if (ret_cur[i] != ret_path[i])
+		{
+			break;
+		}
+	}
+	i--;
+	string pre = "";
+	int remain = ret_cur.size() - i - 1;
+	if (remain > 0)
+	{
+		for (int k = 0; k < remain;k++)
+			pre += "../";
+	}
+
+	for (int k = i + 1; k < ret_path.size();++k)
+	{
+		pre += ret_path[k];
+		pre += '/';
+	}
+
+
+
+	return pre;
 }
 
 std::string WIPFileSystem::get_internal_path(const std::string& path_name)

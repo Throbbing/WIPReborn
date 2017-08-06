@@ -270,6 +270,10 @@ void GLDynamicRHI::init() {
 	_debug_shader = 0;
 	_bound_shader = 0;
 
+	_cur_ib = nullptr;
+	_cur_vb = nullptr;
+	_cur_vf = nullptr;
+
 	const GLubyte *name = glGetString(GL_VENDOR);
 	const GLubyte *biaoshifu = glGetString(GL_RENDERER);
 	const GLubyte *OpenGLVersion = glGetString(GL_VERSION);
@@ -532,8 +536,11 @@ void GLDynamicRHI::set_shader(const WIPBoundShader *shader) {
 		glUseProgram(0);
 		return;
 	}
+	
 	void *s = shader->get_rhi_resource();
 	GLuint id1 = *((GLuint *)(s));
+	if (_bound_shader == id1)
+		return;
 	glUseProgram(id1);
 	_bound_shader = id1;
 }
@@ -550,8 +557,10 @@ unsigned int vf_map_size[VertexType::E_TOTAL] =
 	sizeof(unsigned int)
 };
 
-void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf) const 
+void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf) 
 {
+	if (_cur_vf == vf)
+		return;
 	int tn = vf->total_count;
 	int off = 0;
 	for (int i = 0; i < vf->elements.size(); ++i) {
@@ -562,24 +571,35 @@ void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf) const
 		glEnableVertexAttribArray(i);
 		off += vf->elements[i].count;
 	}
+	_cur_vf = vf;
 }
-void GLDynamicRHI::set_vertex_buffer(const WIPVertexBuffer *vb) const {
+void GLDynamicRHI::set_vertex_buffer(const WIPVertexBuffer *vb) 
+{
+	if (_cur_vb == vb)
+		return;
 	if (!vb)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	void *s = vb->get_rhi_resource();
 	GLuint id1 = *((GLuint *)(s));
 	glBindBuffer(GL_ARRAY_BUFFER, id1);
+	_cur_vb = vb;
 	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO1);
 }
-void GLDynamicRHI::set_index_buffer(const WIPIndexBuffer *ib) const {
+void GLDynamicRHI::set_index_buffer(const WIPIndexBuffer *ib) 
+{
+	if (ib == _cur_ib)
+		return;
 	if (!ib)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	void *s = ib->get_rhi_resource();
 	GLuint id1 = *((GLuint *)(s));
 	// glBindBuffer(GL_ARRAY_BUFFER, VBO1);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id1);
+	_cur_ib = ib;
 }
-void GLDynamicRHI::draw_triangles(int index_count, int offset_add) const{
+
+void GLDynamicRHI::draw_triangles(int index_count, int offset_add) const
+{
 	// glDrawElements(GL_TRIANGLES, vertex_count, GL_UNSIGNED_INT, (void*)offset);
 	glDrawElementsBaseVertex(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, 0,
 		offset_add);

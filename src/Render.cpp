@@ -1,5 +1,7 @@
 #include "Render.h"
 
+#include "RemoteryProfiler.h"
+
 #ifdef USE_D3D11
 #include "D3D11/D3D11RHI.h"
 #else
@@ -78,6 +80,8 @@ void WorldRender::set_world(const WIPScene* scene)
 }
 void WorldRender::render(const WIPCamera* cam)
 {
+	rmt_ScopedOpenGLSample(WorldRender);
+
 	if (!scene_ref)
 		return;
 	g_rhi->set_vertex_buffer(vertex_buffer);
@@ -505,6 +509,7 @@ void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int max
 
 void TextRender::render(const WIPCamera* cam)
 {
+	rmt_ScopedOpenGLSample(text_render);
 	g_rhi->update_texture(text_lut_buffer, text_cache);
 	void* p = g_rhi->lock_vertex_buffer(vb);
 	memcpy(p, text_vertex_buffer, text_to_render* sizeof(f32) * 16);

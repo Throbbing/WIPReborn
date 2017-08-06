@@ -81,7 +81,7 @@ public:
   //Return whether a path is absolute.
   static bool is_absolute_path(const std::string &pathName);
 
-
+  std::string get_relative_path(const std::string &pathName);
 };
 
 

@@ -74,9 +74,9 @@ public:
 	virtual void set_uniform_texture(const char* uniform_name,int loc,const WIPBaseTexture* texture)=0;
 	virtual void set_uniform_texture(const char* uniform_name, int loc, const WIPRenderTexture2D* texture) = 0;
 	virtual void set_shader(const WIPBoundShader* shader)=0;
-	virtual void set_vertex_format(const WIPVertexFormat* vf) const=0;
-	virtual void set_vertex_buffer(const WIPVertexBuffer* vb) const=0;
-	virtual void set_index_buffer(const WIPIndexBuffer* ib) const=0;
+	virtual void set_vertex_format(const WIPVertexFormat* vf) =0;
+	virtual void set_vertex_buffer(const WIPVertexBuffer* vb) =0;
+	virtual void set_index_buffer(const WIPIndexBuffer* ib) =0;
 	virtual void draw_triangles(int count,int offset)const=0;
 	virtual void enable_depth_test()const = 0;
 	virtual void disable_depth_test()const = 0;
@@ -179,6 +179,66 @@ public:
 	WIPBoundShader* bound_shader;
 	WIPBoundShader* bound_shader_pic;
 
+};
+
+class SimpleWorldRender : public WIPRender
+{
+public:
+	virtual void init(const WIPCamera* cam = nullptr);
+	void set_world(const WIPScene* scene);
+	virtual void render(const WIPCamera* cam);
+	virtual void destroy();
+	void culling(const WIPCamera* cam);
+	int _pack_sprites_blend(void *mem, int n, int offset_n, const WIPCamera& cam, bool& change_texture);
+	int _pack_sprites_opaque(void *mem, int n, int offset_n, const WIPCamera& cam, bool& change_texture);
+	/*
+	03
+	12
+	*/
+	void _pack_index(void *mem, int n)
+	{
+		unsigned int* p = (unsigned int*)mem;
+		unsigned int s[6];
+		int k = -1;
+		int off = 0;
+		while (n--)
+		{
+			++k;
+			s[0] = 0 + off;
+			s[1] = 1 + off;
+			s[2] = 3 + off;
+			s[3] = 1 + off;
+			s[4] = 2 + off;
+			s[5] = 3 + off;
+			off += 4;
+			memcpy(p, s, 6 * sizeof(unsigned int));
+			p += 6;
+		}
+	}
+	static bool comp_less(const WIPSprite* lhs, const WIPSprite* rhs);
+	static bool comp_greater(const WIPSprite* lhs, const WIPSprite* rhs);
+	void sort_by_texture();
+	void sort_by_zorder();
+	WIPIndexBuffer* index_buffer;
+	WIPVertexBuffer* vertex_buffer;
+	WIPVertexFormat* vertex_format;
+
+	const WIPScene* scene_ref;
+
+	int vertex_buffer_size;
+	//maybe use for multithread!
+	unsigned char* cpu_vertex_buffer;
+
+	vector<const WIPSprite*> opaque_objects;
+	vector<const WIPSprite*> blend_objects;
+
+	float* pack_mem;
+
+	WIPTexture2D* _pre_texture;
+
+	class WIPBoundShader* bound_shader_opaque;
+	class WIPBoundShader* bound_shader_translucent;
+	class WIPBoundShader* bound_shader_mask;
 };
 
 class WorldRender : public WIPRender

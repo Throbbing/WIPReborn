@@ -178,11 +178,11 @@ public:
 
 	virtual void set_shader(const WIPBoundShader* shader);
 	
-	virtual void set_vertex_format(const WIPVertexFormat* vf) const;
+	virtual void set_vertex_format(const WIPVertexFormat* vf) ;
 	
-	virtual void set_vertex_buffer(const WIPVertexBuffer* vb) const;
+	virtual void set_vertex_buffer(const WIPVertexBuffer* vb) ;
 	
-	virtual void set_index_buffer(const WIPIndexBuffer* ib) const;
+	virtual void set_index_buffer(const WIPIndexBuffer* ib) ;
 	
 	virtual void draw_triangles(int vertex_count,int offset_add) const;
 
@@ -218,4 +218,8 @@ private:
 	WIPVertexBuffer* _debug_vb;
 	WIPIndexBuffer* _debug_ib;
 	WIPVertexFormat* _debug_vf;
+
+	const WIPVertexBuffer* _cur_vb;
+	const WIPIndexBuffer* _cur_ib;
+	const WIPVertexFormat* _cur_vf;
 };
