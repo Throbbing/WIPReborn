@@ -38,6 +38,7 @@ INCLUDE_DIRECTORIES(
 	src/thirdpart
 	src/Platform
 	src/flyUI
+	src/SoftR
 	libs/glfw/include/GLFW
 	src/thirdpart/glad/include/glad
 	src/thirdpart/glad/include/KHR
@@ -75,12 +76,15 @@ AUX_SOURCE_DIRECTORY(src/thirdpart/imgui DIR_IMGUI)
 
 AUX_SOURCE_DIRECTORY(src/thirdpart/Remotery/lib DIR_REMOTERY)
 
+AUX_SOURCE_DIRECTORY(src/SoftR DIR_SOFTR)
+
 list( APPEND DIR_SRCS ${DIR_SRCS_BOX2D})
 list( APPEND DIR_SRCS ${DIR_SRCS_LIB_GLAD})
 list( APPEND DIR_SRCS ${RHI_SRC})
 list( APPEND DIR_SRCS ${DIR_UI})
 list( APPEND DIR_SRCS ${DIR_IMGUI})
 list( APPEND DIR_SRCS ${DIR_REMOTERY})
+list( APPEND DIR_SRCS ${DIR_SOFTR})
 MESSAGE(STATUS "${DIR_SRCS}")
 
 IF (WIN32)
@@ -141,6 +145,7 @@ IF(MSVC)
 	SOURCE_GROUP("box2d" FILES ${DIR_SRCS_BOX2D})
 	SOURCE_GROUP("ui" FILES ${DIR_UI})
 	SOURCE_GROUP("glad" FILES ${DIR_SRCS_LIB_GLAD})
+	SOURCE_GROUP("SoftR" FILES ${DIR_SOFTR})
 ENDIF()
 
 

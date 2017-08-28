@@ -28,9 +28,9 @@ public:
 	/*close system */
 	void shutdown();
 
-	void debug_log(unsigned int flags,char* content,...);
-	void debug_print(unsigned int flags,char* content,...);
-	void debug(unsigned int flags,char* content,...);
+	void debug_log(unsigned int flags,const char* content,...);
+	void debug_print(unsigned int flags,const char* content,...);
+	void debug(unsigned int flags,const char* content,...);
 	void new_log();
 	void flush();
 

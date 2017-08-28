@@ -85,7 +85,7 @@ void WIPLogger::parse_flags(unsigned int flag)
 	}
 }
 
-void WIPLogger::debug_log(unsigned int flags,char* buffer,...)
+void WIPLogger::debug_log(unsigned int flags,const char* buffer,...)
 {		
 	if(!m_initialized)
 		return;
@@ -109,7 +109,7 @@ void WIPLogger::debug_log(unsigned int flags,char* buffer,...)
 
 	
 }
-void WIPLogger::debug_print(unsigned int flags,char* buffer,...)
+void WIPLogger::debug_print(unsigned int flags,const char* buffer,...)
 {
 	parse_flags(flags);
 	printf(_current_line.data());
@@ -150,7 +150,7 @@ void WIPLogger::new_log()
 	
 }
 
-void WIPLogger::debug( unsigned int flags,char* buffer,... )
+void WIPLogger::debug( unsigned int flags,const char* buffer,... )
 {
 	parse_flags(flags);
 	printf(_current_line.data());
