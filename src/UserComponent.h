@@ -143,29 +143,7 @@ public:
 			man->translate_to(old_pos.x, old_pos.y);
 		}
 	}
-	void init()
-	{
-		
-		pre_clip = nullptr;
-		bg = host_object;
-		old_pos = RBVector2::zero_vector;
-		grid = new MapGrid(bg, 100);
-		grid->load_mask_data("./a.mask");
-		draw_debug = false;
-		newpx = 0;
-		newpy = 0;
-		fog_dir = RBVector2(1.f, 1.f);
-		fog_dir.normalize();
-
-		g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
-		g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
-		sound = g_audio_manager->CreateSound("event:/bgm");
-		g_audio_manager->Play(sound);
-
-		edit_mode = false;
-		gsize = 0;
-		
-	}
+  void init();
 	void destroy()
 	{
 		delete grid;
@@ -218,4 +196,9 @@ public:
 	bool edit_mode;
 
 	int gsize;
+
+  //test event system
+  class IMButton* imbt;
+  class A* a;
+  class B* b;
 };

@@ -44,13 +44,9 @@ void SrPipeline::draw(const SrBufferVertex & vertex_buffer, const SrBufferIndex 
 	rmt_EndCPUSample();//TS
 	_profler.set_end("TS"); 
 	
-
+  _profler.set_begin();
+  rmt_BeginCPUSample(thread_wait, 0);
 	s1.finish_all_pass();
-
-	
-
-	_profler.set_begin();
-	rmt_BeginCPUSample(thread_wait,0);
 	int f1 = s1.wait();
 	rmt_EndCPUSample();//thread wait
 	_profler.set_end("WAIT");

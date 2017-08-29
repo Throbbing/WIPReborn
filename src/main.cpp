@@ -5,7 +5,7 @@
 #include "Platform/GLFWApp.h"
 
 int main(int argc,char** argv)
-{
+{  
 	//can change app according command args 
 	//if defined USE_D3D on windows
 	//linux noly glfw.

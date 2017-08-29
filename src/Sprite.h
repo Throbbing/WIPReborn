@@ -8,7 +8,7 @@
 #include "Box2D/Box2D.h"
 
 //message dispatch
-class WIPObject
+class WIPObject1
 {
 public:
 
@@ -141,7 +141,7 @@ private:
 };
 
 //system component
-class WIPComponent : public WIPObject
+class WIPComponent : public WIPObject1
 {
 public:
 	WIPComponent(class WIPSprite* s);
@@ -489,7 +489,7 @@ public:
 
 class WIPScene;
 
-class WIPSprite : public WIPObject
+class WIPSprite : public WIPObject1
 {
 public:
 	static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY,f32 sx=1.f,f32 sy=1.f)
