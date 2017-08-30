@@ -200,7 +200,10 @@ public:
   //test event system
   class IMButton* imbt;
   class A* a;
+  class A* a1;
   class B* b;
   class IMMainMenuBar* main_bar;
   class IMCheckBox* cb;
+
+  string_hash component_update;
 };

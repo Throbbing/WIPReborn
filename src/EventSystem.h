@@ -8,10 +8,18 @@ class WIPObject;
 class EventReceivers
 {
 public:
+  struct EventReceiver
+  {
+    EventReceiver(WIPObject* o, int prior):
+      priority(prior), object(o){}
+    int priority;
+    WIPObject* object;
+  };
   EventReceivers();
-  void add_receiver(WIPObject* object);
+  void add_receiver(WIPObject* object,int priority=-1);
   void remove_receiver(WIPObject* object);
-  std::vector<WIPObject*> receivers_;
+  std::vector<EventReceiver> receivers_;
+
 };
 
 class EventManager
@@ -23,8 +31,8 @@ public:
   std::map<WIPObject*, std::map<string_hash, EventReceivers*> > sender_event_receivers_;
   std::vector<WIPObject*> senders_;
   //add receiver who receives no sender events
-  void add_event_receiver(WIPObject* receiver, string_hash event_type);
-  void add_event_receiver(WIPObject* receiver, WIPObject* sender, string_hash event_type);
+  void add_event_receiver(WIPObject* receiver, string_hash event_type, int priority=-1);
+  void add_event_receiver(WIPObject* receiver, WIPObject* sender, string_hash event_type, int priority=-1);
   /// Return event receivers for a sender and event type, or null if they do not exist.
   EventReceivers* get_event_receivers(WIPObject* sender, string_hash eventType)
   {

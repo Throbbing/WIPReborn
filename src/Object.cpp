@@ -24,7 +24,7 @@ unsigned get_string_hash(const char* str)
   return hash;
 }
 
-void WIPObject::subscribe_event(string_hash evt_tp, EventHandlerBase* handler)
+void WIPObject::subscribe_event(string_hash evt_tp, EventHandlerBase* handler, int priority)
 {
   if (!handler)
     return;
@@ -38,12 +38,12 @@ void WIPObject::subscribe_event(string_hash evt_tp, EventHandlerBase* handler)
   else
   {
     _event_handlers.push_front(handler);
-    EventManager::get_instance()->add_event_receiver(this, evt_tp);
+    EventManager::get_instance()->add_event_receiver(this, evt_tp,priority);
   }
 
 }
 
-void WIPObject::subscribe_event(WIPObject* sender, string_hash evt_tp, EventHandlerBase* handler)
+void WIPObject::subscribe_event(WIPObject* sender, string_hash evt_tp, EventHandlerBase* handler, int priority)
 {
   if (!sender || !handler)
   {
@@ -61,7 +61,7 @@ void WIPObject::subscribe_event(WIPObject* sender, string_hash evt_tp, EventHand
   else
   {
     _event_handlers.push_front(handler);
-    EventManager::get_instance()->add_event_receiver(this, sender, evt_tp);
+    EventManager::get_instance()->add_event_receiver(this, sender, evt_tp,priority);
   }
 }
 
@@ -74,7 +74,7 @@ void WIPObject::send_event(string_hash event_type, void* event_data)
     size_t size = group->receivers_.size();
     for (size_t i = 0; i < size; ++i)
     {
-      WIPObject* rec = group->receivers_[i];
+      WIPObject* rec = group->receivers_[i].object;
       // Holes may exist if receivers removed during send
       if (!rec)
         continue;
@@ -92,7 +92,7 @@ void WIPObject::send_event(string_hash event_type, void* event_data)
       size_t size = group->receivers_.size();
       for (size_t i = 0; i < size; ++i)
       {
-        WIPObject* rec = group->receivers_[i];
+        WIPObject* rec = group->receivers_[i].object;
         // Holes may exist if receivers removed during send
         if (!rec)
           continue;
@@ -104,7 +104,7 @@ void WIPObject::send_event(string_hash event_type, void* event_data)
       size_t size = group->receivers_.size();
       for (size_t i = 0; i < size; ++i)
       {
-        WIPObject* rec = group->receivers_[i];
+        WIPObject* rec = group->receivers_[i].object;
 
         if (!rec || processed.find(rec) != processed.end())
         {

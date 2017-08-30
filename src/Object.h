@@ -206,8 +206,8 @@ public:
 
 
   //void send_event(const WIPObject* sender,WIPEvent evt);
-  void subscribe_event(string_hash evt_tp, EventHandlerBase* handler);
-  void subscribe_event(WIPObject* sender, string_hash evt_tp, EventHandlerBase* handler);
+  void subscribe_event(string_hash evt_tp, EventHandlerBase* handler,int priority=-1);
+  void subscribe_event(WIPObject* sender, string_hash evt_tp, EventHandlerBase* handler, int priority=-1);
 
   void unsubscribe_event(string_hash event_type){}
   void unsubscribe_event(WIPObject* sender, string_hash event_type){}

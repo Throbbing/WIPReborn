@@ -28,7 +28,10 @@ A::A()
 void A::push(string_hash tp, void* data)
 {
   IMButton::Param* p = static_cast<IMButton::Param*>(data);
-  printf("receive->Button hash:%u\nposition:(%d,%d)\n",p->name,p->position.x,p->position.y);
+  if (!p->pass && !is_type_of<A>())
+    return;
+  p->pass = false;
+  printf("A receive->Button hash:%u|position:(%d,%d)\n",p->name,p->position.x,p->position.y);
 
 }
 

@@ -73,6 +73,7 @@ void MapComponent::init()
   imbt = new IMButton("caonim");
   cb = new IMCheckBox("nimei",true);
   a = new A();
+  a1 = new A();
   b = new B();
   main_bar = new IMMainMenuBar();
   main_bar->add_menu_item("File", "Open..");
@@ -86,27 +87,26 @@ void MapComponent::init()
 
   a->subscribe_event(cb, get_string_hash("check_box_change"), WIP_EVENT_HANDLER_OUT(A, check_box, a));
   cb->signal_for_init();
-  a->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a));
-  b->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(B, push1, b));
+  a->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a),2);
+  a1->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a1), 2);
+  b->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(B, push1, b),1);
 
   b->subscribe_event(main_bar, get_string_hash("File.Open.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
   b->subscribe_event(main_bar, get_string_hash("File.Save.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
   b->subscribe_event(main_bar, get_string_hash("File.Import.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
   b->subscribe_event(main_bar, get_string_hash("Tools.Rendering Setting"), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
 
-  imbt->subscribe_event(this, get_string_hash("MapComponent Update"), WIP_EVENT_HANDLER_OUT(IMButton, update, imbt));
-  main_bar->subscribe_event(this, get_string_hash("MapComponent Update"), WIP_EVENT_HANDLER_OUT(IMMainMenuBar, update, main_bar));
-  cb->subscribe_event(this, get_string_hash("MapComponent Update"), WIP_EVENT_HANDLER_OUT(IMCheckBox, update, cb));
+  component_update = get_string_hash("MapComponent Update");
+
+  imbt->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMButton, update, imbt));
+  main_bar->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMMainMenuBar, update, main_bar));
+  cb->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMCheckBox, update, cb));
 
 }
 
 void MapComponent::update(f32 dt)
 {
-
-  //imbt->update();
-  //main_bar->update();
-  //cb->update();
-  send_event(get_string_hash("MapComponent Update"));
+  send_event(component_update);
 
 	//man->translate(dt*-0.1, 0);
 	float speed = 3.2f;

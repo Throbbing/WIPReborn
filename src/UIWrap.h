@@ -14,8 +14,11 @@ class IMButton : public WIPObject
 public:
   struct Param
   {
+    Param() :name(0), pass(true)
+    {}
     string_hash name;
     RBVector2I position;
+    bool pass;
   };
   WIPOBJECT(IMButton, WIPObject);
   IMButton(const char* name);
@@ -161,7 +164,11 @@ public:
   B(){}
   void push1(string_hash tp, void* data)
   {
-    printf("B recieved\n");
+    IMButton::Param* p = static_cast<IMButton::Param*>(data);
+    if (!p->pass)
+      return;
+    p->pass = false;
+    printf("B receive->Button hash:%u|position:(%d,%d)\n", p->name, p->position.x, p->position.y);
   }
   void handle_menu(string_hash tp, void* data)
   {
