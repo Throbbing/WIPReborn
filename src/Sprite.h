@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include "Box2D/Box2D.h"
+#include "Object.h"
 
 //message dispatch
 class WIPObject1
@@ -141,9 +142,10 @@ private:
 };
 
 //system component
-class WIPComponent : public WIPObject1
+class WIPComponent : public WIPObject
 {
 public:
+  WIPOBJECT(WIPComponent, WIPObject);
 	WIPComponent(class WIPSprite* s);
 	WIPComponent();
 	virtual ~WIPComponent() = 0;
@@ -156,6 +158,7 @@ public:
 class WIPTickComponent : public WIPComponent
 {
 public:
+  WIPOBJECT(WIPTickComponent, WIPComponent);
 	WIPTickComponent(class WIPSprite* host);
 	virtual ~WIPTickComponent() = 0;
 	virtual void init() = 0;
@@ -167,6 +170,7 @@ public:
 class WIPRenderComponent : public WIPComponent
 {
 public:
+  WIPOBJECT(WIPRenderComponent, WIPComponent);
 	~WIPRenderComponent(){}
 	WIPRenderComponent(float w,float h):mesh(w,h){}
 	WIPMaterial material;
@@ -182,6 +186,7 @@ public:
 class WIPAnimation : public WIPComponent
 {
 public:
+  WIPOBJECT(WIPAnimation, WIPComponent);
 	WIPAnimation() :_speed(1.f), _last_clip(nullptr){}
 	~WIPAnimation()
 	{
@@ -392,6 +397,7 @@ class WIPPhysicsManager;
 class WIPCollider:public WIPComponent
 {
 public:
+  WIPOBJECT(WIPCollider, WIPComponent);
 	enum _FrictionTypes
 	{
 		E_DYNAMIC = 1,
@@ -474,6 +480,7 @@ private:
 class WIPTransform : public WIPComponent
 {
 public:
+  WIPOBJECT(WIPTransform, WIPComponent);
 	~WIPTransform(){}
 	f32 world_x,world_y;
 	f32 z_order;
@@ -489,9 +496,10 @@ public:
 
 class WIPScene;
 
-class WIPSprite : public WIPObject1
+class WIPSprite : public WIPObject
 {
 public:
+  WIPOBJECT(WIPSprite,WIPObject);
 	static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY,f32 sx=1.f,f32 sy=1.f)
 	{
 		WIPSprite* ret = new WIPSprite();

@@ -201,4 +201,6 @@ public:
   class IMButton* imbt;
   class A* a;
   class B* b;
+  class IMMainMenuBar* main_bar;
+  class IMCheckBox* cb;
 };

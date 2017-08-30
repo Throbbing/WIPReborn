@@ -6,7 +6,7 @@ IMButton::IMButton(const char* name)
   name_ = get_string_hash(name);
 }
 
-void IMButton::update()
+void IMButton::update(string_hash tp, void* data)
 {
   if (ImGui::Button("a"))
   {
