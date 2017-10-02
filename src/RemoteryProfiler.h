@@ -15,7 +15,8 @@ public:
 	static void startup()
 	{
 		rmtSettings* settings = rmt_Settings();
-		settings->port = 1089;
+		if (settings)
+			settings->port = 1089;
 
 		if (RMT_ERROR_NONE != rmt_CreateGlobalInstance(&rmt)) 
 		{

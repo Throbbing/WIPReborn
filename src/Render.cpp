@@ -54,9 +54,8 @@ void WorldRender::init(const WIPCamera* cam )
 	vertex_format->add_float_vertex_attribute(2);
 
 	unsigned int indices[] = { 0, 1, 3, 1, 2, 3 };
-	index_buffer = g_rhi->RHICreateIndexBuffer(
-		6 * sizeof(unsigned int), indices,
-		BufferType::E_STATIC_DRAW);
+	index_buffer = g_rhi->RHICreateIndexBuffer(vertex_buffer_size/(11*sizeof(f32))*2* sizeof(unsigned int), 0,
+		BufferType::E_DYNAMIC_DRAW);
 	vertex_buffer = g_rhi->RHICreateVertexBuffer(
 		vertex_buffer_size, 0, BufferType::E_DYNAMIC_DRAW);
 
@@ -124,6 +123,8 @@ void WorldRender::render(const WIPCamera* cam)
 	g_rhi->set_blend_function();
 	g_rhi->set_depth_write(false);
 	_pre_texture = nullptr;
+	int draw_c = 0;
+	int draw_i = 0;
 	//render alpha
 	if (!blend_objects.empty())
 	{
@@ -143,6 +144,7 @@ void WorldRender::render(const WIPCamera* cam)
 				_pack_index(p, res - old_res);
 				g_rhi->unlock_index_buffer(index_buffer);
 				g_rhi->draw_triangles((res - old_res) * 6, 0);
+				draw_c += res - old_res;
 			}
 			if (change_t)
 			{
@@ -154,6 +156,7 @@ void WorldRender::render(const WIPCamera* cam)
 	g_rhi->set_depth_write(true);
 	opaque_objects.clear();
 	blend_objects.clear();
+	draw_c = 0;
 }
 void WorldRender::destroy()
 {
@@ -177,6 +180,8 @@ void WorldRender::culling(const WIPCamera* cam)
 	for (int i = 0; i < out_index.size(); ++i)
 	{
 		const WIPSprite* s = out_index[i];
+		if (!s->_render->is_visible)
+			continue;
 		if (s != pre)
 		{
 			if (s->_render->material.material_type == WIPMaterialType::E_OPAQUE)

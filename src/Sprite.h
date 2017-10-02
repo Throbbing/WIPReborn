@@ -9,11 +9,14 @@
 #include "Object.h"
 
 //message dispatch
+/*
 class WIPObject1
 {
 public:
 
 };
+*/
+
 
 
 enum class NormalType
@@ -151,7 +154,6 @@ public:
 	virtual ~WIPComponent() = 0;
 	class WIPSprite* host_object;
 	void set_host(class WIPSprite* ho);
-
 };
 
 //user component
@@ -172,9 +174,10 @@ class WIPRenderComponent : public WIPComponent
 public:
   WIPOBJECT(WIPRenderComponent, WIPComponent);
 	~WIPRenderComponent(){}
-	WIPRenderComponent(float w,float h):mesh(w,h){}
+	WIPRenderComponent(float w, float h) :mesh(w, h), is_visible(true){}
 	WIPMaterial material;
 	WIPMesh mesh;
+	bool is_visible;
 };
 
 #include "AnimationClip.h"

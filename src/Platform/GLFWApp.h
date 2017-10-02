@@ -21,6 +21,12 @@ public:
 
   virtual void run();
 
+  void init_rpg_demo();
+  void update_rpg_demo();
+
+  void init_tank_demo();
+  void update_tank_demo();
+
   bool init_gl(const char *title, int width, int height);
   bool create_window(const char *title) 
   {
@@ -52,6 +58,8 @@ private:
 	double lastTime;
 	double curTime;
 	float _frame;
+
+	//demo
 	class WIPTexture2D* tex2d;
 	class WIPTexture2D* tex2d1;
 	class WIPTexture2D* tex2d1mask;
@@ -72,6 +80,28 @@ private:
 	class WIPAnimationClip* clip3_s;
 	class WIPAnimationClip* pre_clip;
 
+	//demo tank
+	class WIPTexture2D* enemy_texture;
+	class WIPTexture2D* player_texture;
+	class WIPTexture2D* block_texture;
+	class WIPTexture2D* pop_texture;
+	class WIPTexture2D* bullet_texture;
+
+	class WIPAnimationClip* enemy_clip;
+	class WIPAnimationClip* player_clip;
+
+
+	class WIPAnimationClip* pop_clip;
+
+
+#define ANIMYNUM 10
+	WIPSprite* enemy[ANIMYNUM];
+	WIPSprite* block;
+	WIPSprite* player;
+	WIPSprite* pop[ANIMYNUM];
+	WIPSprite* bullets[ANIMYNUM];
+
+	//
 	class WorldRender* world_renderer;
 #define Text1
 #ifdef Text1

@@ -44,7 +44,7 @@ documented just below this comment.
 
 // Set to 0 to not include any bits of Remotery in your build
 #ifndef RMT_ENABLED
-#define RMT_ENABLED 1
+#define RMT_ENABLED 0
 #endif
 
 // Used by the Celtoys TinyCRT library (not released yet)

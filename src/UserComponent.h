@@ -207,3 +207,90 @@ public:
 
   string_hash component_update;
 };
+
+class EnemeyComponent : public WIPTickComponent
+{
+public:
+	enum class ManState
+	{
+		E_LEFT,
+		E_RIGHT,
+		E_UP, E_DOWN
+	};
+	WIPOBJECT(EnemeyComponent, WIPTickComponent);
+	EnemeyComponent(WIPSprite* s) :WIPTickComponent(s)
+	{
+		pre_clip = nullptr;
+		clip = nullptr;
+		blt = nullptr;
+	}
+	~EnemeyComponent(){}
+	virtual void init()
+	{
+		man_state = ManState::E_DOWN;
+		acc_t = 0.f;
+		cur_direction = RBMath::get_rand_range_i(0, 3);
+	}
+	virtual void update(f32 dt);
+	virtual void fix_update(f32 dt)
+	{
+
+	}
+	virtual void destroy()
+	{
+
+	}
+
+	ManState man_state;
+	WIPAnimationClip* pre_clip;
+	WIPAnimationClip* clip;
+
+	f32 acc_t;
+	int cur_direction;
+
+	WIPSprite* blt;
+};
+
+class PlayerComponent : public WIPTickComponent
+{
+public:
+	enum class ManState
+	{
+		E_LEFT,
+		E_RIGHT,
+		E_UP, E_DOWN
+	};
+	ManState man_state;
+	WIPOBJECT(PlayerComponent, WIPTickComponent);
+	PlayerComponent(WIPSprite* s) :WIPTickComponent(s)
+	{
+		pre_clip = nullptr;
+		clip = nullptr;
+		cam = nullptr;
+		blt = nullptr;
+	}
+
+	~PlayerComponent(){}
+	virtual void init()
+	{
+		man_state = ManState::E_DOWN;
+
+
+	}
+	virtual void update(f32 dt);
+
+	virtual void fix_update(f32 dt)
+	{
+
+	}
+	virtual void destroy()
+	{
+
+	}
+	WIPAnimationClip* pre_clip;
+	WIPAnimationClip* clip;
+	WIPCamera* cam;
+
+	WIPSprite* blt;
+};
+

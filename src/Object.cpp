@@ -154,3 +154,8 @@ void WIPObject::handle_event(WIPObject* sender, string_hash event_type, void* da
   }
 
 }
+
+
+//mem
+
+RBPoolAllctor* g_pool_allocator = RBPoolAllctor::instance();

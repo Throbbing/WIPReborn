@@ -22,9 +22,9 @@ void UnicodeToUTF_8(char* pOut, wchar_t* pText)
 	return;
 }
 
-char* get_utf8(wchar_t* text,char* buf)
+char* get_utf8(wchar_t* text, char* buf)
 {
-	for (int i = 0; i < wcslen(text);++i)
+	for (int i = 0; i < wcslen(text); ++i)
 	{
 		UnicodeToUTF_8(&buf[i * 3], &text[i]);
 	}
@@ -49,64 +49,64 @@ bool imgui_button_long(wchar_t* text)
 void MapComponent::init()
 {
 
-  pre_clip = nullptr;
-  bg = host_object;
-  old_pos = RBVector2::zero_vector;
-  grid = new MapGrid(bg, 100);
-  grid->load_mask_data("./a.mask");
-  draw_debug = false;
-  newpx = 0;
-  newpy = 0;
-  fog_dir = RBVector2(1.f, 1.f);
-  fog_dir.normalize();
+	pre_clip = nullptr;
+	bg = host_object;
+	old_pos = RBVector2::zero_vector;
+	grid = new MapGrid(bg, 100);
+	grid->load_mask_data("./a.mask");
+	draw_debug = false;
+	newpx = 0;
+	newpy = 0;
+	fog_dir = RBVector2(1.f, 1.f);
+	fog_dir.normalize();
 
-  g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
-  g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
-  sound = g_audio_manager->CreateSound("event:/bgm");
-  g_audio_manager->Play(sound);
+	g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
+	g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
+	sound = g_audio_manager->CreateSound("event:/bgm");
+	g_audio_manager->Play(sound);
 
-  edit_mode = false;
-  gsize = 0;
+	edit_mode = false;
+	gsize = 0;
 
-  
-  //test event
-  imbt = new IMButton("caonim");
-  cb = new IMCheckBox("nimei",true);
-  a = new A();
-  a1 = new A();
-  b = new B();
-  main_bar = new IMMainMenuBar();
-  main_bar->add_menu_item("File", "Open..");
-  main_bar->add_menu_item("File", "Save..");
-  main_bar->add_menu_item("File", "Import..");
-  main_bar->add_menu_item("Tools", "Material Editor");
-  main_bar->add_menu_item("Tools", "Rendering Setting");
-  main_bar->add_menu_item("Tools", "Camera Setting");
-  main_bar->add_menu_item("Help", "Help");
-  main_bar->add_menu_item("Debug", "Debug Tools");
 
-  a->subscribe_event(cb, get_string_hash("check_box_change"), WIP_EVENT_HANDLER_OUT(A, check_box, a));
-  cb->signal_for_init();
-  a->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a),2);
-  a1->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a1), 2);
-  b->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(B, push1, b),1);
+	//test event
+	imbt = new IMButton("caonim");
+	cb = new IMCheckBox("nimei", true);
+	a = new A();
+	a1 = new A();
+	b = new B();
+	main_bar = new IMMainMenuBar();
+	main_bar->add_menu_item("File", "Open..");
+	main_bar->add_menu_item("File", "Save..");
+	main_bar->add_menu_item("File", "Import..");
+	main_bar->add_menu_item("Tools", "Material Editor");
+	main_bar->add_menu_item("Tools", "Rendering Setting");
+	main_bar->add_menu_item("Tools", "Camera Setting");
+	main_bar->add_menu_item("Help", "Help");
+	main_bar->add_menu_item("Debug", "Debug Tools");
 
-  b->subscribe_event(main_bar, get_string_hash("File.Open.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
-  b->subscribe_event(main_bar, get_string_hash("File.Save.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
-  b->subscribe_event(main_bar, get_string_hash("File.Import.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
-  b->subscribe_event(main_bar, get_string_hash("Tools.Rendering Setting"), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
+	a->subscribe_event(cb, get_string_hash("check_box_change"), WIP_EVENT_HANDLER_OUT(A, check_box, a));
+	cb->signal_for_init();
+	a->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a), 2);
+	a1->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(A, push, a1), 2);
+	b->subscribe_event(imbt, get_string_hash("button_push"), WIP_EVENT_HANDLER_OUT(B, push1, b), 1);
 
-  component_update = get_string_hash("MapComponent Update");
+	b->subscribe_event(main_bar, get_string_hash("File.Open.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
+	b->subscribe_event(main_bar, get_string_hash("File.Save.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
+	b->subscribe_event(main_bar, get_string_hash("File.Import.."), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
+	b->subscribe_event(main_bar, get_string_hash("Tools.Rendering Setting"), WIP_EVENT_HANDLER_OUT(B, handle_menu, b));
 
-  imbt->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMButton, update, imbt));
-  main_bar->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMMainMenuBar, update, main_bar));
-  cb->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMCheckBox, update, cb));
+	component_update = get_string_hash("MapComponent Update");
+
+	imbt->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMButton, update, imbt));
+	main_bar->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMMainMenuBar, update, main_bar));
+	cb->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMCheckBox, update, cb));
 
 }
 
 void MapComponent::update(f32 dt)
 {
-  send_event(component_update);
+	send_event(component_update);
 
 	//man->translate(dt*-0.1, 0);
 	float speed = 3.2f;
@@ -206,7 +206,7 @@ void MapComponent::update(f32 dt)
 		}
 		char text[256];
 		memset(text, 0, 256);
-		ImGui::Text(get_utf8(L"鼠标左键绘制碰撞，鼠标右键擦除碰撞",text));
+		ImGui::Text(get_utf8(L"鼠标左键绘制碰撞，鼠标右键擦除碰撞", text));
 		ImGui::End();
 	}
 	fix_sprite_position(bg);
@@ -318,13 +318,13 @@ void MapComponent::update(f32 dt)
 
 	ImGui::InputText("UTF-8 input", buf, 1024);
 
-	
-	for (int i = 0,j=0; i < strlen(buf); i+=3,j++)
+
+	for (int i = 0, j = 0; i < strlen(buf); i += 3, j++)
 	{
 		UTF_8ToUnicode(&wbuf_out[j], &buf[i]);
 	}
-	
-	
+
+
 
 
 	text_renderer->render_text(0, 700, wbuf_out, wcslen(wbuf_out), 200, cam);
@@ -334,10 +334,219 @@ void MapComponent::update(f32 dt)
 
 
 
-	
+
 	if (imgui_button_short(L"编辑"))
 	{
 		edit_mode = !edit_mode;
 	}
 	//grid->clear_data();
+}
+
+
+void PlayerComponent::update(f32 dt)
+{
+	float speed = 5.2f;
+	if (Input::get_key_pressed(WIP_W))
+	{
+		host_object->translate(0, speed*dt);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		//cam->move(0,speed*dt);
+		man_state = ManState::E_UP;
+	}
+	else if (Input::get_key_pressed(WIP_A))
+	{
+		host_object->translate(-speed*dt, 0);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_LEFT;
+
+		//cam->move(-speed*dt, 0);
+	}
+	else if (Input::get_key_pressed(WIP_S))
+	{
+		host_object->translate(0, -speed*dt);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_DOWN;
+
+		//cam->move(0,-speed*dt);
+	}
+	else if (Input::get_key_pressed(WIP_D))
+	{
+		host_object->translate(speed*dt, 0);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_RIGHT;
+
+		//cam->move(speed*dt, 0);
+	}
+	f32 dd = 1.f;
+	f32 dx=0, dy=0;
+		{
+			switch (man_state)
+			{
+			case ManState::E_DOWN:
+				host_object->_animation->play_name("player_run", false);
+				host_object->rotate_to(DEG2RAD(180));
+				dy = -dd;
+				break;
+			case ManState::E_LEFT:
+				host_object->_animation->play_name("player_run", false);
+				host_object->rotate_to(DEG2RAD(90));
+				dx = -dd;
+				break;
+			case ManState::E_RIGHT:
+				host_object->_animation->play_name("player_run", false);
+				host_object->rotate_to(DEG2RAD(270));
+				dx = dd;
+				break;
+			case ManState::E_UP:
+				host_object->_animation->play_name("player_run", false);
+				host_object->rotate_to(DEG2RAD(0));
+				dy = dd;
+				break;
+			}
+
+		}
+
+		cam->move_to(host_object->_transform->world_x, host_object->_transform->world_y);
+		
+		cam->zoomout(Input::get_mouse_scroller()*0.1f);
+
+		static RBVector2 blt_d = RBVector2::zero_vector;
+		if (blt->_transform->world_x<-20 || blt->_transform->world_x>20 || blt->_transform->world_y>20 || blt->_transform->world_y<-20)
+		{ 
+			blt->_render->is_visible = false;
+		if (Input::get_key_pressed(WIP_J))
+		{ 
+			blt->translate_to(host_object->_transform->world_x+dx*2, host_object->_transform->world_y+dy*2);
+			blt_d.x = dx;
+			blt_d.y = dy;
+			blt->_render->is_visible = true;
+
+		}
+		}
+		else
+		{ 
+			f32 blt_speed = 0.5f;
+		blt->translate(blt_d.x*blt_speed,blt_d.y*blt_speed);
+		}
+
+		//blt->_animation->play_name("player_run", false);
+}
+
+void EnemeyComponent::update(f32 dt)
+{
+	float speed = 3.2f;
+	acc_t += dt;
+	static f32 fixt = 0.5f;
+	ImGui::SliderFloat("", &fixt, 0.5f, 2.5f);
+	if (acc_t > fixt)
+	{
+		cur_direction = RBMath::get_rand_range_i(0, 3);
+		acc_t = 0;
+	}
+	else
+	{
+		if (host_object->_transform->world_x > 20
+			)
+		{
+			host_object->translate_to(19, host_object->_transform->world_y);
+			cur_direction = RBMath::get_rand_range_i(0, 3);
+		}
+		if (host_object->_transform->world_x < -20)
+		{
+			host_object->translate_to(-19, host_object->_transform->world_y);
+			cur_direction = RBMath::get_rand_range_i(0, 3);
+		}
+		if (host_object->_transform->world_y > 20
+			)
+		{
+			host_object->translate_to(host_object->_transform->world_x,19);
+			cur_direction = RBMath::get_rand_range_i(0, 3);
+		}
+		if (host_object->_transform->world_y < -20)
+		{
+			host_object->translate_to(host_object->_transform->world_x,-19);
+			cur_direction = RBMath::get_rand_range_i(0, 3);
+		}
+	}
+
+	int d = cur_direction;
+	if (d==0)
+	{
+		host_object->translate(0, speed*dt);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		//cam->move(0,speed*dt);
+		man_state = ManState::E_UP;
+	}
+	else if (d==1)
+	{
+		host_object->translate(-speed*dt, 0);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_LEFT;
+
+		//cam->move(-speed*dt, 0);
+	}
+	else if (d==2)
+	{
+		host_object->translate(0, -speed*dt);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_DOWN;
+
+		//cam->move(0,-speed*dt);
+	}
+	else if (d==3)
+	{
+		host_object->translate(speed*dt, 0);
+		if (host_object->_animation->play_name("player_run", false))
+		{
+			pre_clip = clip;
+		}
+		man_state = ManState::E_RIGHT;
+
+		//cam->move(speed*dt, 0);
+	}
+
+		{
+			switch (man_state)
+			{
+			case ManState::E_DOWN:
+				host_object->rotate_to(DEG2RAD(180));
+
+				break;
+			case ManState::E_LEFT:
+				host_object->rotate_to(DEG2RAD(90));
+
+				break;
+			case ManState::E_RIGHT:
+				host_object->rotate_to(DEG2RAD(270));
+
+				break;
+			case ManState::E_UP:
+				host_object->rotate_to(DEG2RAD(0));
+
+				break;
+			}
+
+		}
+
 }

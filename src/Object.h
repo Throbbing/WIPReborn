@@ -176,13 +176,14 @@ private:
 class WIPObject
 {
 public:
+	static void* mem_header;
   virtual ~WIPObject()
   {
     unsubscribe_all_events();
   }
   WIPObject()
   {
-
+	  
   }
   virtual string_hash get_type() const = 0;
   virtual const std::string&  get_type_name() const = 0;
@@ -275,4 +276,11 @@ private:
 
   std::list<EventHandlerBase*> _event_handlers;
   typedef std::list<EventHandlerBase*> event_list_t;
+
+public:
+	void static_init();
 };
+
+#include "MemoryPool.h"
+
+extern RBPoolAllctor* g_pool_allocator;
