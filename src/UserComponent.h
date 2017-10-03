@@ -186,7 +186,7 @@ public:
 	
 
 	UIRender* ui_renderer;
-#define Text1
+//#define Text1
 #ifdef Text1
 	class LargeTexture_TextRender* text_renderer;
 #else
@@ -249,6 +249,8 @@ public:
 	int cur_direction;
 
 	WIPSprite* blt;
+
+	StudioSound* sound;
 };
 
 class PlayerComponent : public WIPTickComponent
@@ -292,5 +294,36 @@ public:
 	WIPCamera* cam;
 
 	WIPSprite* blt;
+
+	StudioSound* sound;
+
+	class TextRender* text_renderer;
 };
 
+class BulletComponent : public WIPTickComponent
+{
+public:
+	WIPOBJECT(BulletComponent, WIPTickComponent);
+	BulletComponent(WIPSprite* s) :WIPTickComponent(s)
+	{
+	}
+
+	~BulletComponent(){}
+	virtual void init()
+	{
+	}
+	virtual void update(f32 dt);
+
+	virtual void fix_update(f32 dt)
+	{
+
+	}
+	virtual void destroy()
+	{
+
+	}
+	RBVector2 v;
+	WIPSprite* pop_obj;
+	StudioSound* sound;
+	RBVector2 pos;
+};

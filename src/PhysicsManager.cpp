@@ -134,7 +134,7 @@ void  WIPPhysicsManager::update(WIPScene* scene,f32 dt)
 
 
 	_phy_space->Step(dt, velocityIterations, positionIterations);
-	_phy_space->DrawDebugData();
+	//_phy_space->DrawDebugData();
 
 
 	for (b2Body* b = _phy_space->GetBodyList(); b; b = b->GetNext())

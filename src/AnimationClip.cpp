@@ -4,6 +4,7 @@
 #include "ResourceManager.h"
 #include "IniHelper.h"
 #include "Logger.h"
+#include "Sprite.h"
 
 //tansform coord to lb
 bool read_animation_atlas_file(const char* file_name,int& total_frame,float **out_uvs,std::string& texture_name)
@@ -86,4 +87,18 @@ WIPAnimationClip* WIPAnimationClip::create_with_atlas(const char* name,const cha
 WIPAnimationClip::~WIPAnimationClip()
 {
 	delete[] _uvs;
+}
+
+WIPClipInstance::WIPClipInstance(WIPFrameBox* fb, const WIPAnimationClip* clip)
+	:frame_box_ref(fb), clip_ref(clip)
+{
+	speed = clip->_speed;
+	cur_dt = clip->_cur_dt;
+	cur_frame = clip->_cur_frame;
+	will_stop = clip->_will_stop;
+	bplaying = clip->bplaying;
+	bloop = clip->bloop;
+	stop_now = false;
+	cb = nullptr;
+	obj_ref = nullptr;
 }

@@ -2,6 +2,9 @@
 #include "UserComponent.h"
 #include "imgui.h"
 
+//object should belongs to a world not scene
+#include "GLFWApp.h"
+
 
 
 
@@ -390,69 +393,107 @@ void PlayerComponent::update(f32 dt)
 		//cam->move(speed*dt, 0);
 	}
 	f32 dd = 1.f;
-	f32 dx=0, dy=0;
+	f32 dx = 0, dy = 0;
+	{
+		switch (man_state)
 		{
-			switch (man_state)
-			{
-			case ManState::E_DOWN:
-				host_object->_animation->play_name("player_run", false);
-				host_object->rotate_to(DEG2RAD(180));
-				dy = -dd;
-				break;
-			case ManState::E_LEFT:
-				host_object->_animation->play_name("player_run", false);
-				host_object->rotate_to(DEG2RAD(90));
-				dx = -dd;
-				break;
-			case ManState::E_RIGHT:
-				host_object->_animation->play_name("player_run", false);
-				host_object->rotate_to(DEG2RAD(270));
-				dx = dd;
-				break;
-			case ManState::E_UP:
-				host_object->_animation->play_name("player_run", false);
-				host_object->rotate_to(DEG2RAD(0));
-				dy = dd;
-				break;
-			}
-
+		case ManState::E_DOWN:
+			host_object->_animation->play_name("player_run", false);
+			host_object->rotate_to(DEG2RAD(180));
+			dy = -dd;
+			break;
+		case ManState::E_LEFT:
+			host_object->_animation->play_name("player_run", false);
+			host_object->rotate_to(DEG2RAD(90));
+			dx = -dd;
+			break;
+		case ManState::E_RIGHT:
+			host_object->_animation->play_name("player_run", false);
+			host_object->rotate_to(DEG2RAD(270));
+			dx = dd;
+			break;
+		case ManState::E_UP:
+			host_object->_animation->play_name("player_run", false);
+			host_object->rotate_to(DEG2RAD(0));
+			dy = dd;
+			break;
 		}
 
-		cam->move_to(host_object->_transform->world_x, host_object->_transform->world_y);
-		
-		cam->zoomout(Input::get_mouse_scroller()*0.1f);
+	}
 
-		static RBVector2 blt_d = RBVector2::zero_vector;
-		if (blt->_transform->world_x<-20 || blt->_transform->world_x>20 || blt->_transform->world_y>20 || blt->_transform->world_y<-20)
-		{ 
-			blt->_render->is_visible = false;
+	cam->move_to(host_object->_transform->world_x, host_object->_transform->world_y);
+
+	cam->zoomout(Input::get_mouse_scroller()*0.1f);
+
+	static RBVector2 blt_d = RBVector2::zero_vector;
+	if (blt->_render->is_visible == false)
+	{
+		//blt->_render->is_visible = false;
 		if (Input::get_key_pressed(WIP_J))
-		{ 
-			blt->translate_to(host_object->_transform->world_x+dx*2, host_object->_transform->world_y+dy*2);
+		{
+			g_audio_manager->Play(sound);
+			blt->translate_to(host_object->_transform->world_x + dx * 1.5, host_object->_transform->world_y + dy * 1.5);
 			blt_d.x = dx;
 			blt_d.y = dy;
+			((BulletComponent*)blt->tick_components[0])->v = blt_d;
 			blt->_render->is_visible = true;
 
 		}
-		}
-		else
-		{ 
-			f32 blt_speed = 0.5f;
-		blt->translate(blt_d.x*blt_speed,blt_d.y*blt_speed);
-		}
+	}
+	else
+	{
 
-		//blt->_animation->play_name("player_run", false);
+	}
+	static int hp = 100;
+	for (b2ContactEdge* ce = host_object->_collider->get_body()->GetContactList(); ce; ce = ce->next)
+	{
+		b2Contact* c = ce->contact;
+		WIPSprite* s2 = (WIPSprite*)c->GetFixtureB()->GetBody()->GetUserData();
+		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
+		{
+			hp -= 10;
+			if (hp <= 0)
+			{
+				g_app->pending_objects(host_object);
+				return;
+			}
+		}
+		s2 = (WIPSprite*)c->GetFixtureA()->GetBody()->GetUserData();
+		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
+		{
+			hp -= 10;
+			if (hp <= 0)
+			{
+				g_app->pending_objects(host_object);
+				return;
+			}
+		}
+	}
+	//blt->_animation->play_name("player_run", false);
+
+	wchar_t words1[8]={0};
+	
+	wsprintfW(words1, L"HP:%d\n", hp);
+	
+	//std::wstring wbuf = string_to_wstring(buf);
+
+	text_renderer->render_text(20, 600, words1, wcslen(words1), 800, cam);
+	text_renderer->render(cam);
 }
 
 void EnemeyComponent::update(f32 dt)
 {
+	f32 dd = 1.f;
+	f32 dx = 0, dy = 0;
 	float speed = 3.2f;
 	acc_t += dt;
 	static f32 fixt = 0.5f;
+	int r = 0;
 	ImGui::SliderFloat("", &fixt, 0.5f, 2.5f);
 	if (acc_t > fixt)
 	{
 		cur_direction = RBMath::get_rand_range_i(0, 3);
+		r = RBMath::get_rand_i(8);
 		acc_t = 0;
 	}
 	else
@@ -471,18 +512,18 @@ void EnemeyComponent::update(f32 dt)
 		if (host_object->_transform->world_y > 20
 			)
 		{
-			host_object->translate_to(host_object->_transform->world_x,19);
+			host_object->translate_to(host_object->_transform->world_x, 19);
 			cur_direction = RBMath::get_rand_range_i(0, 3);
 		}
 		if (host_object->_transform->world_y < -20)
 		{
-			host_object->translate_to(host_object->_transform->world_x,-19);
+			host_object->translate_to(host_object->_transform->world_x, -19);
 			cur_direction = RBMath::get_rand_range_i(0, 3);
 		}
 	}
 
 	int d = cur_direction;
-	if (d==0)
+	if (d == 0)
 	{
 		host_object->translate(0, speed*dt);
 		if (host_object->_animation->play_name("player_run", false))
@@ -490,9 +531,10 @@ void EnemeyComponent::update(f32 dt)
 			pre_clip = clip;
 		}
 		//cam->move(0,speed*dt);
+		dy = -dd;
 		man_state = ManState::E_UP;
 	}
-	else if (d==1)
+	else if (d == 1)
 	{
 		host_object->translate(-speed*dt, 0);
 		if (host_object->_animation->play_name("player_run", false))
@@ -500,27 +542,29 @@ void EnemeyComponent::update(f32 dt)
 			pre_clip = clip;
 		}
 		man_state = ManState::E_LEFT;
-
+		dx = -dd;
 		//cam->move(-speed*dt, 0);
 	}
-	else if (d==2)
+	else if (d == 2)
 	{
 		host_object->translate(0, -speed*dt);
 		if (host_object->_animation->play_name("player_run", false))
 		{
 			pre_clip = clip;
 		}
+		dx = dd;
 		man_state = ManState::E_DOWN;
 
 		//cam->move(0,-speed*dt);
 	}
-	else if (d==3)
+	else if (d == 3)
 	{
 		host_object->translate(speed*dt, 0);
 		if (host_object->_animation->play_name("player_run", false))
 		{
 			pre_clip = clip;
 		}
+		dy = dd;
 		man_state = ManState::E_RIGHT;
 
 		//cam->move(speed*dt, 0);
@@ -548,5 +592,61 @@ void EnemeyComponent::update(f32 dt)
 			}
 
 		}
+		static RBVector2 blt_d = RBVector2::zero_vector;
+		if (blt->_render->is_visible == false)
+		{
 
+			if (r >= 4)
+			{
+				//g_audio_manager->Play(sound);
+				blt->translate_to(host_object->_transform->world_x + dx * 1.5, host_object->_transform->world_y + dy * 1.5);
+				blt_d.x = dx;
+				blt_d.y = dy;
+				((BulletComponent*)blt->tick_components[0])->v = blt_d;
+				blt->_render->is_visible = true;
+			}
+
+		}
+		for (b2ContactEdge* ce = host_object->_collider->get_body()->GetContactList(); ce; ce = ce->next)
+		{
+			b2Contact* c = ce->contact;
+			WIPSprite* s2 = (WIPSprite*)c->GetFixtureB()->GetBody()->GetUserData();
+			if (s2->get_tag() == "bullet")
+			{
+				g_app->pending_objects(host_object);
+				return;
+			}
+		}
+}
+
+void BulletComponent::update(f32 dt)
+{
+	int i = host_object->_collider->get_collision_list_size();
+	if (i > 0)
+	{
+		g_audio_manager->Play(sound);
+		pop_obj->_render->is_visible = true;
+		pop_obj->translate_to(host_object->_transform->world_x, host_object->_transform->world_y);
+		pop_obj->_animation->play_name("pop", false);
+
+		host_object->_render->is_visible = false;
+		v = RBVector2::zero_vector;
+		host_object->translate_to(pos.x, pos.y);
+	}
+	else
+		host_object->_render->is_visible = true;
+
+	if (host_object->_transform->world_x < -20 || host_object->_transform->world_x>20 || host_object->_transform->world_y > 20 || host_object->_transform->world_y < -20)
+	{
+		host_object->_render->is_visible = false;
+	}
+	else
+	{
+		//host_object->_render->is_visible = true;
+
+		f32 blt_speed = 20.5f;
+		v.y -= 1.8*dt;
+
+		host_object->translate(v.x*blt_speed*dt, v.y*blt_speed*dt);
+	}
 }

@@ -49,7 +49,7 @@ void WIPScene::clear()
 
 }
 
-void WIPScene::remove_sprite(WIPSprite* sptrite)
+void WIPScene::remove_sprite(WIPSprite* sptrite, bool op_related_scene)
 {
 	if(!initilized)
 		return;
@@ -71,7 +71,8 @@ void WIPScene::remove_sprite(WIPSprite* sptrite)
 	{
 		quad_tree->remove_change(*sptrite);
 		objects.erase(it);
-		sptrite->leave_scene(this);
+		if (op_related_scene)
+			sptrite->leave_scene(this);
 	}
 
 }

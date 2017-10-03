@@ -27,6 +27,9 @@ public:
 	void add_clip_back(WIPClipInstance* clip);
 	void add_clip_front(WIPClipInstance* clip);
 
+	//remove clip now !
+	void remove_clip(WIPClipInstance* clip);
+
 protected:
 	WIPAnimationManager();
 	~WIPAnimationManager();

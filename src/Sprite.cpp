@@ -19,14 +19,30 @@ WIPTickComponent::~WIPTickComponent(){}
 
 WIPSprite::~WIPSprite()
 {
-	for (auto i:components)
+
+}
+
+void WIPSprite::destroy(WIPSprite* s)
+{
+	for (auto i : s->related_scenes)
 	{
-		delete i;
+		i->remove_sprite(s, false);
 	}
-	for (auto i:tick_components)
+	s->related_scenes.clear();
+	//删除组件前移除所有依赖！！
+	delete s->_transform;
+	delete s->_collider;
+	delete s->_render;
+	delete s->_animation;
+	for (int i = 0; i < s->components.size(); ++i)
 	{
-		delete i;
+		delete s->components[i];
 	}
+	for (int i = 0; i < s->tick_components.size(); ++i)
+	{
+		delete s->tick_components[i];
+	}
+	delete s;
 }
 
 void WIPSprite::add_to_scene(WIPScene* scene)
@@ -85,4 +101,10 @@ WIPSprite* WIPSpriteFactory::create_sprite(const WIPSpriteCreator& creator)
 	}
 	s->_render->material.texture = creator.texture;
 	return s;
+}
+
+void WIPSprite::destroy_self()
+{
+
+
 }

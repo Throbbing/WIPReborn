@@ -16,6 +16,7 @@ int main(int argc,char** argv)
 	//GLFWApp app;
 #else
 	GLFWApp app;
+	g_app = &app;
 #endif
 	app.init();
 	app.run();

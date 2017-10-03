@@ -90,6 +90,9 @@ void WIPAnimationManager::update(f32 dt)
 				if (!clip->bloop)
 				{
 					clip->bplaying = false;
+					//finish callback
+					if (clip->cb)
+						clip->cb(clip->obj_ref);
 					_remove_list.push_back(clip);
 				}
 
@@ -102,6 +105,9 @@ void WIPAnimationManager::update(f32 dt)
 				if (!clip->bloop)
 				{
 					clip->bplaying = false;
+					//finish callback
+					if (clip->cb)
+						clip->cb(clip->obj_ref);
 					_remove_list.push_back(clip);
 				}
 
@@ -119,6 +125,23 @@ void WIPAnimationManager::update(f32 dt)
 	_remove_list.clear();
 
 
+}
+
+void WIPAnimationManager::remove_clip(WIPClipInstance* clip)
+{
+	clip->bplaying = false;
+	list<WIPClipInstance*>::iterator it = _clip_queue.begin();
+	for (; it != _clip_queue.end(); ++it)
+	{
+		if (*it == clip)
+		{
+			break;
+		}
+	}
+	if (it != _clip_queue.end())
+	{
+		_clip_queue.erase(it);
+	}
 }
 
 void WIPAnimationManager::add_clip(WIPClipInstance* clip)

@@ -49,3 +49,9 @@
 
 ![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
 ![](https://github.com/wubugui/FXXKTracer/raw/master/pic/ll.gif)
+
+# 记录
+
+-	所有object属于同一个world，所有的创建删除都属于world，scene只是world的一个“窗口”.
+-	不同component之间的相互调用，直接调用与消息.
+-	string替换hash

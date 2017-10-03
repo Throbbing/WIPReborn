@@ -173,7 +173,13 @@ void WIPCollider::add_force(f32 x, f32 y)
 
 i32 WIPCollider::get_collision_list_size()
 {
-	return 0;
+	int s = 0;
+	for (b2ContactEdge* ce = _body->GetContactList(); ce; ce = ce->next)
+	{
+		b2Contact* c = ce->contact;
+		s++;
+	}
+	return s;
 }
 
 b2Body* WIPCollider::get_collision_index_body(i32 i)

@@ -2,6 +2,7 @@
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include <string>
 
+
 #define ATLAS			1
 #define PICTURES		2
 
@@ -47,17 +48,12 @@ public:
 class WIPClipInstance
 {
 public:
-	WIPClipInstance(WIPFrameBox* fb,const class WIPAnimationClip* clip)
-		:frame_box_ref(fb),clip_ref(clip)
-	{
-		speed = clip->_speed;
-		cur_dt = clip->_cur_dt;
-		cur_frame = clip->_cur_frame;
-		will_stop = clip->_will_stop;
-		bplaying = clip->bplaying;
-		bloop = clip->bloop;
-		stop_now = false;
-	}
+	typedef void(*clip_callback_t)(void*);
+	WIPClipInstance(WIPFrameBox* fb, const class WIPAnimationClip* clip);
+
+	void* obj_ref;
+	clip_callback_t cb;
+
 	f32 speed;
 	f32 cur_dt;
 	i32 cur_frame;

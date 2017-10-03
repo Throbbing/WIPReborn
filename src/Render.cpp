@@ -453,7 +453,7 @@ void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int max
 			y -= text_h;
 			continue;
 		}
-		if (x+20 >= maxw)
+		if (x+20-px >= maxw)
 		{
 			x = px;
 			y -= text_h;
@@ -531,7 +531,7 @@ void TextRender::render(const WIPCamera* cam)
 	g_rhi->set_vertex_buffer(vb);
 	g_rhi->set_vertex_format(vf);
 	g_rhi->set_uniform_texture("in_texture", 0, text_lut_buffer);
-	g_rhi->set_uniform4f("in_color", RBColorf::black);
+	g_rhi->set_uniform4f("in_color", RBColorf::white);
 	g_rhi->draw_triangles(6*text_to_render, 0);
 
 	g_rhi->enable_depth_test();
@@ -704,7 +704,7 @@ void LargeTexture_TextRender::render(const WIPCamera* cam)
 	g_rhi->set_vertex_buffer(vb);
 	g_rhi->set_vertex_format(vf);
 	g_rhi->set_uniform_texture("in_texture", 0, text_lut_buffer);
-	g_rhi->set_uniform4f("in_color", RBColorf::black);
+	g_rhi->set_uniform4f("in_color", RBColorf::white);
 	g_rhi->draw_triangles(6 * text_to_render, 0);
 
 	g_rhi->enable_depth_test();

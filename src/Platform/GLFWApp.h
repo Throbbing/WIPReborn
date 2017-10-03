@@ -48,9 +48,12 @@ public:
   {
 	  _exit_requist = true;
   }
+  void pending_objects(class WIPSprite* s);
   GLFWwindow *window;
 
 private:
+	std::vector<class WIPSprite*> deleting_objects;
+
 	bool _exit_requist;
 	class TimeSource* times;
 	class RBClock* clock;
@@ -60,6 +63,8 @@ private:
 	float _frame;
 
 	//demo
+	bool show_text;
+
 	class WIPTexture2D* tex2d;
 	class WIPTexture2D* tex2d1;
 	class WIPTexture2D* tex2d1mask;
@@ -94,7 +99,7 @@ private:
 	class WIPAnimationClip* pop_clip;
 
 
-#define ANIMYNUM 10
+#define ANIMYNUM 25
 	WIPSprite* enemy[ANIMYNUM];
 	WIPSprite* block;
 	WIPSprite* player;
@@ -103,7 +108,7 @@ private:
 
 	//
 	class WorldRender* world_renderer;
-#define Text1
+//#define Text1
 #ifdef Text1
 	class LargeTexture_TextRender* text_renderer;
 #else
@@ -143,3 +148,5 @@ private:
   GlfwImguiRender* imgui_renderer;
   class WIPRenderTexture2D* render_texture2d;
 };
+
+extern GLFWApp* g_app;

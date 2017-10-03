@@ -21,7 +21,8 @@ public:
 		initilized = true;
 	}
 	void add_sprite(WIPSprite* sprite);
-	void remove_sprite(WIPSprite* sptrite);
+	//delete related_scene may detroy iterator.
+	void remove_sprite(WIPSprite* sptrite,bool op_related_scene=true);
 	WIPCamera* create_camera(f32 w, f32 h, f32 sw, f32 sh, int iww, int iwh);
 	void update_sprite(WIPSprite* sprite);
 	void sort_by_y(std::vector<WIPSprite*> v);

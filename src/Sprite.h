@@ -198,6 +198,7 @@ public:
 		_Internal_clip_queue::iterator it = _internal_clip_queue.begin();
 		for(;it!=_internal_clip_queue.end();++it)
 		{
+			g_animation_manager->remove_clip(it->second);
 			delete it->second;
 		}
 		_internal_clip_queue.clear();
@@ -206,6 +207,16 @@ public:
 	inline void add_clip(WIPAnimationClip* clip,std::string name)
 	{
 		_internal_clip_queue[name] = new WIPClipInstance(&_framebox_ref,clip);
+	}
+	void add_clip_callback(std::string name, WIPClipInstance::clip_callback_t cb,void* o)
+	{
+		_internal_clip_queue[name]->cb = cb;
+		_internal_clip_queue[name]->obj_ref = o;
+	}
+	void clear_clip_callback(std::string name)
+	{
+		_internal_clip_queue[name]->cb = nullptr;
+		_internal_clip_queue[name]->obj_ref = nullptr;
 	}
 	//not use
 	void remove_clip(WIPAnimationClip* clip)
@@ -266,9 +277,9 @@ public:
 	}
 	bool play_name(std::string name, bool loop )
 	{
-		WIPClipInstance* clip = _internal_clip_queue[name];
-		if(clip)
-			return play(clip,loop);
+		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
+		if (it!=_internal_clip_queue.end())
+			return play(it->second,loop);
 		return false;
 	}
 	bool play(bool loop)
@@ -302,9 +313,9 @@ public:
 	}
 	void stop(std::string name)
 	{
-		WIPClipInstance* clip = _internal_clip_queue[name];
-		if(clip)
-			stop(clip);
+		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
+		if (it != _internal_clip_queue.end())
+			stop(it->second);
 	}
 	void stop()
 	{
@@ -314,8 +325,6 @@ public:
 		if(clip)
 			stop(clip);
 	}
-
-
 
 	inline void stop_now(WIPClipInstance* clip_ins)
 	{
@@ -339,9 +348,9 @@ public:
 	}
 	void stop_now(std::string name)
 	{
-		WIPClipInstance* clip = _internal_clip_queue[name];
-		if (clip)
-			stop_now(clip);
+		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
+		if (it != _internal_clip_queue.end())
+			stop_now(it->second);
 	}
 	void stop_now()
 	{
@@ -351,9 +360,6 @@ public:
 		if (clip)
 			stop_now(clip);
 	}
-
-
-
 
 	inline void rewind(WIPClipInstance* clip_ins)
 	{
@@ -369,8 +375,9 @@ public:
 	}
 	void rewind(std::string name)
 	{
-		WIPClipInstance* clip = _internal_clip_queue[name];
-		rewind(clip);
+		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
+		if (it != _internal_clip_queue.end())
+			rewind(it->second);
 	}
 	void rewind()
 	{
@@ -466,6 +473,8 @@ public:
 	f32 get_speed_y();
 	void set_active(bool v);
 	void set_sprite(class WIPSprite* sprite);
+
+	FORCEINLINE b2Body* get_body(){ return _body; }
 protected:
 
 
@@ -523,19 +532,13 @@ public:
 		ret->_type_tag = "NOTAG";
 		return ret;
 	}
+	static void destroy(WIPSprite* s);
 	//use for lua
 	static WIPSprite* create()
 	{
 		return nullptr;
 	}
-	static void destroy(WIPSprite* sprite)
-	{
-		delete sprite->_transform;
-		delete sprite->_render;
-		delete sprite->_animation;
-		delete sprite->_collider;
-		delete sprite;
-	}
+
 private:
 	WIPSprite()
 	{
@@ -740,6 +743,8 @@ public:
 			i->destroy();
 		}
 	}
+
+	void destroy_self();
 
 public:
 	WIPTransform* _transform;
