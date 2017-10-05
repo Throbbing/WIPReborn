@@ -55,3 +55,7 @@
 -	所有object属于同一个world，所有的创建删除都属于world，scene只是world的一个“窗口”.
 -	不同component之间的相互调用，直接调用与消息.
 -	string替换hash
+-	优化:WIPPhysicsManeger::update
+				WIPSprite::rotate_to
+				WIPSprite::translate_to
+						WIPSprite::update_world

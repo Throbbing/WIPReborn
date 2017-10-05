@@ -60,14 +60,7 @@ enum class WIPMaterialType
 class WIPMaterial 
 {
 public:
-	WIPMaterial():texture(nullptr),material_normal(nullptr),shader(nullptr)
-	{
-		vert_color[0] = RBColorf::white;
-		vert_color[1] = RBColorf::white;
-		vert_color[2] = RBColorf::white;
-		vert_color[3] = RBColorf::white;
-		material_type = WIPMaterialType::E_OTHER;
-	}
+	WIPMaterial();
 	WIPTexture2D* texture;
 	WIPMaterialNormal* material_normal;
 	RBColorf vert_color[4];
@@ -99,26 +92,12 @@ public:
 class WIPMesh
 {
 public:
-	WIPMesh(f32 w,f32 h)
-	{
-		set_quickly(-w/2,h/2,-w/2,-h/2,w/2,h/2,w/2,-h/2);
-	}
-	WIPMesh()
-	{
-		f32 w = 1;
-		f32 h = 1;
-		set_quickly(-w/2,h/2,-w/2,-h/2,w/2,h/2,w/2,-h/2);		
-	}
+	WIPMesh(f32 w, f32 h);
+	WIPMesh();
 	//WIPMesh(const WIPMesh&);
 	RBVector2 lt,lb,rb,rt;
-	float get_witdh()
-	{
-		return RBMath::abs(rt.x  - lt.x);
-	}
-	float get_height()
-	{
-		return RBMath::abs(rt.y-rb.y);
-	}
+	float get_witdh();
+	float get_height();
 	//copy
 	//these will be remove
 	/*
@@ -127,17 +106,11 @@ public:
 	*/
 	void set_quickly
 		(
-		float lt_x1,float lt_y1,
-		float lb_x2,float lb_y2,
-		float rb_x3,float rb_y3,
-		float rt_x4,float rt_y4
-		)
-		{
-			lt = RBVector2(lt_x1,lt_y1);
-			lb = RBVector2(lb_x2,lb_y2);
-			rb = RBVector2(rb_x3,rb_y3);
-			rt = RBVector2(rt_x4,rt_y4);
-		}
+		float lt_x1, float lt_y1,
+		float lb_x2, float lb_y2,
+		float rb_x3, float rb_y3,
+		float rt_x4, float rt_y4
+		);
 
 
 private:
@@ -180,214 +153,40 @@ public:
 	bool is_visible;
 };
 
-#include "AnimationClip.h"
-#include "AnimationQueue.h"
-#include "FrameBox.h"
-#include "AnimationManager.h"
 
+#include "AnimationClip.h"
+#include "FrameBox.h"
 //make a clip instance according a given clip
 class WIPAnimation : public WIPComponent
 {
 public:
   WIPOBJECT(WIPAnimation, WIPComponent);
-	WIPAnimation() :_speed(1.f), _last_clip(nullptr){}
-	~WIPAnimation()
-	{
-		if(_internal_clip_queue.empty())
-			return;
-		_Internal_clip_queue::iterator it = _internal_clip_queue.begin();
-		for(;it!=_internal_clip_queue.end();++it)
-		{
-			g_animation_manager->remove_clip(it->second);
-			delete it->second;
-		}
-		_internal_clip_queue.clear();
-		//_internal_clip_queue.swap(_Internal_clip_queue());
-	}
-	inline void add_clip(WIPAnimationClip* clip,std::string name)
-	{
-		_internal_clip_queue[name] = new WIPClipInstance(&_framebox_ref,clip);
-	}
-	void add_clip_callback(std::string name, WIPClipInstance::clip_callback_t cb,void* o)
-	{
-		_internal_clip_queue[name]->cb = cb;
-		_internal_clip_queue[name]->obj_ref = o;
-	}
-	void clear_clip_callback(std::string name)
-	{
-		_internal_clip_queue[name]->cb = nullptr;
-		_internal_clip_queue[name]->obj_ref = nullptr;
-	}
+  WIPAnimation();
+	~WIPAnimation();
+	void add_clip(WIPAnimationClip* clip, std::string name);
+	void add_clip_callback(std::string name, WIPClipInstance::clip_callback_t cb, void* o);
+	void clear_clip_callback(std::string name);
 	//not use
-	void remove_clip(WIPAnimationClip* clip)
-	{
-		g_logger->debug_print(WIP_WARNING,"This function is not in use!");
-	}
-	void remove_clip(std::string name)
-	{
-		_internal_clip_queue.erase(name);
-	}
-	void set_clip_instance_speed(std::string name, f32 speed)
-	{
-		_internal_clip_queue[name]->speed = speed;
-	}
-	inline bool play(WIPClipInstance* clip_instance,bool loop=false)
-	{
-		if(clip_instance->bplaying)
-			return false;
-		if (_last_clip)
-			_last_clip->stop_now = true;
-		clip_instance->bplaying = false;
-		clip_instance->stop_now = false;
-		clip_instance->will_stop = false;
-		clip_instance->bloop = loop;
-		g_animation_manager->add_clip(clip_instance);
-		_last_clip = clip_instance;
-		return true;
-	}
-	bool play(WIPAnimationClip* clip,bool loop=false)
-	{
-		if(!clip)
-			return false;
-		
-		_Internal_clip_queue::iterator it = _internal_clip_queue.begin();
-		for(;it!=_internal_clip_queue.end();++it)
-		{
-			if(it->second->clip_ref==clip)
-			{
-				break;
-			}
-		}
-		if(it==_internal_clip_queue.end())
-		{
-			return false;
-		}
-
-		if(it->second->bplaying)
-			return false;
-		if (_last_clip)
-			_last_clip->stop_now = true;
-		it->second->bplaying = false;
-		it->second->stop_now = false;
-		it->second->will_stop = false;
-		it->second->bloop = loop;
-		g_animation_manager->add_clip(it->second);
-		_last_clip = it->second;
-		return true;
-	}
-	bool play_name(std::string name, bool loop )
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
-		if (it!=_internal_clip_queue.end())
-			return play(it->second,loop);
-		return false;
-	}
-	bool play(bool loop)
-	{
-		if (_internal_clip_queue.empty())
-			return false;
-		WIPClipInstance* clip = (_internal_clip_queue.begin()->second);
-		if(clip)
-			return play(clip,loop);
-		return false;
-	}
-	inline void stop(WIPClipInstance* clip_ins)
-	{
-		clip_ins->will_stop = true;
-	}
-	void stop(WIPAnimationClip* clip)
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.begin();
-		for(;it!=_internal_clip_queue.end();++it)
-		{
-			if(it->second->clip_ref==clip)
-			{
-				break;
-			}
-		}
-		if(it==_internal_clip_queue.end())
-		{
-			return;
-		}
-		it->second->will_stop = true;
-	}
-	void stop(std::string name)
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
-		if (it != _internal_clip_queue.end())
-			stop(it->second);
-	}
-	void stop()
-	{
-		if(_internal_clip_queue.empty())
-			return;
-		WIPClipInstance* clip = (_internal_clip_queue.begin()->second);
-		if(clip)
-			stop(clip);
-	}
-
-	inline void stop_now(WIPClipInstance* clip_ins)
-	{
-		clip_ins->stop_now = true;
-	}
-	void stop_now(WIPAnimationClip* clip)
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.begin();
-		for (; it != _internal_clip_queue.end(); ++it)
-		{
-			if (it->second->clip_ref == clip)
-			{
-				break;
-			}
-		}
-		if (it == _internal_clip_queue.end())
-		{
-			return;
-		}
-		it->second->stop_now = true;
-	}
-	void stop_now(std::string name)
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
-		if (it != _internal_clip_queue.end())
-			stop_now(it->second);
-	}
-	void stop_now()
-	{
-		if (_internal_clip_queue.empty())
-			return;
-		WIPClipInstance* clip = (_internal_clip_queue.begin()->second);
-		if (clip)
-			stop_now(clip);
-	}
-
-	inline void rewind(WIPClipInstance* clip_ins)
-	{
-		stop(clip_ins);
-		play(clip_ins);
-	}
-	void rewind(WIPAnimationClip* clip)
-	{
-		if(!clip)
-			return;
-		stop(clip);
-		play(clip);
-	}
-	void rewind(std::string name)
-	{
-		_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
-		if (it != _internal_clip_queue.end())
-			rewind(it->second);
-	}
-	void rewind()
-	{
-		WIPClipInstance* clip = (_internal_clip_queue.begin()->second);
-		rewind(clip);
-	}
-	void playeQueue(WIPAnimationQueue* queue)
-	{
-		g_logger->debug_print(WIP_WARNING,"This function is not in use!");
-	}
+	void remove_clip(WIPAnimationClip* clip);
+	void remove_clip(std::string name);
+	void set_clip_instance_speed(std::string name, f32 speed);
+	bool play(WIPClipInstance* clip_instance, bool loop = false);
+	bool play(WIPAnimationClip* clip, bool loop = false);
+	bool play_name(std::string name, bool loop);
+	bool play(bool loop);
+	void stop(WIPClipInstance* clip_ins);
+	void stop(WIPAnimationClip* clip);
+	void stop(std::string name);
+	void stop();
+	void stop_now(WIPClipInstance* clip_ins);
+	void stop_now(WIPAnimationClip* clip);
+	void stop_now(std::string name);
+	void stop_now();
+	void rewind(WIPClipInstance* clip_ins);
+	void rewind(WIPAnimationClip* clip);
+	void rewind(std::string name);
+	void rewind();
+	void playeQueue(class WIPAnimationQueue* queue);
 
 private:
 	//--- 1 for normal,can be negtive
@@ -449,7 +248,7 @@ public:
 	void reset_body_restitution(f32 restitution);
 	void reset_body_friction(f32 v, _FrictionTypes type);
 
-	void set_mesh_box(f32 sx, f32 sy)
+	inline void set_mesh_box(f32 sx, f32 sy)
 	{
 		_cb_scale_x = sx;
 		_cb_scale_y = sy;
@@ -512,26 +311,7 @@ class WIPSprite : public WIPObject
 {
 public:
   WIPOBJECT(WIPSprite,WIPObject);
-	static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY,f32 sx=1.f,f32 sy=1.f)
-	{
-		WIPSprite* ret = new WIPSprite();
-		ret->_transform = new WIPTransform();
-		ret->_render = new WIPRenderComponent(width,height);
-		ret->_animation = new WIPAnimation();
-		if (tp != 4)
-		{
-			ret->_collider = WIPCollider::create_collider(ret, tp);
-			ret->_collider->set_sprite(ret);
-			ret->_collider->set_mesh_box(sx,sy);
-		}
-		else
-		{
-			ret->_collider = nullptr;
-		}
-		ret->_tag = "NONAME";
-		ret->_type_tag = "NOTAG";
-		return ret;
-	}
+  static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY, f32 sx = 1.f, f32 sy = 1.f);
 	static void destroy(WIPSprite* s);
 	//use for lua
 	static WIPSprite* create()
@@ -540,9 +320,7 @@ public:
 	}
 
 private:
-	WIPSprite()
-	{
-	}
+	WIPSprite(){}
 	~WIPSprite();
 
 public:
@@ -627,78 +405,9 @@ public:
 	}
 	//lt lb rt rb,regard anchor as center
 	//mesh regard 0.5,0.5 as center
-	void get_anchor_vertices(RBVector2* vertices) const
-	{
-		if (!vertices)
-			return;
-
-		f32 ax = (_transform->anchor_x - 0.5f)*_render->mesh.get_witdh();
-		f32 ay = (_transform->anchor_y - 0.5f)*_render->mesh.get_height();
-		RBVector2 lb1 = _render->mesh.lb -RBVector2(ax, ay);
-		RBVector2 lt1 = _render->mesh.lt -RBVector2(ax, ay);
-		RBVector2 rb1 = _render->mesh.rb -RBVector2(ax, ay);
-		RBVector2 rt1 = _render->mesh.rt -RBVector2(ax, ay);
-
-		vertices[0] = lt1;
-		vertices[1] = lb1;
-		vertices[2] = rt1;
-		vertices[3] = rb1;
-	}
+	void get_anchor_vertices(RBVector2* vertices) const;
 	//lt lb rb rt
-	void get_world_position(RBVector2* vertices) const
-	{
-		if(!vertices)
-			return;
-		f32 scale_x = _transform->scale_x;
-		f32 scale_y = _transform->scale_y;
-		f32 tworld_x = _transform->world_x ;//-  _transform->anchor_x*_render->mesh.get_witdh();
-		f32 tworld_y = _transform->world_y ;//-  _transform->anchor_y*_render->mesh.get_height();
-		f32 rotation = _transform->rotation;
-
-		f32 ax = (_transform->anchor_x-0.5f)*_render->mesh.get_witdh();
-		f32 ay = (_transform->anchor_y-0.5f)*_render->mesh.get_height();
-		RBVector2 lb1 = _render->mesh.lb - RBVector2(ax,ay);
-		RBVector2 lt1 = _render->mesh.lt - RBVector2(ax,ay);
-		RBVector2 rb1 = _render->mesh.rb - RBVector2(ax,ay);
-		RBVector2 rt1 = _render->mesh.rt - RBVector2(ax,ay);
-
-		RBVector2 lb1r,lt1r,rb1r,rt1r;
-		#define _cos RBMath::cos
-		#define _sin RBMath::sin
-		lt1r.y = lt1.x*_sin(rotation) + lt1.y*_cos(rotation);
-		lt1r.x = lt1.x*_cos(rotation) - lt1.y*_sin(rotation);
-
-		lb1r.y = lb1.x*_sin(rotation) + lb1.y*_cos(rotation);
-		lb1r.x = lb1.x*_cos(rotation) - lb1.y*_sin(rotation);
-
-		rb1r.y = rb1.x*_sin(rotation) + rb1.y*_cos(rotation);
-		rb1r.x = rb1.x*_cos(rotation) - rb1.y*_sin(rotation);
-
-		rt1r.y = rt1.x*_sin(rotation) + rt1.y*_cos(rotation);
-		rt1r.x = rt1.x*_cos(rotation) - rt1.y*_sin(rotation);
-		#undef _cos
-		#undef _sin
-
-		lt1r.x *= scale_x;
-		lb1r.x *= scale_x;
-		rt1r.x *= scale_x;
-		rb1r.x *= scale_x;
-		lt1r.y *= scale_y;
-		lb1r.y *= scale_y;
-		rt1r.y *= scale_y;
-		rb1r.y *= scale_y;
-
-		lt1r+=RBVector2(tworld_x,tworld_y);
-		lb1r+=RBVector2(tworld_x,tworld_y);
-		rt1r+=RBVector2(tworld_x,tworld_y);
-		rb1r+=RBVector2(tworld_x,tworld_y);
-
-		vertices[0] = lt1r;
-		vertices[1] = lb1r;
-		vertices[2] = rt1r;
-		vertices[3] = rb1r;
-
-	}
+	void get_world_position(RBVector2* vertices) const;
 	void add_to_scene(WIPScene* scene);
 	void leave_scene(WIPScene* scene);
 	void add_component(WIPComponent* c)
@@ -713,36 +422,12 @@ public:
 	}
 
 
-	void update(f32 dt)
-	{
-		for (auto i : tick_components)
-		{
-			i->update(dt);
-		}
-	}
-	void fix_update(f32 dt)
-	{
-		for (auto i : tick_components)
-		{
-			i->fix_update(dt);
-		}
-	}
+	void update(f32 dt);
+	void fix_update(f32 dt);
 
-	void init_components()
-	{
-		for (auto i : tick_components)
-		{
-			i->init();
-		}
-	}
+	void init_components();
 
-	void destroy_components()
-	{
-		for (auto i : tick_components)
-		{
-			i->destroy();
-		}
-	}
+	void destroy_components();
 
 	void destroy_self();
 

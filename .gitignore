@@ -32,8 +32,10 @@ bin/resources
 *.suo
 *.sbr
 bin/Debug
+bin/MinSizeRel
+bin/Release
+bin/RelWithDebInfo
 bin/libs
-bin/data/pic
 .vscode
 build
 libs/fmod_fsbank

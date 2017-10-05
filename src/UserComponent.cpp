@@ -345,52 +345,41 @@ void MapComponent::update(f32 dt)
 	//grid->clear_data();
 }
 
+void PlayerComponent::init()
+{
+	man_state = ManState::E_DOWN;
+	cam->zoomout(1.0);
+	host_object->translate_to(0, 0);
+	g_audio_manager->Play(sound_start);
 
+
+}
 void PlayerComponent::update(f32 dt)
 {
 	float speed = 5.2f;
+	if (Input::get_key_pressed(WIP_K))
+	{
+		speed *= 2;
+	}
 	if (Input::get_key_pressed(WIP_W))
 	{
 		host_object->translate(0, speed*dt);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
-		//cam->move(0,speed*dt);
 		man_state = ManState::E_UP;
 	}
 	else if (Input::get_key_pressed(WIP_A))
 	{
 		host_object->translate(-speed*dt, 0);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
 		man_state = ManState::E_LEFT;
-
-		//cam->move(-speed*dt, 0);
 	}
 	else if (Input::get_key_pressed(WIP_S))
 	{
 		host_object->translate(0, -speed*dt);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
 		man_state = ManState::E_DOWN;
-
-		//cam->move(0,-speed*dt);
 	}
 	else if (Input::get_key_pressed(WIP_D))
 	{
 		host_object->translate(speed*dt, 0);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
 		man_state = ManState::E_RIGHT;
-
-		//cam->move(speed*dt, 0);
 	}
 	f32 dd = 1.f;
 	f32 dx = 0, dy = 0;
@@ -454,6 +443,7 @@ void PlayerComponent::update(f32 dt)
 			hp -= 10;
 			if (hp <= 0)
 			{
+				g_audio_manager->Play(sound_death);
 				g_app->pending_objects(host_object);
 				return;
 			}
@@ -464,6 +454,7 @@ void PlayerComponent::update(f32 dt)
 			hp -= 10;
 			if (hp <= 0)
 			{
+				g_audio_manager->Play(sound_death);
 				g_app->pending_objects(host_object);
 				return;
 			}
@@ -471,14 +462,15 @@ void PlayerComponent::update(f32 dt)
 	}
 	//blt->_animation->play_name("player_run", false);
 
-	wchar_t words1[8]={0};
-	
-	wsprintfW(words1, L"HP:%d\n", hp);
-	
-	//std::wstring wbuf = string_to_wstring(buf);
+	//wchar_t words1[8]={0};
+	//wsprintfW(words1, L"HP:%d\n", hp);
+	//text_renderer->render_text(20, 600, words1, wcslen(words1), 800, cam);
+	//text_renderer->render(cam);
 
-	text_renderer->render_text(20, 600, words1, wcslen(words1), 800, cam);
-	text_renderer->render(cam);
+	ImGui::SetNextWindowPos(ImVec2(20, 20));
+	ImGui::Begin("");
+	ImGui::ProgressBar(hp / 100.f, ImVec2(100, 20));
+	ImGui::End();
 }
 
 void EnemeyComponent::update(f32 dt)
@@ -487,9 +479,9 @@ void EnemeyComponent::update(f32 dt)
 	f32 dx = 0, dy = 0;
 	float speed = 3.2f;
 	acc_t += dt;
-	static f32 fixt = 0.5f;
+	static f32 fixt = 2.5f;
 	int r = 0;
-	ImGui::SliderFloat("", &fixt, 0.5f, 2.5f);
+	ImGui::SliderFloat("", &fixt, 1.5f, 5.5f);
 	if (acc_t > fixt)
 	{
 		cur_direction = RBMath::get_rand_range_i(0, 3);
@@ -613,6 +605,7 @@ void EnemeyComponent::update(f32 dt)
 			WIPSprite* s2 = (WIPSprite*)c->GetFixtureB()->GetBody()->GetUserData();
 			if (s2->get_tag() == "bullet")
 			{
+				g_audio_manager->Play(sound_death);
 				g_app->pending_objects(host_object);
 				return;
 			}
@@ -639,6 +632,7 @@ void BulletComponent::update(f32 dt)
 	if (host_object->_transform->world_x < -20 || host_object->_transform->world_x>20 || host_object->_transform->world_y > 20 || host_object->_transform->world_y < -20)
 	{
 		host_object->_render->is_visible = false;
+		host_object->translate_to(pos.x, pos.y);
 	}
 	else
 	{

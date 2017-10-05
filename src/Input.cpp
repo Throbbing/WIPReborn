@@ -49,6 +49,7 @@ bool Input::get_sys_key_pressed(int key)
 
 bool Input::get_key_pressed(int key)
 {
+	//printf("%x\n", g_input_manager->_keyinfo[1].key_bit);
 	return (bool)(g_input_manager->get_key_info()[1].key_bit&key);
 }
 

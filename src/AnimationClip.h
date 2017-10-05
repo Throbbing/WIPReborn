@@ -49,7 +49,7 @@ class WIPClipInstance
 {
 public:
 	typedef void(*clip_callback_t)(void*);
-	WIPClipInstance(WIPFrameBox* fb, const class WIPAnimationClip* clip);
+	WIPClipInstance(WIPFrameBox* fb, const WIPAnimationClip* clip);
 
 	void* obj_ref;
 	clip_callback_t cb;
@@ -62,5 +62,5 @@ public:
 	bool bplaying;
 	bool bloop;
 	WIPFrameBox* frame_box_ref;
-	const class WIPAnimationClip* clip_ref;
+	const WIPAnimationClip* clip_ref;
 };

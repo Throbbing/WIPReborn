@@ -63,7 +63,9 @@ void GLFWApp::init_tank_demo()
 	g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
 	StudioSound* sound_fire = g_audio_manager->CreateSound("event:/fire");
 	StudioSound* sound_blast = g_audio_manager->CreateSound("event:/blast");
-
+	StudioSound* sound_death_enemy = g_audio_manager->CreateSound("event:/Death 1");
+	StudioSound* sound_death = g_audio_manager->CreateSound("event:/Death 2");
+	StudioSound* sound_start = g_audio_manager->CreateSound("event:/start");
 
 	cameras.push_back(scene->create_camera(20, 20, window_w, window_h, window_w, window_h));
 	cameras[0]->move_to(5, 5);
@@ -137,6 +139,7 @@ void GLFWApp::init_tank_demo()
 		sp->set_tag("enemy");
 		EnemeyComponent* pcc = new EnemeyComponent(sp);
 		pcc->sound = sound_fire;
+		pcc->sound_death = sound_death_enemy;
 		pcc->clip = enemy_clip;
 		sp->add_tick_component(pcc);
 		scene->add_sprite(sp);
@@ -194,6 +197,8 @@ void GLFWApp::init_tank_demo()
 		sp->set_tag("player");
 
 		PlayerComponent* pcc = new PlayerComponent(sp);
+		pcc->sound_death = sound_death;
+		pcc->sound_start = sound_start;
 		pcc->sound = sound_fire;
 		pcc->clip = player_clip;
 		sp->add_tick_component(pcc);
@@ -332,6 +337,66 @@ void GLFWApp::init_tank_demo()
 			sp->translate_to(2 + i*1.8, -12);
 		}
 
+	}
+
+	{
+		for (int i = 0; i < 23; ++i)
+		{
+			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
+			ctor_man1.texture = block_texture;
+			ctor_man1.world_render = world_renderer;
+			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+			ctor_man1.collider_sx = 1.f;
+			ctor_man1.collider_sy = 1.f;
+			WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			sp->set_tag("block");
+
+			scene->add_sprite(sp);
+			sp->translate_to(-20 + i*1.8, -20);
+		}
+
+		for (int i = 0; i < 23; ++i)
+		{
+			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
+			ctor_man1.texture = block_texture;
+			ctor_man1.world_render = world_renderer;
+			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+			ctor_man1.collider_sx = 1.f;
+			ctor_man1.collider_sy = 1.f;
+			WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			sp->set_tag("block");
+
+			scene->add_sprite(sp);
+			sp->translate_to(-20 + i*1.8, 20);
+		}
+		for (int i = 0; i < 23; ++i)
+		{
+			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
+			ctor_man1.texture = block_texture;
+			ctor_man1.world_render = world_renderer;
+			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+			ctor_man1.collider_sx = 1.f;
+			ctor_man1.collider_sy = 1.f;
+			WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			sp->set_tag("block");
+
+			scene->add_sprite(sp);
+			sp->translate_to(-20 , -20+i*1.8);
+		}
+		for (int i = 0; i < 23; ++i)
+		{
+			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
+			ctor_man1.texture = block_texture;
+			ctor_man1.world_render = world_renderer;
+			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+			ctor_man1.collider_sx = 1.f;
+			ctor_man1.collider_sy = 1.f;
+			WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			sp->set_tag("block");
+
+			scene->add_sprite(sp);
+			sp->translate_to(20, -20 + i*1.8);
+		}
 	}
 
 	show_text = false;

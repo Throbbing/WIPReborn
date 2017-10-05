@@ -251,6 +251,8 @@ public:
 	WIPSprite* blt;
 
 	StudioSound* sound;
+	StudioSound* sound_death;
+
 };
 
 class PlayerComponent : public WIPTickComponent
@@ -273,12 +275,7 @@ public:
 	}
 
 	~PlayerComponent(){}
-	virtual void init()
-	{
-		man_state = ManState::E_DOWN;
-
-
-	}
+	virtual void init();
 	virtual void update(f32 dt);
 
 	virtual void fix_update(f32 dt)
@@ -296,6 +293,10 @@ public:
 	WIPSprite* blt;
 
 	StudioSound* sound;
+	StudioSound* sound_start;
+	StudioSound* sound_death;
+
+
 
 	class TextRender* text_renderer;
 };

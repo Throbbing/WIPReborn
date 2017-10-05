@@ -108,13 +108,14 @@ void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int 
 void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	GlfwImguiRender::ImGui_ImplGlfwGL3_KeyCallback(window, key, scancode, action, mods);
-
 	int bits = g_input_manager->get_last_key_info()->key_bit;
 	int bits_c = g_input_manager->get_last_key_info()[1].key_bit;
 	if(action==GLFW_REPEAT)
 	{
 		switch (key)
 		{
+		case GLFW_KEY_SPACE:bits |= WIP_SPACE;
+			break;
 		case GLFW_KEY_A:
 			bits_c |= WIP_A;
 			break;
@@ -175,6 +176,8 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
 
 		switch (key)
 		{
+		case GLFW_KEY_SPACE:bits |= WIP_SPACE;
+			break;
 		case GLFW_KEY_A:
 			bits_c |= WIP_A;
 			break;
@@ -234,6 +237,8 @@ void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, in
 	{
 		switch (key)
 		{
+		case GLFW_KEY_SPACE:bits &= ~WIP_SPACE;
+			break;
 		case GLFW_KEY_A:
 			bits_c &= ~WIP_A;
 			break;
