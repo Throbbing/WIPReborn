@@ -59,3 +59,5 @@
 				WIPSprite::rotate_to
 				WIPSprite::translate_to
 						WIPSprite::update_world
+
+四叉树优化：在object中记录自己所在四叉树位置，先检测该结点是否变化了四叉树区域，若没变就只更新位置，不操作四叉树；否则删除结点重新插入。注意大部分对象是不会变化四叉树区域的。
