@@ -18,6 +18,7 @@ const int MAX_SINGLE_LINE_CHAR_NUM = 1024;
 using namespace std;
 
 //this class will not export to lua
+//to add mutex!
 class WIPLogger
 {
 public:
@@ -50,6 +51,7 @@ private:
 	string _current_line;
 	int _current_lines;
 	
+
 };
 
 extern WIPLogger* g_logger;

@@ -79,6 +79,7 @@ void WIPScene::remove_sprite(WIPSprite* sptrite, bool op_related_scene)
 
 void WIPScene::update_sprite(WIPSprite* sprite)
 {
+	//todo:must avoid every-frame remove-insert!!
 	quad_tree->remove_change(*sprite);
 	quad_tree->insert(*sprite);
 

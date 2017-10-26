@@ -303,6 +303,7 @@ void WIPSprite::add_to_scene(WIPScene* scene)
 
 void WIPSprite::update_world()
 {
+	cache_world_position();
 	for (int i = 0; i < related_scenes.size(); ++i)
 	{
 		related_scenes[i]->update_sprite(this);
@@ -398,11 +399,9 @@ void WIPSprite::get_anchor_vertices(RBVector2* vertices) const
 	vertices[2] = rt1;
 	vertices[3] = rb1;
 }
-
-void WIPSprite::get_world_position(RBVector2* vertices) const
+void WIPSprite::cache_world_position()
 {
-	if (!vertices)
-		return;
+	
 	f32 scale_x = _transform->scale_x;
 	f32 scale_y = _transform->scale_y;
 	f32 tworld_x = _transform->world_x;//-  _transform->anchor_x*_render->mesh.get_witdh();
@@ -447,11 +446,17 @@ void WIPSprite::get_world_position(RBVector2* vertices) const
 	rt1r += RBVector2(tworld_x, tworld_y);
 	rb1r += RBVector2(tworld_x, tworld_y);
 
-	vertices[0] = lt1r;
-	vertices[1] = lb1r;
-	vertices[2] = rt1r;
-	vertices[3] = rb1r;
+	_transform->vertices_cache[0] = lt1r;
+	_transform->vertices_cache[1] = lb1r;
+	_transform->vertices_cache[2] = rt1r;
+	_transform->vertices_cache[3] = rb1r;
+}
 
+void WIPSprite::get_world_position(RBVector2* vertices) const
+{
+	if (!vertices)
+		return;
+	memcpy(vertices, _transform->vertices_cache, sizeof(RBVector2) * 4);
 }
 
 void WIPSprite::update(f32 dt)

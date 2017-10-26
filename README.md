@@ -58,6 +58,6 @@
 -	优化:WIPPhysicsManeger::update
 				WIPSprite::rotate_to
 				WIPSprite::translate_to
-						WIPSprite::update_world
+						WIPSprite::update_world(主要时间消耗在每帧都无脑删插上，也许用速度来唯一表征运动？)
 
 四叉树优化：在object中记录自己所在四叉树位置，先检测该结点是否变化了四叉树区域，若没变就只更新位置，不操作四叉树；否则删除结点重新插入。注意大部分对象是不会变化四叉树区域的。

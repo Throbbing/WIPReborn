@@ -266,7 +266,7 @@ void GLFWApp::init_tank_demo()
 	}
 
 	{
-		for (int i = 0; i < 14; ++i)
+		for (int i = 0; i < 10; ++i)
 		{
 			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
 			ctor_man1.texture = block_texture;
@@ -383,7 +383,7 @@ void GLFWApp::init_tank_demo()
 			scene->add_sprite(sp);
 			sp->translate_to(-20 , -20+i*1.8);
 		}
-		for (int i = 0; i < 23; ++i)
+		for (int i = 0; i < 20; ++i)
 		{
 			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
 			ctor_man1.texture = block_texture;

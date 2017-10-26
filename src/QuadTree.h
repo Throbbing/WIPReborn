@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <list>
+#include <map>
 #include "Sprite.h"
 #include "RBMath/Inc/AABB.h"
 
@@ -19,7 +21,8 @@ public:
 	{
 		//index.swap(std::vector<int>());
 	}
-	std::vector<const WIPSprite*> index;
+	typedef std::map<const WIPSprite*,const WIPSprite*> object_list_t;
+	object_list_t index;
 	bool leaf;
 	bool root;
 	//ltlbrtrb
@@ -70,10 +73,7 @@ public:
 		RBAABB2D sprite_bound;
 		RBVector2 vert[4];
 		sprite.get_world_position(vert);
-		sprite_bound.include(vert[0]);
-		sprite_bound.include(vert[1]);
-		sprite_bound.include(vert[2]);
-		sprite_bound.include(vert[3]);
+		sprite_bound.include(vert);
 		//if (!sprite_bound.intersection(world_aabb))
 		{
 			world_bound.include(sprite_bound.min);
@@ -85,7 +85,7 @@ public:
 	{
 		if(root->leaf)
 		{
-			root->index.push_back(id);
+			root->index[id]=(id);
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -131,9 +131,10 @@ public:
 	{
 		if(root->leaf)
 		{
-			for(int i=0;i<root->index.size();++i)
+			WIPQuadTreeNode::object_list_t::const_iterator it;
+			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
-				out_index.push_back(root->index[i]);
+				out_index.push_back(it->second);
 			}
 			return;
 		}
@@ -165,10 +166,7 @@ public:
 		RBAABB2D sprite_bound;
 		RBVector2 vert[4];
 		sprite.get_world_position(vert);
-		sprite_bound.include(vert[0]);
-		sprite_bound.include(vert[1]);
-		sprite_bound.include(vert[2]);
-		sprite_bound.include(vert[3]);
+		sprite_bound.include(vert);
 		_get_near_node(&root,sprite_bound,world_aabb,&sprite,out_index);
 	}
 	void get_near_node(const RBVector2& pos, std::vector<const WIPSprite*>& out_index) const
@@ -180,9 +178,10 @@ public:
 	{
 		if(root->leaf)
 		{
-			for(int i=0;i<root->index.size();++i)
+			WIPQuadTreeNode::object_list_t::const_iterator it;
+			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
-				out_index.push_back(root->index[i]);
+				out_index.push_back(it->second);
 			}
 			return;
 		}
@@ -213,9 +212,10 @@ public:
 	{
 		if(root->leaf)
 		{
-			for(int i=0;i<root->index.size();++i)
+			WIPQuadTreeNode::object_list_t::const_iterator it;
+			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
-				out_index.push_back(root->index[i]);
+				out_index.push_back(it->second);
 			}
 			return;
 		}
@@ -280,18 +280,7 @@ public:
 	{
 		if (root->leaf)
 		{
-			std::vector<const WIPSprite*>::iterator  it;
-			for (it = root->index.begin(); it != root->index.end(); ++it)
-			{
-				if (*it == id)
-				{
-					break;
-				}
-			}
-			if (it != root->index.end())
-			{
-				root->index.erase(it);
-			}
+			root->index.erase(id);
 			return;
 		}
 		RBVector2 c = aabb.min + (aabb.max - aabb.min)*0.5f;
@@ -310,10 +299,7 @@ public:
 		RBAABB2D sprite_bound;
 		RBVector2 vert[4];
 		sprite.get_world_position(vert);
-		sprite_bound.include(vert[0]);
-		sprite_bound.include(vert[1]);
-		sprite_bound.include(vert[2]);
-		sprite_bound.include(vert[3]);
+		sprite_bound.include(vert);
 		_remove(&root,sprite_bound,world_aabb,&sprite);
 	}
 	
@@ -322,22 +308,7 @@ public:
 	{
 		if(root->leaf)
 		{
-			std::vector<const WIPSprite*>::iterator  it;
-			for( it=root->index.begin();it!=root->index.end();++it)
-			{
-				if(*it==id)
-				{
-					break;
-				}
-			}
-			if(it==root->index.end())
-			{
-				LOG_NOTE("QuadTree No such a node");
-			}
-			else
-			{
-				root->index.erase(it);
-			}
+			root->index.erase(id);
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -370,9 +341,10 @@ public:
 	{
 		if(root->leaf)
 		{
-			for(int i=0;i<root->index.size();++i)
+			WIPQuadTreeNode::object_list_t::const_iterator it;
+			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
-				out_index.push_back(root->index[i]);
+				out_index.push_back(it->second);
 			}
 			return;
 		}

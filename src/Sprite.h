@@ -301,6 +301,7 @@ public:
 	f32 scale_x,scale_y;
 	f32 anchor_x;
 	f32 anchor_y;
+	RBVector2 vertices_cache[4];
 	WIPTransform():world_x(0.f),world_y(0.f),z_order(0),rotation(0.f),
 	scale_x(1.f),scale_y(1.f),anchor_x(0.5f),anchor_y(0.5f){}
 };
@@ -408,6 +409,7 @@ public:
 	void get_anchor_vertices(RBVector2* vertices) const;
 	//lt lb rb rt
 	void get_world_position(RBVector2* vertices) const;
+	void cache_world_position();
 	void add_to_scene(WIPScene* scene);
 	void leave_scene(WIPScene* scene);
 	void add_component(WIPComponent* c)
@@ -436,7 +438,7 @@ public:
 	WIPRenderComponent* _render;
 	WIPAnimation* _animation;
 	WIPCollider* _collider;
-
+	
 	std::string _tag;
 	std::vector<WIPScene*> related_scenes;
 	//todo:hash

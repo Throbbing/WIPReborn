@@ -367,6 +367,17 @@ struct RBAABB2D
     max.y = max.y < v.y ? v.y : max.y;
     max.x = max.x < v.x ? v.x : max.x;
   }
+  void include(RBVector2* vs,int n=4)
+  {
+	  for (int i = 0; i < n; ++i)
+	  {
+		  const RBVector2& v = vs[i];
+		  min.y = min.y > v.y ? v.y : min.y;
+		  min.x = min.x > v.x ? v.x : min.x;
+		  max.y = max.y < v.y ? v.y : max.y;
+		  max.x = max.x < v.x ? v.x : max.x;
+	  }
+  }
   void transform(const RBMatrix& m)
   {
 
