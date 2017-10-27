@@ -57,6 +57,11 @@ void GLFWApp::pending_objects(WIPSprite* s)
 	deleting_objects.push_back(s);
 }
 
+void GLFWApp::creating_object(WIPSprite* s)
+{
+	creating_objects.push_back(s);
+}
+
 void GLFWApp::init_tank_demo()
 {
 	g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
@@ -124,67 +129,7 @@ void GLFWApp::init_tank_demo()
 	pop_texture = g_rhi->RHICreateTexture2D(ww1pop, hh1pop, res_handle1fog->ptr);
 	bullet_texture = g_rhi->RHICreateTexture2D(ww1blt, hh1blt, res_handlebullet->ptr);
 
-
-	for (int i = 0; i < ANIMYNUM; i++)
-	{
-		WIPSpriteCreator ctor_man(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
-		ctor_man.texture = enemy_texture;
-		ctor_man.world_render = world_renderer;
-		ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
-		ctor_man.collider_sx = 1.f;
-		ctor_man.collider_sy = 1.f;
-		WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man);
-		sp->_animation->add_clip(enemy_clip, enemy_clip->name);
-		sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
-		sp->set_tag("enemy");
-		EnemeyComponent* pcc = new EnemeyComponent(sp);
-		pcc->sound = sound_fire;
-		pcc->sound_death = sound_death_enemy;
-		pcc->clip = enemy_clip;
-		sp->add_tick_component(pcc);
-		scene->add_sprite(sp);
-
-		WIPSpriteCreator ctor_blt(0.3f, 0.3f, WIPMaterialType::E_TRANSLUCENT);
-		ctor_blt.texture = bullet_texture;
-		ctor_blt.world_render = world_renderer;
-		ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
-		ctor_blt.collider_sx = 1.f;
-		ctor_blt.collider_sy = 1.f;
-		WIPSprite* spblt = WIPSpriteFactory::create_sprite(ctor_blt);
-		spblt->_animation->add_clip(player_clip, player_clip->name);
-		spblt->_animation->play_name(player_clip->name, false);
-		spblt->_render->is_visible = false;
-		BulletComponent* pcc1 = new BulletComponent(spblt);
-		pcc1->sound = sound_blast;
-		spblt->add_tick_component(pcc1);
-		spblt->set_tag("bullet_enemy");
-		pcc->blt = spblt;
-		spblt->translate_to(21, 22+i);
-		pcc1->pos = RBVector2(21,22+i);
-		scene->add_sprite(spblt);
-
-		WIPSpriteCreator ctor_pop(2.f, 2.f, WIPMaterialType::E_TRANSLUCENT);
-		ctor_pop.texture = pop_texture;
-		ctor_pop.world_render = world_renderer;
-		ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
-		ctor_pop.collider_sx = 1.f;
-		ctor_pop.collider_sy = 1.f;
-		WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
-		sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
-		//sp_pop->_animation->play_name(pop_clip->name, false);
-		sp_pop->set_z_order(-0.1);
-		sp_pop->set_tag("pop_enemy");
-		sp_pop->_render->is_visible = false;
-		auto cb = [](void* s)->void
-		{
-			((WIPSprite*)s)->_render->is_visible = false;
-		};
-		sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
-		scene->add_sprite(sp_pop);
-
-		pcc1->pop_obj = sp_pop;
-	}
-
+	WIPSprite* splayer = nullptr;
 	{
 		WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
 		ctor_man1.texture = player_texture;
@@ -193,6 +138,7 @@ void GLFWApp::init_tank_demo()
 		ctor_man1.collider_sx = 1.f;
 		ctor_man1.collider_sy = 1.f;
 		WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man1);
+		splayer = sp;
 		sp->_animation->add_clip(player_clip, player_clip->name);
 		sp->set_tag("player");
 
@@ -205,6 +151,18 @@ void GLFWApp::init_tank_demo()
 		scene->add_sprite(sp);
 		pcc->text_renderer = text_renderer;
 		pcc->cam = cameras[0];
+
+		pcc->enemy_texture = enemy_texture;
+		pcc->enemy_clip = enemy_clip;
+		pcc->pop_clip = pop_clip;
+		pcc->pop_texture = pop_texture;
+		pcc->bullet_texture = bullet_texture;
+		pcc->scene = scene;
+		pcc->world_renderer = world_renderer;
+		pcc->sound_fire = sound_fire;
+		pcc->sound_blast = sound_blast;
+		pcc->sound_death_enemy = sound_death_enemy;
+		pcc->player_clip = player_clip;
 
 		WIPSpriteCreator ctor_blt(0.3f, 0.3f, WIPMaterialType::E_TRANSLUCENT);
 		ctor_blt.texture = bullet_texture;
@@ -241,15 +199,116 @@ void GLFWApp::init_tank_demo()
 		{
 			((WIPSprite*)s)->_render->is_visible = false;
 		};
-		sp_pop->_animation->add_clip_callback(pop_clip->name,cb, sp_pop);
+		sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
 		scene->add_sprite(sp_pop);
 
 		pcc1->pop_obj = sp_pop;
 	}
 
+	for (int i = 0; i < ANIMYNUM; i++)
+	{
+		WIPSpriteCreator ctor_man(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
+		ctor_man.texture = enemy_texture;
+		ctor_man.world_render = world_renderer;
+		ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+		ctor_man.collider_sx = 1.f;
+		ctor_man.collider_sy = 1.f;
+		WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man);
+		sp->_animation->add_clip(enemy_clip, enemy_clip->name);
+		sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
+		sp->set_tag("enemy");
+		EnemeyComponent* pcc = new EnemeyComponent(sp);
+		pcc->player_ref = splayer;
+		pcc->sound = sound_fire;
+		pcc->sound_death = sound_death_enemy;
+		pcc->clip = enemy_clip;
+		sp->add_tick_component(pcc);
+		scene->add_sprite(sp);
+
+		WIPSpriteCreator ctor_blt(0.3f, 0.3f, WIPMaterialType::E_TRANSLUCENT);
+		ctor_blt.texture = bullet_texture;
+		ctor_blt.world_render = world_renderer;
+		ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+		ctor_blt.collider_sx = 1.f;
+		ctor_blt.collider_sy = 1.f;
+		WIPSprite* spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+		spblt->_animation->add_clip(player_clip, player_clip->name);
+		spblt->_animation->play_name(player_clip->name, false);
+		spblt->_render->is_visible = false;
+		int r = RBMath::get_rand_i(800);
+		if (r < 0)
+		{
+			BulletComponent* pcc1 = new BulletComponent(spblt);
+			pcc1->sound = sound_blast;
+			spblt->add_tick_component(pcc1);
+			spblt->set_tag("bullet_enemy");
+			pcc->blt = spblt;
+			spblt->translate_to(25, 22 - 0.6*i);
+			pcc1->pos = RBVector2(25, 22 - 0.6*i);
+			scene->add_sprite(spblt);
+
+			WIPSpriteCreator ctor_pop(2.f, 2.f, WIPMaterialType::E_TRANSLUCENT);
+			ctor_pop.texture = pop_texture;
+			ctor_pop.world_render = world_renderer;
+			ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+			ctor_pop.collider_sx = 1.f;
+			ctor_pop.collider_sy = 1.f;
+			WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+			sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
+			//sp_pop->_animation->play_name(pop_clip->name, false);
+			sp_pop->set_z_order(-0.1);
+			sp_pop->set_tag("pop_enemy");
+			sp_pop->_render->is_visible = false;
+			auto cb = [](void* s)->void
+			{
+				((WIPSprite*)s)->_render->is_visible = false;
+			};
+			sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+			scene->add_sprite(sp_pop);
+
+			pcc1->pop_obj = sp_pop;
+		}
+		else
+		{
+			BulletComponent1* pcc1 = new BulletComponent1(spblt);
+			pcc1->sound = sound_blast;
+			spblt->add_tick_component(pcc1);
+			spblt->set_tag("bullet_enemy");
+			pcc->blt = spblt;
+			spblt->translate_to(25, 22 - 0.6*i);
+			pcc1->pos = RBVector2(25, 22 - 0.6*i);
+			scene->add_sprite(spblt);
+
+			WIPSpriteCreator ctor_pop(2.f, 2.f, WIPMaterialType::E_TRANSLUCENT);
+			ctor_pop.texture = pop_texture;
+			ctor_pop.world_render = world_renderer;
+			ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+			ctor_pop.collider_sx = 1.f;
+			ctor_pop.collider_sy = 1.f;
+			WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+			sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
+			//sp_pop->_animation->play_name(pop_clip->name, false);
+			sp_pop->set_z_order(-0.1);
+			sp_pop->set_tag("pop_enemy");
+			sp_pop->_render->is_visible = false;
+			auto cb = [](void* s)->void
+			{
+				((WIPSprite*)s)->_render->is_visible = false;
+			};
+			sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+			scene->add_sprite(sp_pop);
+
+			pcc1->pop_obj = sp_pop;
+		}
+		
+		
+	}
+
+
+
 	//block
 	{
-		for (int i = 0; i < 7; ++i)
+		for (int i = 0; i < 10; ++i)
 		{
 			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
 			ctor_man1.texture = block_texture;
@@ -383,7 +442,7 @@ void GLFWApp::init_tank_demo()
 			scene->add_sprite(sp);
 			sp->translate_to(-20 , -20+i*1.8);
 		}
-		for (int i = 0; i < 20; ++i)
+		for (int i = 0; i < 23; ++i)
 		{
 			WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_OPAQUE);
 			ctor_man1.texture = block_texture;
@@ -974,6 +1033,7 @@ void GLFWApp::run()
 
 
 			//g_rhi->set_shader(0);
+#ifdef DEBUGDRAW
 			rmt_BeginCPUSample(debug_draw_cpu, 0);
 			rmt_BeginOpenGLSample(debug_draw);
 			g_rhi->begin_debug_context();
@@ -984,7 +1044,7 @@ void GLFWApp::run()
 			g_rhi->end_debug_context();
 			rmt_EndOpenGLSample();
 			rmt_EndCPUSample();
-
+#endif
 			rmt_BeginCPUSample(get_time, RMTSF_Aggregate);
 			f32 dt = clock->get_frame_time();
 			rmt_EndCPUSample();
@@ -1065,6 +1125,13 @@ void GLFWApp::run()
 			}
 			deleting_objects.clear();
 
+			for (auto i : creating_objects)
+			{
+				i->init_components();
+				scene->add_sprite(i);
+
+			}
+			creating_objects.clear();
 			rmt_EndCPUSample();
 
 		}

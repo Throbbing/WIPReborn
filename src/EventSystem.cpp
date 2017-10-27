@@ -12,13 +12,28 @@ void EventReceivers::add_receiver(WIPObject* object,int priority)
 {
   if (!object)
     return;
+  std::vector<EventReceiver>::iterator it = receivers_.begin();
+  for (; it != receivers_.end(); ++it)
+  {
+	  if ((*it).object == object)
+		  break;
+  }
+  if (it != receivers_.end())
+	  return;
    receivers_.push_back(EventReceiver(object,priority));
    std::sort(receivers_.begin(), receivers_.end(), sort_g);
 }
 
 void EventReceivers::remove_receiver(WIPObject* object)
 {
-
+	std::vector<EventReceiver>::iterator it = receivers_.begin();
+	for (; it != receivers_.end(); ++it)
+	{
+		if ((*it).object == object)
+			break;
+	}
+	if (it!=receivers_.end())
+		receivers_.erase(it);
 }
 
 EventManager* EventManager::get_instance()
@@ -56,4 +71,35 @@ void EventManager::add_event_receiver(WIPObject* receiver, WIPObject* sender, st
     }
   }
   sender_event_receivers_[sender][event_type]->add_receiver(receiver,priority);
+}
+
+void EventManager::remove_event_sender(WIPObject* sender)
+{
+	auto ret = sender_event_receivers_.find(sender);
+	if (ret != sender_event_receivers_.end())
+	{
+		for (std::map<string_hash, EventReceivers*>::iterator it = ret->second.begin(); 
+			it != ret->second.end(); ++it)
+		{
+			for (auto i : it->second->receivers_)
+			{
+				i.object->remove_event_sender(sender);
+			}
+		}
+		sender_event_receivers_.erase(ret);
+	}
+}
+
+void EventManager::remove_event_receiver(WIPObject* receiver, WIPObject* sender, string_hash eventType)
+{
+	EventReceivers* group = get_event_receivers(sender,eventType);
+	if (group)
+		group->remove_receiver(receiver);
+}
+
+void EventManager::remove_event_receiver(WIPObject* receiver, string_hash eventType)
+{
+	EventReceivers* group = get_event_receivers(eventType);
+	if (group)
+		group->remove_receiver(receiver);
 }

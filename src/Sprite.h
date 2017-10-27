@@ -319,7 +319,9 @@ public:
 	{
 		return nullptr;
 	}
-
+	int key;
+	static int cur_id;
+	static std::vector<int> ids;
 private:
 	WIPSprite(){}
 	~WIPSprite();

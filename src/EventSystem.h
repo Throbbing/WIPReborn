@@ -33,6 +33,9 @@ public:
   //add receiver who receives no sender events
   void add_event_receiver(WIPObject* receiver, string_hash event_type, int priority=-1);
   void add_event_receiver(WIPObject* receiver, WIPObject* sender, string_hash event_type, int priority=-1);
+  void remove_event_sender(WIPObject* sender);
+  void remove_event_receiver(WIPObject* receiver, WIPObject* sender, string_hash eventType);
+  void remove_event_receiver(WIPObject* receiver, string_hash eventType);
   /// Return event receivers for a sender and event type, or null if they do not exist.
   EventReceivers* get_event_receivers(WIPObject* sender, string_hash eventType)
   {

@@ -223,14 +223,10 @@ public:
 		pre_clip = nullptr;
 		clip = nullptr;
 		blt = nullptr;
+		player_ref = nullptr;
 	}
 	~EnemeyComponent(){}
-	virtual void init()
-	{
-		man_state = ManState::E_DOWN;
-		acc_t = 0.f;
-		cur_direction = RBMath::get_rand_range_i(0, 3);
-	}
+	virtual void init();
 	virtual void update(f32 dt);
 	virtual void fix_update(f32 dt)
 	{
@@ -240,7 +236,7 @@ public:
 	{
 
 	}
-
+	void des_player(string_hash tp, void* ud);
 	ManState man_state;
 	WIPAnimationClip* pre_clip;
 	WIPAnimationClip* clip;
@@ -249,6 +245,7 @@ public:
 	int cur_direction;
 
 	WIPSprite* blt;
+	WIPSprite* player_ref;
 
 	StudioSound* sound;
 	StudioSound* sound_death;
@@ -273,7 +270,7 @@ public:
 		cam = nullptr;
 		blt = nullptr;
 	}
-
+	void add_hp(string_hash tp, void* ud);
 	~PlayerComponent(){}
 	virtual void init();
 	virtual void update(f32 dt);
@@ -296,9 +293,30 @@ public:
 	StudioSound* sound_start;
 	StudioSound* sound_death;
 
-
-
+	float acc = 100;
+	f32 hp = 100;
+	int killed = 0;
 	class TextRender* text_renderer;
+
+
+	class WIPTexture2D* enemy_texture;
+	class WIPTexture2D* player_texture;
+	class WIPTexture2D* block_texture;
+	class WIPTexture2D* pop_texture;
+	class WIPTexture2D* bullet_texture;
+
+	class WIPAnimationClip* enemy_clip;
+	class WIPAnimationClip* player_clip;
+
+
+	class WIPAnimationClip* pop_clip;
+	class WIPScene* scene;
+	class WorldRender* world_renderer;
+
+	class StudioSound* sound_fire;
+	class StudioSound* sound_blast;
+	class StudioSound* sound_death_enemy;
+
 };
 
 class BulletComponent : public WIPTickComponent
@@ -310,6 +328,36 @@ public:
 	}
 
 	~BulletComponent(){}
+	virtual void init()
+	{
+	}
+	virtual void update(f32 dt);
+
+	virtual void fix_update(f32 dt)
+	{
+
+	}
+	virtual void destroy()
+	{
+
+	}
+	RBVector2 v;
+	WIPSprite* pop_obj;
+	StudioSound* sound;
+	RBVector2 pos;
+	f32 s = 0;
+	int main_axis = -1;
+};
+
+class BulletComponent1 : public WIPTickComponent
+{
+public:
+	WIPOBJECT(BulletComponent1, WIPTickComponent);
+	BulletComponent1(WIPSprite* s) :WIPTickComponent(s)
+	{
+	}
+
+	~BulletComponent1(){}
 	virtual void init()
 	{
 	}

@@ -16,6 +16,149 @@ inline unsigned SDBMHash(unsigned hash, unsigned char c);
 
 unsigned get_string_hash(const char* str);
 
+//noly surpport int key in hash
+template<class T>
+struct HashLinkNode
+{
+	HashLinkNode() :
+		prev(nullptr), next(nullptr), key(-1), data(nullptr)
+	{}
+	HashLinkNode* prev;
+	HashLinkNode* next;
+	int key;
+	const T* data;
+};
+
+template<class T>
+class HashLink
+{
+private:
+	void cache_node(HashLinkNode<T>* node)
+	{
+		//insert front
+		node->next = cache_link_node;
+		cache_link_node = node;
+	}
+	HashLinkNode<T>* get_empty_node()
+	{
+		if (!cache_link_node)
+		{
+			return new HashLinkNode<T>();
+		}
+		auto* ret = cache_link_node;
+		cache_link_node = cache_link_node->next;
+		return ret;
+	}
+	void insert_link_front(HashLinkNode<T>* node)
+	{
+		if (_head->next == node)
+		{
+			return;
+		}
+		if (_head->next)
+		{
+			_head->next->prev = node;
+			node->next = _head->next;
+			node->prev = _head;
+			_head->next = node;
+		}
+		else
+		{
+			_head->next = node;
+			node->prev = _head;
+			node->next = nullptr;
+			_head->prev = node;
+		}
+	}
+	void remove_link(HashLinkNode<T>* node)
+	{
+		auto* next = node->next;
+		auto* prev = node->prev;
+		node->next = nullptr;
+		node->prev = nullptr;
+		if (next == nullptr)
+		{
+			_head->prev = prev;
+			prev->next = nullptr;
+			return;
+		}
+		next->prev = prev;
+		prev->next = next;
+	}
+
+public:
+	void insert(const T* a)
+	{
+		HashLinkNode<T>* node = get_empty_node();
+		node->data = a;
+		node->key = a->key;
+		insert_link_front(node);
+		if (_hash_table.size() < a->key + 1)
+			_hash_table.resize(a->key*2+2,nullptr);
+		_hash_table[node->key] = node;
+	}
+	void remove(const T* a)
+	{
+		if (_hash_table.size() < a->key + 1)
+			return;
+		HashLinkNode<T>* node = _hash_table[a->key];
+		if (!node)
+			return;
+		assert(node->key == a->key);
+		remove_link(node);
+		cache_node(node);
+		_hash_table[a->key] = nullptr;
+	}
+	HashLinkNode<T>* head() const
+	{
+		return _head->next;
+	}
+	HashLinkNode<T>* end() const
+	{
+		return _head;
+	}
+	HashLinkNode<T>* next(HashLinkNode<T>* cur) const
+	{
+		if (!cur)
+			return nullptr;
+		return cur->next;
+	}
+	HashLinkNode<T>* prev(HashLinkNode<T>* cur) const
+	{
+		if (!cur)
+			return nullptr;
+		return cur->prev;
+	}
+
+	HashLink()
+	{
+		_head = new HashLinkNode<T>();
+		cache_link_node = nullptr;
+	}
+	~HashLink()
+	{
+		//release link
+		HashLinkNode<T>* temp = nullptr;
+		for (HashLinkNode<T>* l = _head; l != nullptr;)
+		{
+			temp = l->next;
+			delete l;
+			l = temp;
+		}
+		for (HashLinkNode<T>* l = cache_link_node; l != nullptr;)
+		{
+			temp = l->next;
+			delete l;
+			l = temp;
+		}
+	}
+
+private:
+	HashLinkNode<T>* _head;
+	std::vector<HashLinkNode<T>*> _hash_table;
+
+	HashLinkNode<T>* cache_link_node;
+};
 
 enum class EventType
 {
@@ -210,10 +353,10 @@ public:
   void subscribe_event(string_hash evt_tp, EventHandlerBase* handler,int priority=-1);
   void subscribe_event(WIPObject* sender, string_hash evt_tp, EventHandlerBase* handler, int priority=-1);
 
-  void unsubscribe_event(string_hash event_type){}
-  void unsubscribe_event(WIPObject* sender, string_hash event_type){}
-  void unsubscribe_events(WIPObject* sender){}
-  void unsubscribe_all_events(){}
+  void unsubscribe_event(string_hash event_type);
+  void unsubscribe_event(WIPObject* sender, string_hash event_type);
+  void unsubscribe_events(WIPObject* sender);
+  void unsubscribe_all_events();
   void unsubscribe_all_events_except(const std::vector<string_hash>& exceptions, bool only_user_data){}
 
   void send_event(string_hash event_type)
@@ -224,7 +367,7 @@ public:
   void send_event(string_hash event_type, void* event_data);
 
 
-  
+  void remove_event_sender(WIPObject* sender);
 
   void* get_event_data() const;
 

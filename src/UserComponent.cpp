@@ -49,6 +49,20 @@ bool imgui_button_long(wchar_t* text)
 	return ImGui::Button(get_utf8(text, t));
 }
 
+void imgui_label_short(wchar_t* text)
+{
+	char t[15];
+	memset(t, 0, 15);
+	ImGui::Text(get_utf8(text, t));
+}
+
+void imgui_lable_long(wchar_t* text)
+{
+	char t[512];
+	memset(t, 0, 512);
+	ImGui::Text(get_utf8(text, t));
+}
+
 void MapComponent::init()
 {
 
@@ -352,15 +366,158 @@ void PlayerComponent::init()
 	host_object->translate_to(0, 0);
 	g_audio_manager->Play(sound_start);
 
-
+	subscribe_event(get_string_hash("add_hp"), WIP_EVENT_HANDLER(PlayerComponent, add_hp));
 }
+
+void PlayerComponent::add_hp(string_hash tp, void* ud)
+{
+	hp+=hp*0.1;
+	if (hp > 100)
+		hp = 100;
+	acc += 1;
+	if (acc > 100)
+		acc = 100;
+	killed++;
+	static int created = 0;
+	if (killed % 2 == 0)
+	{
+		if (RBMath::get_rand_i(900) > 450)
+		{
+			for (int i = 0; i < RBMath::get_rand_range_i(1, 5); i++)
+			{
+
+				WIPSpriteCreator ctor_man(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
+				ctor_man.texture = enemy_texture;
+				ctor_man.world_render = world_renderer;
+				ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+				ctor_man.collider_sx = 1.f;
+				ctor_man.collider_sy = 1.f;
+				WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man);
+				sp->_animation->add_clip(enemy_clip, enemy_clip->name);
+				sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
+				sp->set_tag("enemy");
+				EnemeyComponent* pcc = new EnemeyComponent(sp);
+				pcc->player_ref = host_object;
+				pcc->sound = sound_fire;
+				pcc->sound_death = sound_death_enemy;
+				pcc->clip = enemy_clip;
+				sp->add_tick_component(pcc);
+				g_app->creating_object(sp);
+				//scene->add_sprite(sp);
+
+				WIPSpriteCreator ctor_blt(0.3f, 0.3f, WIPMaterialType::E_TRANSLUCENT);
+				ctor_blt.texture = bullet_texture;
+				ctor_blt.world_render = world_renderer;
+				ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+				ctor_blt.collider_sx = 1.f;
+				ctor_blt.collider_sy = 1.f;
+				WIPSprite* spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+				spblt->_animation->add_clip(player_clip, player_clip->name);
+				spblt->_animation->play_name(player_clip->name, false);
+				spblt->_render->is_visible = false;
+				int r = RBMath::get_rand_i(800);
+				if (r < 0)
+				{
+					BulletComponent* pcc1 = new BulletComponent(spblt);
+					pcc1->sound = sound_blast;
+					spblt->add_tick_component(pcc1);
+					spblt->set_tag("bullet_enemy");
+					pcc->blt = spblt;
+					spblt->translate_to(-28, 22 - created);
+					pcc1->pos = RBVector2(-28, 22 - created);
+					g_app->creating_object(spblt);
+					//scene->add_sprite(spblt);
+
+					WIPSpriteCreator ctor_pop(2.f, 2.f, WIPMaterialType::E_TRANSLUCENT);
+					ctor_pop.texture = pop_texture;
+					ctor_pop.world_render = world_renderer;
+					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+					ctor_pop.collider_sx = 1.f;
+					ctor_pop.collider_sy = 1.f;
+					WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
+					//sp_pop->_animation->play_name(pop_clip->name, false);
+					sp_pop->set_z_order(-0.1);
+					sp_pop->set_tag("pop_enemy");
+					sp_pop->_render->is_visible = false;
+					auto cb = [](void* s)->void
+					{
+						((WIPSprite*)s)->_render->is_visible = false;
+					};
+					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+					g_app->creating_object(sp_pop);
+					//scene->add_sprite(sp_pop);
+
+					pcc1->pop_obj = sp_pop;
+				}
+				else
+				{
+					BulletComponent1* pcc1 = new BulletComponent1(spblt);
+					pcc1->sound = sound_blast;
+					spblt->add_tick_component(pcc1);
+					spblt->set_tag("bullet_enemy");
+					pcc->blt = spblt;
+					spblt->translate_to(-28, 22 - created);
+					pcc1->pos = RBVector2(-28, 22 -  created );
+					g_app->creating_object(spblt);
+					//scene->add_sprite(spblt);
+
+					WIPSpriteCreator ctor_pop(2.f, 2.f, WIPMaterialType::E_TRANSLUCENT);
+					ctor_pop.texture = pop_texture;
+					ctor_pop.world_render = world_renderer;
+					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+					ctor_pop.collider_sx = 1.f;
+					ctor_pop.collider_sy = 1.f;
+					WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
+					//sp_pop->_animation->play_name(pop_clip->name, false);
+					sp_pop->set_z_order(-0.1);
+					sp_pop->set_tag("pop_enemy");
+					sp_pop->_render->is_visible = false;
+					auto cb = [](void* s)->void
+					{
+						((WIPSprite*)s)->_render->is_visible = false;
+					};
+					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+					g_app->creating_object(sp_pop);
+					//scene->add_sprite(sp_pop);
+
+					pcc1->pop_obj = sp_pop;
+				}
+				created++;
+
+
+			}
+		}
+
+	}
+}
+
 void PlayerComponent::update(f32 dt)
 {
+	static bool accing = false;
 	float speed = 5.2f;
-	if (Input::get_key_pressed(WIP_K))
-	{
-		speed *= 2;
-	}
+
+	
+	
+		if (acc <= 99)
+		{
+			acc += 0.1;
+		}
+		if (Input::get_key_pressed(WIP_K))
+		{
+			if (acc > 0.5)
+			{
+				speed *= 2;
+				acc -= 1;
+			}
+			/*
+			if (acc < 0.5)
+				accing = true;
+			*/
+		}
+	
+
 	if (Input::get_key_pressed(WIP_W))
 	{
 		host_object->translate(0, speed*dt);
@@ -433,29 +590,35 @@ void PlayerComponent::update(f32 dt)
 	{
 
 	}
-	static int hp = 100;
+	
 	for (b2ContactEdge* ce = host_object->_collider->get_body()->GetContactList(); ce; ce = ce->next)
 	{
 		b2Contact* c = ce->contact;
 		WIPSprite* s2 = (WIPSprite*)c->GetFixtureB()->GetBody()->GetUserData();
 		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
 		{
-			hp -= 10;
+			if (!Input::get_key_pressed(WIP_K) || acc <= 0.1f)
+			hp -= 17;
 			if (hp <= 0)
 			{
+				unsubscribe_all_events();
 				g_audio_manager->Play(sound_death);
 				g_app->pending_objects(host_object);
+				host_object->send_event(get_string_hash("destory"));
 				return;
 			}
 		}
 		s2 = (WIPSprite*)c->GetFixtureA()->GetBody()->GetUserData();
 		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
 		{
-			hp -= 10;
+			if (!Input::get_key_pressed(WIP_K)||acc<=0.1f)
+			hp -= 16;
 			if (hp <= 0)
 			{
+				unsubscribe_all_events();
 				g_audio_manager->Play(sound_death);
 				g_app->pending_objects(host_object);
+				host_object->send_event(get_string_hash("destory"));
 				return;
 			}
 		}
@@ -469,8 +632,29 @@ void PlayerComponent::update(f32 dt)
 
 	ImGui::SetNextWindowPos(ImVec2(20, 20));
 	ImGui::Begin("");
+	imgui_label_short(L"血量：");
+	ImGui::SameLine();
 	ImGui::ProgressBar(hp / 100.f, ImVec2(100, 20));
+	imgui_label_short(L"氮气：");
+	ImGui::SameLine();
+	ImGui::ProgressBar(acc / 100.f, ImVec2(100, 20));
+	imgui_label_short(L"击杀：");
+	ImGui::SameLine();
+	ImGui::Text("%d", killed);
 	ImGui::End();
+}
+
+void EnemeyComponent::init()
+{
+	man_state = ManState::E_DOWN;
+	acc_t = 0.f;
+	cur_direction = RBMath::get_rand_range_i(0, 3);
+	subscribe_event(player_ref, get_string_hash("destory"), WIP_EVENT_HANDLER(EnemeyComponent,des_player));
+}
+
+void EnemeyComponent::des_player(string_hash tp, void* ud)
+{
+	player_ref = nullptr;
 }
 
 void EnemeyComponent::update(f32 dt)
@@ -479,10 +663,12 @@ void EnemeyComponent::update(f32 dt)
 	f32 dx = 0, dy = 0;
 	float speed = 3.2f;
 	acc_t += dt;
-	static f32 fixt = 2.5f;
+	static f32 fixt = 1.5f ;
 	int r = 0;
 	ImGui::SliderFloat("", &fixt, 1.5f, 5.5f);
-	if (acc_t > fixt)
+	f32 tf = fixt+RBMath::get_rand_range_f(-1.2, 1.2);
+
+	if (acc_t > tf)
 	{
 		cur_direction = RBMath::get_rand_range_i(0, 3);
 		r = RBMath::get_rand_i(8);
@@ -517,85 +703,97 @@ void EnemeyComponent::update(f32 dt)
 	int d = cur_direction;
 	if (d == 0)
 	{
+		host_object->rotate_to(DEG2RAD(0));
 		host_object->translate(0, speed*dt);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
+
 		//cam->move(0,speed*dt);
-		dy = -dd;
+		dy = dd;
 		man_state = ManState::E_UP;
 	}
 	else if (d == 1)
 	{
+		host_object->rotate_to(DEG2RAD(90));
 		host_object->translate(-speed*dt, 0);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
+
 		man_state = ManState::E_LEFT;
 		dx = -dd;
 		//cam->move(-speed*dt, 0);
 	}
 	else if (d == 2)
 	{
+		host_object->rotate_to(DEG2RAD(180));
 		host_object->translate(0, -speed*dt);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
-		dx = dd;
+
+		dy = -dd;
 		man_state = ManState::E_DOWN;
 
 		//cam->move(0,-speed*dt);
 	}
 	else if (d == 3)
 	{
+		host_object->rotate_to(DEG2RAD(270));
 		host_object->translate(speed*dt, 0);
-		if (host_object->_animation->play_name("player_run", false))
-		{
-			pre_clip = clip;
-		}
-		dy = dd;
+
+		dx = dd;
 		man_state = ManState::E_RIGHT;
 
 		//cam->move(speed*dt, 0);
 	}
-
+	
+	if (player_ref&&r >= 4)
+	{
+		//shot player
+		f32 a = (player_ref->_transform->world_x - host_object->_transform->world_x);
+		if (a > 0)
 		{
-			switch (man_state)
-			{
-			case ManState::E_DOWN:
-				host_object->rotate_to(DEG2RAD(180));
-
-				break;
-			case ManState::E_LEFT:
-				host_object->rotate_to(DEG2RAD(90));
-
-				break;
-			case ManState::E_RIGHT:
-				host_object->rotate_to(DEG2RAD(270));
-
-				break;
-			case ManState::E_UP:
-				host_object->rotate_to(DEG2RAD(0));
-
-				break;
-			}
-
+			dx = dd;
+			man_state = ManState::E_RIGHT;
 		}
+		else
+		{
+			dx = -dd;
+			man_state = ManState::E_LEFT;
+		}
+		f32 b = (player_ref->_transform->world_y - host_object->_transform->world_y);
+		if (b > 0)
+		{
+			dy = dd;
+			man_state = ManState::E_UP;
+		}
+		else
+		{
+			dy = -dd;
+			man_state = ManState::E_DOWN;
+		}
+	}
+	
 		static RBVector2 blt_d = RBVector2::zero_vector;
 		if (blt->_render->is_visible == false)
 		{
 
-			if (r >= 4)
+			if (player_ref&& r >= 4)
 			{
-				//g_audio_manager->Play(sound);
-				blt->translate_to(host_object->_transform->world_x + dx * 1.5, host_object->_transform->world_y + dy * 1.5);
-				blt_d.x = dx;
-				blt_d.y = dy;
-				((BulletComponent*)blt->tick_components[0])->v = blt_d;
-				blt->_render->is_visible = true;
+				//shot
+				f32 a = (player_ref->_transform->world_x - host_object->_transform->world_x);
+				f32 b = (player_ref->_transform->world_y - host_object->_transform->world_y);
+
+				if (
+					
+					(a > 0 && man_state == ManState::E_RIGHT&&RBMath::abs(b)<8) ||
+					(a < 0 && man_state == ManState::E_LEFT&&RBMath::abs(b)<8) ||
+					(b>0 && man_state == ManState::E_UP&&RBMath::abs(a)<8) ||
+					(b < 0 && man_state == ManState::E_DOWN&&RBMath::abs(a)<8)
+					
+					)
+				{
+					//g_audio_manager->Play(sound);
+					blt->translate_to(host_object->_transform->world_x + dx * 1.5, host_object->_transform->world_y + dy * 1.5);
+
+					blt_d.x = dx;
+					blt_d.y = dy;
+					((BulletComponent*)blt->tick_components[0])->v = blt_d;
+					blt->_render->is_visible = true;
+				}
 			}
 
 		}
@@ -605,7 +803,18 @@ void EnemeyComponent::update(f32 dt)
 			WIPSprite* s2 = (WIPSprite*)c->GetFixtureB()->GetBody()->GetUserData();
 			if (s2->get_tag() == "bullet")
 			{
+				host_object->send_event(get_string_hash("add_hp"));
 				g_audio_manager->Play(sound_death);
+				unsubscribe_all_events();
+				g_app->pending_objects(host_object);
+				return;
+			}
+			s2 = (WIPSprite*)c->GetFixtureA()->GetBody()->GetUserData();
+			if (s2->get_tag() == "bullet")
+			{
+				host_object->send_event(get_string_hash("add_hp"));
+				g_audio_manager->Play(sound_death);
+				unsubscribe_all_events();
 				g_app->pending_objects(host_object);
 				return;
 			}
@@ -613,6 +822,66 @@ void EnemeyComponent::update(f32 dt)
 }
 
 void BulletComponent::update(f32 dt)
+{
+	
+	int i = host_object->_collider->get_collision_list_size();
+	if (i > 0)
+	{
+		g_audio_manager->Play(sound);
+		pop_obj->_render->is_visible = true;
+		pop_obj->translate_to(host_object->_transform->world_x, host_object->_transform->world_y);
+		pop_obj->_animation->play_name("pop", false);
+
+		host_object->_render->is_visible = false;
+		v = RBVector2::zero_vector;
+		host_object->translate_to(pos.x, pos.y);
+	}
+	else
+		host_object->_render->is_visible = true;
+
+	if (host_object->_transform->world_x < -20 || host_object->_transform->world_x>20 || host_object->_transform->world_y > 20 || host_object->_transform->world_y < -20)
+	{
+		host_object->_render->is_visible = false;
+		host_object->translate_to(pos.x, pos.y);
+		s = 0;
+		main_axis = -1;
+	}
+	else
+	{
+		//host_object->_render->is_visible = true;
+
+		f32 blt_speed = 16.5f;
+		//v.y -= 1.8*dt;
+
+		if (main_axis == -1)
+		{
+			if (RBMath::abs(v.x) < 0.1)
+			{
+				main_axis = 0;
+				
+			}
+			else if (RBMath::abs(v.y) < 0.1)
+			{
+				main_axis = 1;
+				
+			}
+		}
+		if (main_axis == 1)
+		{
+			v.y = 1*RBMath::sin(s*20);
+			s += v.x*dt;
+		}
+		else if (main_axis == 0)
+		{
+			v.x = 1*RBMath::sin(s*20 );
+			s += v.y*dt;
+		}
+
+		host_object->translate(v.x*blt_speed*dt, v.y*blt_speed*dt);
+	}
+}
+
+void BulletComponent1::update(f32 dt)
 {
 	int i = host_object->_collider->get_collision_list_size();
 	if (i > 0)
@@ -638,8 +907,8 @@ void BulletComponent::update(f32 dt)
 	{
 		//host_object->_render->is_visible = true;
 
-		f32 blt_speed = 20.5f;
-		v.y -= 1.8*dt;
+		f32 blt_speed = 10.5f;
+
 
 		host_object->translate(v.x*blt_speed*dt, v.y*blt_speed*dt);
 	}

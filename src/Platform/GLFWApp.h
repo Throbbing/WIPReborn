@@ -49,10 +49,14 @@ public:
 	  _exit_requist = true;
   }
   void pending_objects(class WIPSprite* s);
+  //add object to scene in case of destory iterator.
+  void creating_object(class WIPSprite* s);
   GLFWwindow *window;
 
 private:
 	std::vector<class WIPSprite*> deleting_objects;
+	std::vector<class WIPSprite*> creating_objects;
+
 
 	bool _exit_requist;
 	class TimeSource* times;
@@ -99,7 +103,7 @@ private:
 	class WIPAnimationClip* pop_clip;
 
 
-#define ANIMYNUM 25
+#define ANIMYNUM 52
 	WIPSprite* enemy[ANIMYNUM];
 	WIPSprite* block;
 	WIPSprite* player;

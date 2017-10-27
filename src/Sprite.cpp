@@ -293,6 +293,7 @@ void WIPSprite::destroy(WIPSprite* s)
 	{
 		delete s->tick_components[i];
 	}
+	ids.push_back(s->key);
 	delete s;
 }
 
@@ -361,6 +362,9 @@ void WIPSprite::destroy_self()
 
 }
 
+int WIPSprite::cur_id=0;
+std::vector<int> WIPSprite::ids;
+
 WIPSprite* WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes tp , f32 sx , f32 sy )
 {
 	WIPSprite* ret = new WIPSprite();
@@ -379,6 +383,18 @@ WIPSprite* WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes
 	}
 	ret->_tag = "NONAME";
 	ret->_type_tag = "NOTAG";
+	//assign an id
+	int id = -1;
+	if (ids.size() > 0)
+	{
+		id = ids.back();
+		ids.pop_back();
+	}
+	else
+	{
+		id = cur_id++;
+	}
+	ret->key = id;
 	return ret;
 }
 

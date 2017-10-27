@@ -65,6 +65,99 @@ void WIPObject::subscribe_event(WIPObject* sender, string_hash evt_tp, EventHand
   }
 }
 
+void WIPObject::remove_event_sender(WIPObject* sender)
+{
+	event_list_t::iterator handler = _event_handlers.begin();
+	EventHandlerBase* prev;
+	while (handler!=_event_handlers.end())
+	{
+		if ((*handler)->get_sender() == sender)
+		{
+			handler = _event_handlers.erase(handler);
+		}
+	}
+}
+
+void WIPObject::unsubscribe_event(string_hash event_type)
+{
+	while (1)
+	{
+		EventHandlerBase* prev;
+		event_list_t::const_iterator handler = _find_event_handler(event_type, &prev);
+		if (handler != _event_handlers.end())
+		{
+			if ((*handler)->get_sender())
+			{
+				EventManager::get_instance()->remove_event_receiver(this, (*handler)->get_sender(), event_type);
+			}
+			else
+			{
+				EventManager::get_instance()->remove_event_receiver(this, event_type);
+			}
+			_event_handlers.erase(handler);
+		}
+		else
+			break;
+
+	}
+}
+
+void WIPObject::unsubscribe_event(WIPObject* sender, string_hash event_type)
+{
+	if (!sender)
+		return;
+	EventHandlerBase* evp;
+	event_list_t::const_iterator handler = _find_specific_event_handler(sender, event_type, &evp);
+	if (handler != _event_handlers.end())
+	{
+		EventManager::get_instance()->remove_event_receiver(this, (*handler)->get_sender(), event_type);
+		_event_handlers.erase(handler);
+	}
+}
+
+void WIPObject::unsubscribe_events(WIPObject* sender)
+{
+	if (!sender)
+		return;
+	while (1)
+	{
+		EventHandlerBase* prev;
+		event_list_t::const_iterator handler = _find_specific_event_handler(sender, &prev);
+		if (handler != _event_handlers.end())
+		{
+
+			EventManager::get_instance()->remove_event_receiver(this, (*handler)->get_sender(), (*handler)->get_event_type());
+			_event_handlers.erase(handler);
+		}
+		else
+			break;
+
+	}
+}
+
+void WIPObject::unsubscribe_all_events()
+{
+	while (1)
+	{
+		event_list_t::const_iterator handler = _event_handlers.begin();
+		if (handler != _event_handlers.end())
+		{
+			if ((*handler)->get_sender())
+			{
+				EventManager::get_instance()->remove_event_receiver(this, (*handler)->get_sender(), (*handler)->get_event_type());
+			}
+			else
+			{
+				EventManager::get_instance()->remove_event_receiver(this, (*handler)->get_event_type());
+			}
+			_event_handlers.erase(handler);
+		}
+		else
+			break;
+
+	}
+}
+
 void WIPObject::send_event(string_hash event_type, void* event_data)
 {
   EventReceivers* group = EventManager::get_instance()->get_event_receivers(this, event_type);
@@ -154,6 +247,7 @@ void WIPObject::handle_event(WIPObject* sender, string_hash event_type, void* da
   }
 
 }
+
 
 
 //mem

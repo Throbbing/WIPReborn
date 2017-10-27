@@ -1,12 +1,11 @@
 #pragma once
 #include <vector>
-#include <list>
-#include <map>
+#include <hash_map>
 #include "Sprite.h"
 #include "RBMath/Inc/AABB.h"
 
 class WIPScene;
-
+//#define W
 class WIPQuadTreeNode
 {
 public:
@@ -21,7 +20,11 @@ public:
 	{
 		//index.swap(std::vector<int>());
 	}
-	typedef std::map<const WIPSprite*,const WIPSprite*> object_list_t;
+#ifdef W
+	typedef std::hash_map<const WIPSprite*,const WIPSprite*> object_list_t;
+#else
+	typedef HashLink<WIPSprite> object_list_t;
+#endif
 	object_list_t index;
 	bool leaf;
 	bool root;
@@ -85,7 +88,11 @@ public:
 	{
 		if(root->leaf)
 		{
+#ifdef W
 			root->index[id]=(id);
+#else
+			root->index.insert(id);
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -131,11 +138,20 @@ public:
 	{
 		if(root->leaf)
 		{
+#ifdef W
 			WIPQuadTreeNode::object_list_t::const_iterator it;
 			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
 				out_index.push_back(it->second);
 			}
+#else
+			auto* it = root->index.head();
+			while (it)
+			{
+				out_index.push_back(it->data);
+				it = it->next;
+			}
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -178,11 +194,20 @@ public:
 	{
 		if(root->leaf)
 		{
+#ifdef W
 			WIPQuadTreeNode::object_list_t::const_iterator it;
 			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
 				out_index.push_back(it->second);
 			}
+#else
+			auto* it = root->index.head();
+			while (it)
+			{
+				out_index.push_back(it->data);
+				it = it->next;
+			}
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -212,11 +237,20 @@ public:
 	{
 		if(root->leaf)
 		{
+#ifdef W
 			WIPQuadTreeNode::object_list_t::const_iterator it;
 			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
 				out_index.push_back(it->second);
 			}
+#else
+			auto* it = root->index.head();
+			while (it)
+			{
+				out_index.push_back(it->data);
+				it = it->next;
+			}
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -280,7 +314,12 @@ public:
 	{
 		if (root->leaf)
 		{
-			root->index.erase(id);
+#ifdef W
+			if (root->index.find(id) != root->index.end())
+				root->index.erase(id);
+#else
+			root->index.remove(id);
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min + (aabb.max - aabb.min)*0.5f;
@@ -308,7 +347,12 @@ public:
 	{
 		if(root->leaf)
 		{
-			root->index.erase(id);
+#ifdef W
+			if (root->index.find(id) != root->index.end())
+				root->index.erase(id);
+#else
+			root->index.remove(id);
+#endif
 			return;
 		}
 		RBVector2 c = aabb.min+(aabb.max-aabb.min)*0.5f;
@@ -341,11 +385,20 @@ public:
 	{
 		if(root->leaf)
 		{
+#ifdef W
 			WIPQuadTreeNode::object_list_t::const_iterator it;
 			for (it = root->index.begin(); it != root->index.end(); ++it)
 			{
 				out_index.push_back(it->second);
 			}
+#else
+			auto* it = root->index.head();
+			while (it)
+			{
+				out_index.push_back(it->data);
+				it = it->next;
+			}
+#endif
 			return;
 		}
 		_get_all_nodes(root->child[0],out_index);
