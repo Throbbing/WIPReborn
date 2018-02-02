@@ -35,7 +35,16 @@ void WIPScene::destroy_components()
 	}
 }
 
-void WIPScene::add_sprite(WIPSprite* sprite)
+void WIPScene::init(float world_sizex, float world_sizey, int max_depth)
+{
+	world_size_x = world_sizex;
+	world_size_y = world_sizey;
+	quad_tree = new WIPQuadTree(world_sizex, world_sizey, max_depth);
+	quad_tree->build_empty();
+	initilized = true;
+}
+
+void WIPScene::add_sprite(TRefCountPtr<WIPSprite> sprite)
 {
 	if(!initilized)
 		return;
@@ -47,13 +56,14 @@ void WIPScene::add_sprite(WIPSprite* sprite)
 void WIPScene::clear()
 {
 
+	objects.clear();
 }
 
-void WIPScene::remove_sprite(WIPSprite* sptrite, bool op_related_scene)
+void WIPScene::remove_sprite(TRefCountPtr<WIPSprite> sptrite, bool op_related_scene)
 {
 	if(!initilized)
 		return;
-	std::vector<WIPSprite*>::iterator  it;
+	std::vector<TRefCountPtr<WIPSprite>>::iterator  it;
 	int i = 0;
 	for( it=objects.begin();it!=objects.end();++it)
 	{
@@ -77,7 +87,7 @@ void WIPScene::remove_sprite(WIPSprite* sptrite, bool op_related_scene)
 
 }
 
-void WIPScene::update_sprite(WIPSprite* sprite)
+void WIPScene::update_sprite(TRefCountPtr<WIPSprite> sprite)
 {
 	//todo:must avoid every-frame remove-insert!!
 	quad_tree->remove_change(*sprite);
@@ -102,19 +112,19 @@ WIPScene::~WIPScene()
 	cameras.clear();
 }
 
-bool less_y(const WIPSprite* s1, const WIPSprite* s2)
+bool less_y(TRefCountPtr< WIPSprite> s1, TRefCountPtr< WIPSprite> s2)
 {
 	return (s1->_transform->world_y < s2->_transform->world_y);
 }
 
-void WIPScene::sort_by_y(std::vector<WIPSprite*> v)
+void WIPScene::sort_by_y(std::vector<TRefCountPtr<WIPSprite>> v)
 {
 	std::sort(objects.begin(), objects.end(), less_y);
 }
 
 void WIPScene::update_zorder_by_type_tag(std::string type_tag, f32 min_z, f32 max_z)
 {
-	std::vector<WIPSprite*> charecters;
+	std::vector<TRefCountPtr<WIPSprite>> charecters;
 	for (int i = 0; i < objects.size(); ++i)
 	{
 		if (objects[i]->_type_tag == type_tag)
@@ -144,21 +154,33 @@ void WIPScene::update_zorder_by_type_tag(std::string type_tag, f32 min_z, f32 ma
 }
 
 
-void WIPScene::update_zorder_by_type_tag(const WIPSprite* s, std::string type_tag, f32 min_z, f32 max_z)
+void WIPScene::update_zorder_by_type_tag(TRefCountPtr<const WIPSprite> s, std::string type_tag, f32 min_z, f32 max_z)
 {
-	std::vector<const WIPSprite* > out_objects;
-	std::vector<const WIPSprite* > out_objects_filted;
+	std::vector<TRefCountPtr<const WIPSprite> > out_objects;
+	std::vector<TRefCountPtr<const WIPSprite> > out_objects_filted;
 	quad_tree->get_near_node(*s,out_objects);
 	std::sort(out_objects.begin(), out_objects.end());
 	int n = 0;
-	const WIPSprite* pre = nullptr;
+	TRefCountPtr<const WIPSprite> pre = nullptr;
 	for (int i = 0; i < out_objects.size(); ++i)
 	{
-		const WIPSprite* s = out_objects[i];
+		TRefCountPtr<const WIPSprite> s = out_objects[i];
 		if (s != pre)
 		{
 			out_objects_filted.push_back(s);
 		}
 	}
 	//problem:we may trouble the intersected object's order with other objects which are not in our consideration if only consider the intersected objects.
+}
+
+WIPSprite* WIPScene::get_sprite_by_tag(const std::string& name) const
+{
+	for (auto i : objects)
+	{
+		if (i->get_tag() == name)
+		{
+			return i.GetReference();
+		}
+	}
+	return nullptr;
 }

@@ -19,7 +19,7 @@
 -  ~事件驱动Object重构，消除各级Update~
 -  事件驱动UI
 -  以事件驱动方式封装IMGUI
--  内存，智能指针
+-  ~内存，智能指针~
 -  完善动画系统(~帧动画~，状态机，transform动画，动画事件等)
 -  Profile与性能优化
 -  D3D11支持
@@ -50,14 +50,3 @@
 ![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
 ![](https://github.com/wubugui/FXXKTracer/raw/master/pic/ll.gif)
 
-# 记录
-
--	所有object属于同一个world，所有的创建删除都属于world，scene只是world的一个“窗口”.
--	不同component之间的相互调用，直接调用与消息.
--	string替换hash
--	优化:WIPPhysicsManeger::update
-				WIPSprite::rotate_to
-				WIPSprite::translate_to
-						WIPSprite::update_world(节点储存结构已优化。)
-
-四叉树优化：在object中记录自己所在四叉树位置，先检测该结点是否变化了四叉树区域，若没变就只更新位置，不操作四叉树；否则删除结点重新插入。注意大部分对象是不会变化四叉树区域的。

@@ -2,6 +2,7 @@
 #pragma once
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include "RBMath/Inc/Vector2.h"
+#include "RefCount.h"
 
 class WIPRenderTexture2D;
 class WIPLayer;
@@ -24,7 +25,7 @@ class WIPSprite;
 	 |
 	 |-1
 */
-class WIPCamera
+class WIPCamera  : public FRefCountedObject
 {
 public:
 	WIPCamera(f32 w,f32 h,f32 pw,f32 ph,int iww,int iwh);

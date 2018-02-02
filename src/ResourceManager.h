@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <map>
 #include <string>
+#include "RefCount.h"
 
 #define SUCC_SUB 0
 #define FAIL 1
@@ -94,7 +95,7 @@ They are loaded when needed and keep in memory until the game exit.
 Be sure only use clone method to copy ResHandler and its pointer.
 DO NOT allow any assignment between handler and handler or the pointer and pointer.
 */
-class WIPResourceManager
+class WIPResourceManager : public FRefCountedObject
 {
 public:
 

@@ -1,10 +1,11 @@
 #pragma once
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include <list>
+#include "RefCount.h"
 
 class WIPAnimationClip;
 
-class WIPAnimationQueue
+class WIPAnimationQueue : public FRefCountedObject
 {
 public:
 	void add_clip(WIPAnimationClip* clip);

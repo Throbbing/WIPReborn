@@ -242,7 +242,7 @@ void GLDynamicRHI::load_shaders() {
 	g_filesystem->scan_dir(ress_v, path, ".vs", SCAN_FILES, true);
 	g_filesystem->scan_dir(ress_p, path, ".ps", SCAN_FILES, true);
 
-	for (int i = 0; i < ress_v.size(); ++i) {
+	for (size_t i = 0; i < ress_v.size(); ++i) {
 		auto shader_text_handler = g_res_manager->load_resource(
 			(path + ress_v[i]).c_str(), WIPResourceType::TEXT);
 		const char *shader_text = (((string *)shader_text_handler->ptr)->c_str());
@@ -253,7 +253,7 @@ void GLDynamicRHI::load_shaders() {
 		_vertex_shaders[filename] = wvs;
 	}
 
-	for (int i = 0; i < ress_p.size(); ++i) {
+	for (size_t i = 0; i < ress_p.size(); ++i) {
 		auto shader_text_handler = g_res_manager->load_resource(
 			(path + ress_p[i]).c_str(), WIPResourceType::TEXT);
 		const char *shader_text = (((string *)shader_text_handler->ptr)->c_str());
@@ -351,6 +351,7 @@ void GLDynamicRHI::set_main_back_buffer() const
 void GLDynamicRHI::clear_back_buffer(const RBColorf& c) const
 {
 	glClearColor(c.r, c.g, c.b, c.a);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void GLDynamicRHI::set_uniform4f(const char* uniform_name, const RBColorf& color)
@@ -563,7 +564,7 @@ void GLDynamicRHI::set_vertex_format(const WIPVertexFormat *vf)
 		return;
 	int tn = vf->total_count;
 	int off = 0;
-	for (int i = 0; i < vf->elements.size(); ++i) {
+	for (size_t i = 0; i < vf->elements.size(); ++i) {
 		glVertexAttribPointer(i, vf->elements[i].count, 
 			vf_map[vf->elements[i].type], GL_FALSE,
 			tn * vf_map_size[vf->elements[i].type], 
@@ -606,7 +607,7 @@ void GLDynamicRHI::draw_triangles(int index_count, int offset_add) const
 }
 
 
-void GLDynamicRHI::begin_debug_context()
+bool GLDynamicRHI::begin_debug_context()
 {
 
 	set_index_buffer(_debug_ib);
@@ -615,11 +616,11 @@ void GLDynamicRHI::begin_debug_context()
 
 
 	if (!_debug_shader)
-		return;
+		return false;
 	void *s = _debug_shader->get_rhi_resource();
 	GLuint id1 = *((GLuint *)(s));
 	glUseProgram(id1);
-
+	return true;
 	
 }
 

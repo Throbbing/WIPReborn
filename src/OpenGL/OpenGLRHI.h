@@ -168,7 +168,7 @@ public:
 
 	virtual void set_main_back_buffer() const;
 
-	virtual void clear_back_buffer(const RBColorf& c) const;
+	virtual void clear_back_buffer(const RBColorf& c=RBColorf::blank) const;
 
 	virtual void set_uniform4f(const char* uniform_name, const RBColorf& c);
 	
@@ -199,7 +199,7 @@ public:
 
 	virtual void set_blend_function() const;
 
-	virtual void begin_debug_context();
+	virtual bool begin_debug_context();
 
 	virtual void change_debug_color(const RBColorf& color);
 

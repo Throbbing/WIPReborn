@@ -1,7 +1,8 @@
 #pragma once
 #include "RBMath/Inc/Vector2.h"
+#include "RefCount.h"
 
-class WIPFrameBox
+class WIPFrameBox : public FRefCountedObject
 {
 public:
 	 RBVector2 lt,lb,rb,rt;

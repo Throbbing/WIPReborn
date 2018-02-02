@@ -6,27 +6,28 @@ WIPCollider*  WIPCollider::create_collider(std::vector<RBVector2>& poly)
 	return nullptr;
 }
 
-WIPCollider* WIPCollider::create_collider(WIPSprite* m, WIPCollider::_CollisionTypes tp)
+WIPCollider* WIPCollider::create_collider(TRefCountPtr<WIPSprite> m, WIPCollider::_CollisionTypes tp,f32 sx,f32 sy)
 {
 
 	WIPCollider* ret;
 	ret = new WIPCollider();
-	ret->_polygon_shape = g_physics_manager->create_polygon();
-	
+	ret->set_host(m);
+	ret->_polygon_shape = new b2PolygonShape();
+	ret->set_mesh_box(sx, sy);
 	if (m)
 	{
 		ret->reset_polygon_vertices(m, 4);
 	}
 	else
 	{
-		ret->_polygon_shape = new b2PolygonShape();
 		ret->_polygon_shape->SetAsBox(1, 1);
 	}
 	ret->_body = g_physics_manager->create_body((b2BodyType)tp);
+	ret->_body->SetFixedRotation(true);
 	// Define the dynamic body fixture.
 	b2FixtureDef fixtureDef;
 	fixtureDef.shape = ret->_polygon_shape;
-
+	//fixtureDef.isSensor = true;
 	// Set the box density to be non-zero, so it will be dynamic.
 	fixtureDef.density = 1.0f;
 
@@ -84,10 +85,15 @@ WIPCollider::WIPCollider() :_cb_scale_x(1.0f), _cb_scale_y(1.0f), _active(true)
 
 WIPCollider::~WIPCollider()
 {
+	//g_physics_manager->delete_body(_body);
+}
+
+void WIPCollider::destroy()
+{
 	g_physics_manager->delete_body(_body);
 }
 
-void WIPCollider::reset_polygon_vertices(WIPSprite* s, i32 n)
+void WIPCollider::reset_polygon_vertices(TRefCountPtr<WIPSprite> s, i32 n)
 {
 	if (!s->_render)
 		return;
@@ -123,6 +129,19 @@ void WIPCollider::reset_polygon_position(f32 x, f32 y)
 
 void WIPCollider::reset_polygon_density(f32 density)
 {
+}
+
+void WIPCollider::recreate_fixture()
+{
+	b2Fixture* fixture = _body->GetFixtureList();
+	if (fixture)
+	{
+		_body->DestroyFixture(fixture);
+		b2FixtureDef fixturedef;
+		fixturedef.userData = this->host_object;
+		fixturedef.shape = _polygon_shape;
+		_body->CreateFixture(&fixturedef);
+	}
 }
 
 void WIPCollider::reset_body_rad(f32 rad)
@@ -210,8 +229,30 @@ f32 WIPCollider::get_speed_y()
 
 }
 
-void WIPCollider::set_sprite(WIPSprite* sprite)
+void WIPCollider::set_sprite(TRefCountPtr<WIPSprite> sprite)
 {
 	if (_body)
-		_body->SetUserData(sprite);
+		_body->SetUserData((WIPSprite *)sprite);
+}
+
+void WIPCollider::on_begin_contact(const WIPSprite* s)
+{
+	CHECK(s != this->host_object);
+	_contact_objects.insert(s);
+	WIPSprite* o = this->host_object;
+	for (auto i : o->tick_components)
+	{
+		i->on_begin_contact(s);
+	}
+}
+
+void WIPCollider::on_end_contact(const WIPSprite* s)
+{
+	CHECK(s != this->host_object);
+	_contact_objects.remove(s);
+	WIPSprite* o = this->host_object;
+	for (auto i : o->tick_components)
+	{
+		i->on_end_contact(s);
+	}
 }

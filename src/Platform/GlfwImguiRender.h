@@ -2,13 +2,14 @@
 //this is a lowlevel render.
 //see also Platform/glfw_callbacks.cpp
 #include "imgui/imgui.h"
+#include "RefCount.h"
 
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
 #endif // _WIN32
 
 
-class GlfwImguiRender
+class GlfwImguiRender : public FRefCountedObject
 {
 public:
 	bool imgui_init(struct GLFWwindow* window, const char* ttf, int size_in_pixels);

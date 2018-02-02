@@ -161,7 +161,7 @@ SrPipeline::SrPipeline():s1(MAX_QUEUE_SIZE)
 
 	_o_depth_buffer.init(w, h);
 	_o_color_buffer.init(w, h);
-	_o_depth_buffer.set_vals(1.1);
+	_o_depth_buffer.set_vals(1.1f);
 	_o_color_buffer.set_vals(125);
 
 	_clear_SSBuffer();

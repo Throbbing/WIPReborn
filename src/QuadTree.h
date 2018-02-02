@@ -3,6 +3,7 @@
 #include <hash_map>
 #include "Sprite.h"
 #include "RBMath/Inc/AABB.h"
+#include "RefCount.h"
 
 class WIPScene;
 //#define W
@@ -21,7 +22,7 @@ public:
 		//index.swap(std::vector<int>());
 	}
 #ifdef W
-	typedef std::hash_map<const WIPSprite*,const WIPSprite*> object_list_t;
+	typedef std::hash_map< TRefCountPtr<const WIPSprite>, TRefCountPtr<const WIPSprite>> object_list_t;
 #else
 	typedef HashLink<WIPSprite> object_list_t;
 #endif
@@ -40,7 +41,7 @@ or
 push the object to children just when the children totally contain it.
 if we do like above, objects can store just only once in the tree.
 */
-class WIPQuadTree
+class WIPQuadTree : public FRefCountedObject
 {
 public:
 	//give the max care world range
@@ -84,7 +85,7 @@ public:
 		}
 		_insert(&root, sprite_bound, world_aabb, &sprite);
 	}
-	void _insert(WIPQuadTreeNode* root,const RBAABB2D& sprite_bound,const RBAABB2D& aabb,const WIPSprite* id)
+	void _insert(WIPQuadTreeNode* root,const RBAABB2D& sprite_bound,const RBAABB2D& aabb,TRefCountPtr<const WIPSprite> id)
 	{
 		if(root->leaf)
 		{
@@ -128,13 +129,13 @@ public:
 		
 
 	}
-	void get_intersected_node(const RBAABB2D& aabb,std::vector<const WIPSprite*>& out_index) const
+	void get_intersected_node(const RBAABB2D& aabb,std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
 		if (world_aabb.intersection(aabb))
 			_get_intersected_node(&root,aabb,world_aabb,out_index);
 	}
-	void _get_intersected_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, std::vector<const WIPSprite* >& out_index) const
+	void _get_intersected_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, std::vector< TRefCountPtr<const WIPSprite> >& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -176,7 +177,7 @@ public:
 			_get_intersected_node(root->child[3],sprite_bound,rbb,out_index);
 		}
 	}
-	void get_near_node(const WIPSprite&  sprite, std::vector<const WIPSprite*>& out_index) const
+	void get_near_node(const WIPSprite&  sprite, std::vector<TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
 		RBAABB2D sprite_bound;
@@ -185,12 +186,12 @@ public:
 		sprite_bound.include(vert);
 		_get_near_node(&root,sprite_bound,world_aabb,&sprite,out_index);
 	}
-	void get_near_node(const RBVector2& pos, std::vector<const WIPSprite*>& out_index) const
+	void get_near_node(const RBVector2& pos, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
 		_get_near_node_point(&root,pos,world_aabb,out_index);
 	}
-	void _get_near_node_point(const WIPQuadTreeNode* root, const RBVector2& pos, const RBAABB2D& aabb, std::vector<const WIPSprite*>& out_index) const
+	void _get_near_node_point(const WIPQuadTreeNode* root, const RBVector2& pos, const RBAABB2D& aabb, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -233,7 +234,7 @@ public:
 		}
 
 	}
-	void _get_near_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, const WIPSprite* id, std::vector<const WIPSprite*>& out_index) const
+	void _get_near_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, TRefCountPtr<const WIPSprite> id, std::vector<TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -310,7 +311,7 @@ public:
 		//sprite bound changed,we have to search the whole tree
 		_remove_change(&root, world_bound, &sprite);
 	}
-	void _remove_change(WIPQuadTreeNode* root, const RBAABB2D& aabb, const WIPSprite* id)
+	void _remove_change(WIPQuadTreeNode* root, const RBAABB2D& aabb,  TRefCountPtr<const WIPSprite> id)
 	{
 		if (root->leaf)
 		{
@@ -343,7 +344,7 @@ public:
 	}
 	
 	
-	void _remove(WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, const WIPSprite* id)
+	void _remove(WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb,  TRefCountPtr<const WIPSprite> id)
 	{
 		if(root->leaf)
 		{
@@ -377,11 +378,11 @@ public:
 			_remove(root->child[3],sprite_bound,rbb,id);
 		}
 	}
-	void get_all_nodes(std::vector<const WIPSprite*>& out_index) const
+	void get_all_nodes(std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		_get_all_nodes(&root,out_index);
 	}
-	void _get_all_nodes(const WIPQuadTreeNode* root, std::vector<const WIPSprite*>& out_index) const
+	void _get_all_nodes(const WIPQuadTreeNode* root, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -415,7 +416,9 @@ public:
 		_release(root->child[1]);
 		_release(root->child[2]);
 		_release(root->child[3]);
-		delete root;
+		if (root!=&this->root)
+			delete root;
+		
 	}
 
 	void compress_world_bound();

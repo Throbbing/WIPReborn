@@ -6,8 +6,9 @@
 #include "Sound.h"
 #include "ProducerConsumerQueue.h"
 #include <map>
+#include "RefCount.h"
 
-class AudioStudioManager
+class AudioStudioManager : public FRefCountedObject
 {
 private:
   class CallbackEventData

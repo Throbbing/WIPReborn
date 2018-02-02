@@ -206,7 +206,7 @@ public:
 				{
 
 					//s->done = false;
-					if (s->queue.sizeGuess() > s->total)
+					if (s->queue.sizeGuess() > (size_t)s->total)
 						s->total = s->queue.sizeGuess();
 					s->_stage_ps->proccess(v);
 					s->_stage_om->proccess(v, *(s->color), *(s->depth));

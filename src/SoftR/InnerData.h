@@ -132,7 +132,7 @@ struct SrSSBuffer
 	{
 		std::lock_guard<std::mutex> lk(lock);
 		int index = y*w + x;
-		if (index<_buffer.size())
+		if ((size_t)index<_buffer.size())
 		{
 			_buffer[index] = data;
 		}
@@ -141,7 +141,7 @@ struct SrSSBuffer
 	T get_data(int x,int y)
 	{
 		int index = y*w + x;
-		if (index < _buffer.size())
+		if ((size_t)index < _buffer.size())
 			return _buffer[index];
 		else
 			return _buffer[_buffer.size()-1];

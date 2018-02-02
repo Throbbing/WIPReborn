@@ -32,7 +32,7 @@ public:
 	RBColorf get_color(int x,int y) const
 	{
 		int index = y*_w*4 + x*4;
-		if (index < _size)
+		if ((uint)index < _size)
 		{
 			RBColorf c;
 			c.r = _data[index] / 255.f;

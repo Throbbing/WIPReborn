@@ -3,8 +3,9 @@
 #include <cstddef>
 #include <vector>
 #include <deque>
+#include "RefCount.h"
 
-class TimeSourceBase
+class TimeSourceBase : public FRefCountedObject
 {
 public:
     virtual ~TimeSourceBase() {};
@@ -31,14 +32,14 @@ private:
 };
 #endif
 
-class ITimeObserver
+class ITimeObserver : public FRefCountedObject
 {
 public:
 	virtual ~ITimeObserver(){};
 	virtual void notify() = 0;
 };
 
-class RBClock
+class RBClock : public FRefCountedObject
 {
 public:
 	~RBClock();
@@ -118,6 +119,11 @@ public:
 	f64 get_time() const
 	{
 		return _current_time;
+	}
+
+	f64 get_time_ms() const
+	{
+		return _current_time*1000.0;
 	}
 
 	//get predicted time

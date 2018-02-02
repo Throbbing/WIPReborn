@@ -4,7 +4,7 @@
 #include "LinkList.h"
 #include <list>
 #include <vector>
-
+#include "RefCount.h"
 
 using std::list;
 using std::vector;
@@ -14,7 +14,7 @@ using std::vector;
 class WIPAnimationClip;
 class WIPClipInstance;
 
-class WIPAnimationManager
+class WIPAnimationManager : public FRefCountedObject
 {
 public:
 	static WIPAnimationManager* instance();

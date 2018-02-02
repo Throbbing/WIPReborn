@@ -321,10 +321,11 @@ void SrRasterizer::triangle_setup(std::vector<SrTriangle*> _triangles, std::vect
 		float z3 = tri->v[2].position.z * inv_w;
 		*/
 		
+		/*
 		float ym, xm, zm,
 			yu, xu, zu,
 			yd, xd, zd;
-		
+		*/
 		_sort_y(tri);
 
 		/*

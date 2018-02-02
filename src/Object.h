@@ -6,15 +6,13 @@
 #include <string>
 #include <vector>
 #include <list>
-
+#include "RefCount.h"
+#include "MemoryManager.h"
 
 using namespace std;
 
-typedef unsigned int string_hash;
 
-inline unsigned SDBMHash(unsigned hash, unsigned char c);
 
-unsigned get_string_hash(const char* str);
 
 //noly surpport int key in hash
 template<class T>
@@ -26,9 +24,10 @@ struct HashLinkNode
 	HashLinkNode* prev;
 	HashLinkNode* next;
 	int key;
-	const T* data;
+	TRefCountPtr<const T> data;
 };
 
+//_head->pre points to the tail
 template<class T>
 class HashLink
 {
@@ -87,19 +86,19 @@ private:
 	}
 
 public:
-	void insert(const T* a)
+	void insert( TRefCountPtr<const T> a)
 	{
 		HashLinkNode<T>* node = get_empty_node();
 		node->data = a;
 		node->key = a->key;
 		insert_link_front(node);
-		if (_hash_table.size() < a->key + 1)
+		if (_hash_table.size() < (size_t)(a->key + 1))
 			_hash_table.resize(a->key*2+2,nullptr);
 		_hash_table[node->key] = node;
 	}
-	void remove(const T* a)
+	void remove(TRefCountPtr<const T> a)
 	{
-		if (_hash_table.size() < a->key + 1)
+		if (_hash_table.size() < (size_t)(a->key + 1))
 			return;
 		HashLinkNode<T>* node = _hash_table[a->key];
 		if (!node)
@@ -130,9 +129,16 @@ public:
 		return cur->prev;
 	}
 
+	bool empty()
+	{
+		return !_head->next;
+	}
+
 	HashLink()
 	{
+		//mem!
 		_head = new HashLinkNode<T>();
+		_head->prev = _head;
 		cache_link_node = nullptr;
 	}
 	~HashLink()
@@ -316,7 +322,7 @@ private:
 
 
 
-class WIPObject
+class WIPObject : public FRefCountedObject
 {
 public:
 	static void* mem_header;
@@ -424,6 +430,4 @@ public:
 	void static_init();
 };
 
-#include "MemoryPool.h"
 
-extern RBPoolAllctor* g_pool_allocator;

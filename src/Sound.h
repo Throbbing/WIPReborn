@@ -6,8 +6,9 @@
 #include <vector>
 #include "Vector3.h"
 #include "Logger.h"
+#include "RefCount.h"
 
-class StudioSound
+class StudioSound : public FRefCountedObject
 {
 private:
     class DescriptionData

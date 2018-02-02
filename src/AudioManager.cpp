@@ -75,6 +75,7 @@ void AudioStudioManager::Update()
     auto parameters = ce->parameters;
     FMOD::Studio::EventDescription* desc = nullptr;
     FMOD::Studio::EventInstance* event_ = (FMOD::Studio::EventInstance*)event;
+	//bug:when does it send a destroyed event?
     if (type == FMOD_STUDIO_EVENT_CALLBACK_DESTROYED)
 	{
       delete _delete_delay[event_];

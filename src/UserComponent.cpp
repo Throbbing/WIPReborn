@@ -5,8 +5,46 @@
 //object should belongs to a world not scene
 #include "GLFWApp.h"
 
+void WIPScriptComponent::init()
+{
+	g_script_manager->call_table_function(_name.data(), "init",nullptr);
+}
 
+void WIPScriptComponent::on_begin_contact(const WIPSprite* s)
+{
+	g_script_manager->call_table_function(_name.data(), "on_begin_contact", nullptr);
+}
+void WIPScriptComponent::on_contact(const WIPSprite* s)
+{
+	g_script_manager->call_table_function(_name.data(), "on_contact", nullptr);
+}
+void WIPScriptComponent::on_end_contact(const WIPSprite* s)
+{
+	g_script_manager->call_table_function(_name.data(), "on_end_contact", nullptr);
+}
 
+void WIPScriptComponent::update(f32 dt)
+{
+	g_script_manager->call_table_function(_name.data(), "update", "d",dt);
+}
+void WIPScriptComponent::fix_update(f32 dt)
+{
+	g_script_manager->call_table_function(_name.data(), "fix_update","d",dt);
+}
+void WIPScriptComponent::destroy()
+{
+	g_script_manager->call_table_function(_name.data(), "destroy", nullptr);
+}
+
+//level start/end
+void WIPScriptComponent::start()
+{
+	g_script_manager->call_table_function(_name.data(), "start", nullptr);
+}
+void WIPScriptComponent::end()
+{
+	g_script_manager->call_table_function(_name.data(), "end", nullptr);
+}
 
 void UTF_8ToUnicode(wchar_t* pOut, char *pText)
 {
@@ -27,7 +65,7 @@ void UnicodeToUTF_8(char* pOut, wchar_t* pText)
 
 char* get_utf8(wchar_t* text, char* buf)
 {
-	for (int i = 0; i < wcslen(text); ++i)
+	for (size_t i = 0; i < wcslen(text); ++i)
 	{
 		UnicodeToUTF_8(&buf[i * 3], &text[i]);
 	}
@@ -63,6 +101,21 @@ void imgui_lable_long(wchar_t* text)
 	ImGui::Text(get_utf8(text, t));
 }
 
+void MapComponent::change_to_talk(string_hash tp, void* data)
+{
+	cur_npc_ui = (NPCDisplayData*)data;
+	game_state = GameState::E_TALK;
+}
+
+void MapComponent::change_to_player(string_hash tp, void* data)
+{
+	g_rhi->set_back_buffer(render_texture2d);
+	g_rhi->clear_back_buffer();
+	g_rhi->set_main_back_buffer();
+	cur_npc_ui = nullptr;
+	game_state = GameState::E_PLAYER_CONTROLL;
+}
+
 void MapComponent::init()
 {
 
@@ -80,7 +133,8 @@ void MapComponent::init()
 	g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
 	g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
 	sound = g_audio_manager->CreateSound("event:/bgm");
-	g_audio_manager->Play(sound);
+	sound_t = g_audio_manager->CreateSound("event:/bgm1");
+	g_audio_manager->Play(sound_t);
 
 	edit_mode = false;
 	gsize = 0;
@@ -119,76 +173,208 @@ void MapComponent::init()
 	main_bar->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMMainMenuBar, update, main_bar));
 	cb->subscribe_event(this, component_update, WIP_EVENT_HANDLER_OUT(IMCheckBox, update, cb));
 
+
+
+	{
+		auto res_extbt = g_res_manager->load_resource("./pic/exit-2.png", WIPResourceType::TEXTURE);
+		int w = ((TextureData *)(res_extbt->extra))->width;
+		int h = ((TextureData *)(res_extbt->extra))->height;
+
+		ext_bt = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+	}
+	{
+		auto res_extbt = g_res_manager->load_resource("./pic/continue-2.png", WIPResourceType::TEXTURE);
+		int w = ((TextureData *)(res_extbt->extra))->width;
+		int h = ((TextureData *)(res_extbt->extra))->height;
+
+		ctn_bt = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+	}
+	{
+		auto res_extbt = g_res_manager->load_resource("./pic/start-2.png", WIPResourceType::TEXTURE);
+		int w = ((TextureData *)(res_extbt->extra))->width;
+		int h = ((TextureData *)(res_extbt->extra))->height;
+
+		stt_bt = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+	}
+	{
+		auto res_extbt = g_res_manager->load_resource("./pic/Snap1.png", WIPResourceType::TEXTURE);
+		int w = ((TextureData *)(res_extbt->extra))->width;
+		int h = ((TextureData *)(res_extbt->extra))->height;
+
+		t_bg = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+	}
+	{
+		auto res_extbt = g_res_manager->load_resource("./pic/title.png", WIPResourceType::TEXTURE);
+		int w = ((TextureData *)(res_extbt->extra))->width;
+		int h = ((TextureData *)(res_extbt->extra))->height;
+
+		title = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+	}
+
 }
 
 void MapComponent::update(f32 dt)
 {
-	send_event(component_update);
 
-	//man->translate(dt*-0.1, 0);
-	float speed = 3.2f;
-	if (Input::get_key_pressed(WIP_W))
+	//send_event(component_update);
+	switch (game_state)
 	{
-		man->translate(0, speed*dt);
-		if (man->_animation->play_name("walk_up", false))
-		{
-			pre_clip = clip3;
-		}
-		//cam->move(0,speed*dt);
-		man_state = ManState::E_UP;
-	}
-	else if (Input::get_key_pressed(WIP_A))
+	case GameState::E_TITLE:
 	{
-		man->translate(-speed*dt, 0);
-		if (man->_animation->play_name("walk_left", false))
-		{
-			pre_clip = clip1;
-		}
-		man_state = ManState::E_LEFT;
+		g_rhi->set_back_buffer(render_texture2d);
+		ui_renderer->render_pic(1, 0, t_bg->get_width(), t_bg->get_height(), t_bg);
 
-		//cam->move(-speed*dt, 0);
-	}
-	else if (Input::get_key_pressed(WIP_S))
-	{
-		man->translate(0, -speed*dt);
-		if (man->_animation->play_name("walk_down", false))
+		if (Input::get_key_down(WIP_W))
 		{
-			pre_clip = clip;
+			title_state--;
+			if (title_state < 0) title_state = 2;
+			title_state %= 3;
 		}
-		man_state = ManState::E_DOWN;
-
-		//cam->move(0,-speed*dt);
-	}
-	else if (Input::get_key_pressed(WIP_D))
-	{
-		man->translate(speed*dt, 0);
-		if (man->_animation->play_name("walk_right", false))
+		if (Input::get_key_down(WIP_S))
 		{
-			pre_clip = clip2;
+			title_state++;
+			title_state %= 3;
 		}
-		man_state = ManState::E_RIGHT;
 
-		//cam->move(speed*dt, 0);
-	}
-	else
-	{
-		switch (man_state)
+		switch (title_state)
 		{
-		case ManState::E_DOWN:
-			man->_animation->play_name("stand_down", false);
-			break;
-		case ManState::E_LEFT:
-			man->_animation->play_name("stand_left", false);
-			break;
-		case ManState::E_RIGHT:
-			man->_animation->play_name("stand_right", false);
-			break;
-		case ManState::E_UP:
-			man->_animation->play_name("stand_up", false);
+		case 0:
+		{
+			ui_renderer->render_pic(330, 600 - 391, stt_bt->get_width(), stt_bt->get_height(), stt_bt);
+		}
+		break;
+		case 1:
+		{
+			ui_renderer->render_pic(330, 600 - 450, ctn_bt->get_width(), ctn_bt->get_height(), ctn_bt);
+
+		}
+		break;
+		case 2:
+		{
+			ui_renderer->render_pic(330, 600 - 520, ext_bt->get_width(), ext_bt->get_height(), ext_bt);
+
+		}
+		break;
+		default:
 			break;
 		}
 
+		g_rhi->set_main_back_buffer();
+
+		if (Input::get_sys_key_down(WIP_SPACE))
+		{
+			switch (title_state)
+			{
+			case 0:
+			{
+				g_audio_manager->StopAll(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+				g_audio_manager->Play(sound);
+				change_to_player(0, 0);
+			}
+			break;
+			case 1:
+			{
+
+			}
+			break;
+			case 2:
+			{
+				g_app->require_exit();
+
+			}
+			break;
+			}
+		}
+
+		return;
 	}
+	break;
+	case GameState::E_PLAYER_CONTROLL:
+	{
+		float speed = 3.2f;
+		if (Input::get_key_pressed(WIP_W))
+		{
+			man->translate(0, speed*dt);
+			if (man->_animation->play_name("walk_up", false))
+			{
+				pre_clip = clip3;
+			}
+			//cam->move(0,speed*dt);
+			man_state = ManState::E_UP;
+		}
+		else if (Input::get_key_pressed(WIP_A))
+		{
+			man->translate(-speed*dt, 0);
+			if (man->_animation->play_name("walk_left", false))
+			{
+				pre_clip = clip1;
+			}
+			man_state = ManState::E_LEFT;
+
+			//cam->move(-speed*dt, 0);
+		}
+		else if (Input::get_key_pressed(WIP_S))
+		{
+			man->translate(0, -speed*dt);
+			if (man->_animation->play_name("walk_down", false))
+			{
+				pre_clip = clip;
+			}
+			man_state = ManState::E_DOWN;
+
+			//cam->move(0,-speed*dt);
+		}
+		else if (Input::get_key_pressed(WIP_D))
+		{
+			man->translate(speed*dt, 0);
+			if (man->_animation->play_name("walk_right", false))
+			{
+				pre_clip = clip2;
+			}
+			man_state = ManState::E_RIGHT;
+
+			//cam->move(speed*dt, 0);
+		}
+		else
+		{
+			switch (man_state)
+			{
+			case ManState::E_DOWN:
+				man->_animation->play_name("stand_down", false);
+				break;
+			case ManState::E_LEFT:
+				man->_animation->play_name("stand_left", false);
+				break;
+			case ManState::E_RIGHT:
+				man->_animation->play_name("stand_right", false);
+				break;
+			case ManState::E_UP:
+				man->_animation->play_name("stand_up", false);
+				break;
+			}
+
+		}
+	}
+	break;
+	case GameState::E_TALK:
+	{
+		if (cur_npc_ui)
+		{
+			g_rhi->set_back_buffer(render_texture2d);
+			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3f, 0.3f, 0.5f, 0.5f));
+			if (cur_npc_ui->face)
+				ui_renderer->render_pic(600, 50, cur_npc_ui->face->get_width(), cur_npc_ui->face->get_height(), cur_npc_ui->face);
+			wchar_t *words1 = cur_npc_ui->words;
+			text_renderer->render_text(100, 170, words1, wcslen(words1), g_app->window_w, cam);
+			text_renderer->render(cam);
+			g_rhi->set_main_back_buffer();
+		}
+	}
+	break;
+	default:
+		break;
+	}
+
 	if (edit_mode)
 	{
 		if (!ImGui::IsMouseHoveringAnyWindow())
@@ -326,7 +512,7 @@ void MapComponent::update(f32 dt)
 	wchar_t wbuf[3] = L"确定";
 
 	//this is utf-8 encode
-	static char buf[1024] = "\xe4\xb8\xa5 \xe8\x9b\x99 \xe7\x8e\x8b \xe5\xad\x90";
+	static char buf[1024] = "\xe4\xb8\xa5\xe8\x9b\x99\xe7\x8e\x8b\xe5\xad\x90";
 	UnicodeToUTF_8(buf, wbuf);
 	int k = strlen(buf);
 	wchar_t wbuf_out[1024];
@@ -336,7 +522,7 @@ void MapComponent::update(f32 dt)
 	ImGui::InputText("UTF-8 input", buf, 1024);
 
 
-	for (int i = 0, j = 0; i < strlen(buf); i += 3, j++)
+	for (size_t i = 0, j = 0; i < strlen(buf); i += 3, j++)
 	{
 		UTF_8ToUnicode(&wbuf_out[j], &buf[i]);
 	}
@@ -357,16 +543,75 @@ void MapComponent::update(f32 dt)
 		edit_mode = !edit_mode;
 	}
 	//grid->clear_data();
+
+	if (ImGui::Button("Scale Character"))
+	{
+		man->scale(1.2f, 1.2f);
+	}
+
+	ImGui::Begin("Make Clip");
+	static int wh[2] = {0};
+	static char cname[64];
+	ImGui::InputText("File name",cname,64);
+	ImGui::InputInt2("W-H", wh);
+	if (imgui_button_short(L"生成"))
+	{
+		f32 intervalx = 1.f / (f32)wh[0];
+		f32 intervaly = 1.f / (f32)wh[1];
+
+		{
+			
+			f32 ybase = 0.f;
+			int i = 0;
+			while (ybase + 0.001f < 1.f)
+			{
+				std::string sname = cname;
+				sname += "_";
+				char tmp[8];
+				itoa(i++, tmp, 10);
+				sname += tmp;
+				sname += ".clip";
+				std::ofstream fout(sname.data(), std::ios::ate);
+
+				fout << "[head]\ntexture = " << cname << ".png\ntotal_frame = " << wh[1] << std::endl;
+				char outs[128] = "lb_x = %f\nlb_y = %f\nlt_x = %f\nlt_y = %f\nrt_x = %f\nrt_y = %f\nrb_x = %f\nrb_y = %f\n\0";
+				char outs1[256] = { 0 };
+				f32 xbase = 0.f;
+				u32 frame_number = 1;
+				while (xbase + 0.001f < 1.f)
+				{
+					fout << "[" << frame_number++ << "]" << std::endl;
+					sprintf(outs1, outs,
+						xbase,
+						ybase,
+						xbase,
+						ybase + intervaly,
+						xbase + intervalx,
+						ybase + intervaly,
+						xbase + intervalx,
+						ybase);
+					xbase += intervalx;
+					fout << outs1;
+				}
+				ybase += intervaly;
+				fout.close();
+			}
+
+		}
+	}
+	ImGui::End();
 }
 
 void PlayerComponent::init()
 {
-	man_state = ManState::E_DOWN;
+	man_state = ManState::E_UP;
 	cam->zoomout(1.0);
 	host_object->translate_to(0, 0);
 	g_audio_manager->Play(sound_start);
 
 	subscribe_event(get_string_hash("add_hp"), WIP_EVENT_HANDLER(PlayerComponent, add_hp));
+
+
 }
 
 void PlayerComponent::add_hp(string_hash tp, void* ud)
@@ -379,11 +624,11 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 		acc = 100;
 	killed++;
 	static int created = 0;
-	if (killed % 2 == 0)
+	if (true)//killed % 2 == 0)
 	{
-		if (RBMath::get_rand_i(900) > 450)
+		if (true)//RBMath::get_rand_i(900) > 450)
 		{
-			for (int i = 0; i < RBMath::get_rand_range_i(1, 5); i++)
+			for (int i = 0; i < 1/*RBMath::get_rand_range_i(1, 5)*/; i++)
 			{
 
 				WIPSpriteCreator ctor_man(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
@@ -392,7 +637,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 				ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 				ctor_man.collider_sx = 1.f;
 				ctor_man.collider_sy = 1.f;
-				WIPSprite* sp = WIPSpriteFactory::create_sprite(ctor_man);
+				TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man);
 				sp->_animation->add_clip(enemy_clip, enemy_clip->name);
 				sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
 				sp->set_tag("enemy");
@@ -411,7 +656,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 				ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 				ctor_blt.collider_sx = 1.f;
 				ctor_blt.collider_sy = 1.f;
-				WIPSprite* spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+				TRefCountPtr<WIPSprite> spblt = WIPSpriteFactory::create_sprite(ctor_blt);
 				spblt->_animation->add_clip(player_clip, player_clip->name);
 				spblt->_animation->play_name(player_clip->name, false);
 				spblt->_render->is_visible = false;
@@ -434,17 +679,17 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 					ctor_pop.collider_sx = 1.f;
 					ctor_pop.collider_sy = 1.f;
-					WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 					//sp_pop->_animation->play_name(pop_clip->name, false);
-					sp_pop->set_z_order(-0.1);
+					sp_pop->set_z_order(-0.1f);
 					sp_pop->set_tag("pop_enemy");
 					sp_pop->_render->is_visible = false;
 					auto cb = [](void* s)->void
 					{
 						((WIPSprite*)s)->_render->is_visible = false;
 					};
-					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, (WIPSprite *)sp_pop);
 					g_app->creating_object(sp_pop);
 					//scene->add_sprite(sp_pop);
 
@@ -468,17 +713,17 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 					ctor_pop.collider_sx = 1.f;
 					ctor_pop.collider_sy = 1.f;
-					WIPSprite* sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 					//sp_pop->_animation->play_name(pop_clip->name, false);
-					sp_pop->set_z_order(-0.1);
+					sp_pop->set_z_order(-0.1f);
 					sp_pop->set_tag("pop_enemy");
 					sp_pop->_render->is_visible = false;
 					auto cb = [](void* s)->void
 					{
 						((WIPSprite*)s)->_render->is_visible = false;
 					};
-					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, sp_pop);
+					sp_pop->_animation->add_clip_callback(pop_clip->name, cb, (WIPSprite *)sp_pop);
 					g_app->creating_object(sp_pop);
 					//scene->add_sprite(sp_pop);
 
@@ -502,7 +747,7 @@ void PlayerComponent::update(f32 dt)
 	
 		if (acc <= 99)
 		{
-			acc += 0.1;
+			acc += 0.1f;
 		}
 		if (Input::get_key_pressed(WIP_K))
 		{
@@ -591,6 +836,8 @@ void PlayerComponent::update(f32 dt)
 
 	}
 	
+	f32 dhp = 0;//16
+
 	for (b2ContactEdge* ce = host_object->_collider->get_body()->GetContactList(); ce; ce = ce->next)
 	{
 		b2Contact* c = ce->contact;
@@ -598,7 +845,7 @@ void PlayerComponent::update(f32 dt)
 		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
 		{
 			if (!Input::get_key_pressed(WIP_K) || acc <= 0.1f)
-			hp -= 17;
+				hp -= dhp;
 			if (hp <= 0)
 			{
 				unsubscribe_all_events();
@@ -612,7 +859,7 @@ void PlayerComponent::update(f32 dt)
 		if (s2->get_tag() == "bullet_enemy" || s2->get_tag() == "bullet")
 		{
 			if (!Input::get_key_pressed(WIP_K)||acc<=0.1f)
-			hp -= 16;
+				hp -= dhp;
 			if (hp <= 0)
 			{
 				unsubscribe_all_events();
@@ -629,7 +876,10 @@ void PlayerComponent::update(f32 dt)
 	//wsprintfW(words1, L"HP:%d\n", hp);
 	//text_renderer->render_text(20, 600, words1, wcslen(words1), 800, cam);
 	//text_renderer->render(cam);
-
+	if (Input::get_key_down(WIP_P))
+	{
+		g_mem_manager->report();
+	}
 	ImGui::SetNextWindowPos(ImVec2(20, 20));
 	ImGui::Begin("");
 	imgui_label_short(L"血量：");
@@ -650,6 +900,15 @@ void EnemeyComponent::init()
 	acc_t = 0.f;
 	cur_direction = RBMath::get_rand_range_i(0, 3);
 	subscribe_event(player_ref, get_string_hash("destory"), WIP_EVENT_HANDLER(EnemeyComponent,des_player));
+
+
+	last_time = start_time = g_app->get_cur_time();
+
+	fout.open("d1.data", std::ios::binary | std::ios::app);
+
+	nn.load("d0.model");
+
+
 }
 
 void EnemeyComponent::des_player(string_hash tp, void* ud)
@@ -657,8 +916,13 @@ void EnemeyComponent::des_player(string_hash tp, void* ud)
 	player_ref = nullptr;
 }
 
+
+
 void EnemeyComponent::update(f32 dt)
 {
+	bool changing = false;
+	int is_shotting = 0;
+	int is_dying = 0;
 	f32 dd = 1.f;
 	f32 dx = 0, dy = 0;
 	float speed = 3.2f;
@@ -666,12 +930,52 @@ void EnemeyComponent::update(f32 dt)
 	static f32 fixt = 1.5f ;
 	int r = 0;
 	ImGui::SliderFloat("", &fixt, 1.5f, 5.5f);
-	f32 tf = fixt+RBMath::get_rand_range_f(-1.2, 1.2);
+	f32 tf = fixt;// +RBMath::get_rand_range_f(-1.2, 1.2);
 
-	if (acc_t > tf)
+	data_pak_t df(RBVector2(player_ref->_transform->world_x, player_ref->_transform->world_y),
+		RBVector2(host_object->_transform->world_x, host_object->_transform->world_y),
+		RBVector2(((PlayerComponent*)(player_ref->tick_components[0]))->blt->_transform->world_x,
+		((PlayerComponent*)(player_ref->tick_components[0]))->blt->_transform->world_y),
+		RBVector2(blt->_transform->world_x, blt->_transform->world_y),
+		is_shotting,
+		is_dying,
+		g_app->get_cur_time() - start_time
+		);
+	vec_t data = { df.player_pos.x, df.player_pos.y, df.enemey_pos.x, df.enemey_pos.y,
+		df.player_bullet_pos.x, df.player_bullet_pos.y };
+	auto res = nn.predict_label(data);
+
+	if (res<3||acc_t > tf)
 	{
+		changing = true;
 		cur_direction = RBMath::get_rand_range_i(0, 3);
+		
+		if (res < 3)
+		{
+			PlayerComponent::ManState state = ((PlayerComponent*)(player_ref->tick_components[0]))->man_state;
+			switch (state)
+			{
+			case PlayerComponent::ManState::E_LEFT:
+				cur_direction = 1;
+				break;
+			case PlayerComponent::ManState::E_RIGHT:
+				cur_direction = 3;
+
+				break;
+			case PlayerComponent::ManState::E_UP:
+				cur_direction = 0;
+
+				break;
+			case PlayerComponent::ManState::E_DOWN:
+				cur_direction = 2;
+
+				break;
+			default:
+				break;
+			}
+		}
 		r = RBMath::get_rand_i(8);
+		if(acc_t > tf)
 		acc_t = 0;
 	}
 	else
@@ -793,6 +1097,7 @@ void EnemeyComponent::update(f32 dt)
 					blt_d.y = dy;
 					((BulletComponent*)blt->tick_components[0])->v = blt_d;
 					blt->_render->is_visible = true;
+					is_shotting = 1;
 				}
 			}
 
@@ -807,7 +1112,8 @@ void EnemeyComponent::update(f32 dt)
 				g_audio_manager->Play(sound_death);
 				unsubscribe_all_events();
 				g_app->pending_objects(host_object);
-				return;
+				is_dying = 1;
+				//return;
 			}
 			s2 = (WIPSprite*)c->GetFixtureA()->GetBody()->GetUserData();
 			if (s2->get_tag() == "bullet")
@@ -816,16 +1122,60 @@ void EnemeyComponent::update(f32 dt)
 				g_audio_manager->Play(sound_death);
 				unsubscribe_all_events();
 				g_app->pending_objects(host_object);
-				return;
+				is_dying = 1;
+				//return;
 			}
 		}
+
+		//ms
+		f32 interval = 500;
+		f32 ct = g_app->get_cur_time();
+		//if (is_dying||changing)
+		{
+			RBVector2 player_blt_pos(((PlayerComponent*)(player_ref->tick_components[0]))->blt->_transform->world_x,
+				((PlayerComponent*)(player_ref->tick_components[0]))->blt->_transform->world_y);
+			last_time = g_app->get_cur_time();
+			data_pak_t d(RBVector2(player_ref->_transform->world_x, player_ref->_transform->world_y),
+				RBVector2(host_object->_transform->world_x, host_object->_transform->world_y),
+				player_blt_pos,
+				RBVector2(blt->_transform->world_x, blt->_transform->world_y),
+				is_shotting,
+				is_dying,
+				g_app->get_cur_time() - start_time
+				);
+			data_out.push_back(d);
+
+		}
+		if (is_dying)
+		{
+			//write data
+			/*
+			for (auto i : data_out)
+			{
+			fout << i.player_pos.x << ',' << i.player_pos.y << '|'
+			<< i.enemey_pos.x << ',' << i.enemey_pos.y << '|'
+			<< i.player_bullet_pos.x << ',' << i.player_bullet_pos.y << '|'
+			<< i.enemey_bullet_pos.x << ',' << i.enemey_bullet_pos.y << '|'
+			<< is_shotting << '|' << is_dying << '|' << i.cur_time_ms<<'|' << std::endl;
+			}
+			*/
+			fout.write((const char*)data_out.data(), data_out.size()*sizeof(data_pak_t));
+			data_out.clear();
+		}
+		
+		//last_time = g_app->get_cur_time();
+}
+
+void EnemeyComponent::destroy()
+{
+	fout.close();
 }
 
 void BulletComponent::update(f32 dt)
 {
 	
 	int i = host_object->_collider->get_collision_list_size();
-	if (i > 0)
+	if ( i > 0)
 	{
 		g_audio_manager->Play(sound);
 		pop_obj->_render->is_visible = true;
@@ -887,6 +1237,7 @@ void BulletComponent1::update(f32 dt)
 	if (i > 0)
 	{
 		g_audio_manager->Play(sound);
+		
 		pop_obj->_render->is_visible = true;
 		pop_obj->translate_to(host_object->_transform->world_x, host_object->_transform->world_y);
 		pop_obj->_animation->play_name("pop", false);
@@ -912,4 +1263,101 @@ void BulletComponent1::update(f32 dt)
 
 		host_object->translate(v.x*blt_speed*dt, v.y*blt_speed*dt);
 	}
+}
+
+
+NPCComponent::NPCComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+{
+
+}
+NPCComponent::~NPCComponent()
+{
+
+}
+void NPCComponent::init()
+{
+	//pre:on load
+	data.face = nullptr;
+	data.words = nullptr;
+	set_default_face();
+	map_component = (MapComponent*)g_app->get_by_tag("bg")->get_component<MapComponent>();
+}
+void NPCComponent::update(f32 dt)
+{
+	return;
+}
+void NPCComponent::destroy()
+{
+
+}
+
+void NPCComponent::on_begin_contact(const WIPSprite* s)
+{
+	//LOG_INFO("begin contact:%s", s->get_tag().data());
+}
+
+void NPCComponent::on_end_contact(const WIPSprite* s)
+{
+	send_event(get_string_hash("player"));
+	//LOG_INFO("end contact:%s", s->get_tag().data());
+}
+
+void NPCComponent::on_contact(const WIPSprite* s)
+{
+	if (s->get_tag() == "man")
+	{
+		if (map_component->cur_npc_ui != nullptr&&map_component->cur_npc_ui != &data)
+			return;
+		if (Input::get_sys_key_down(WIP_SPACE))
+		{
+			if (words[0].empty())
+			{
+				/*
+				while (!words[1].empty())
+				{
+					words[0].push(words[1].front());
+					words[1].pop();
+				}
+				*/
+				words[0].swap(words[1]);
+				send_event(get_string_hash("player"));
+				return;
+			}
+
+			data.words = words[0].front();
+			send_event(get_string_hash("npc talk"), &data);
+			words[1].push(words[0].front());
+			words[0].pop();
+
+		}
+	}
+	//LOG_INFO("contacting:%s", s->get_tag().data());
+}
+
+void NPCComponent::add_faces(std::string name, WIPTexture2D* tex)
+{
+	npc_faces[get_string_hash(name.data())] = tex;
+}
+void NPCComponent::set_face(std::string name)
+{
+	data.face = npc_faces[get_string_hash(name.data())];
+}
+void NPCComponent::set_no_face()
+{
+	data.face = nullptr;
+}
+
+void NPCComponent::set_default_face()
+{
+	if (npc_faces.empty())
+	{
+		set_no_face();
+		return;
+	}
+	if (npc_faces.find(get_string_hash("dft"))==npc_faces.end())
+	{
+		set_no_face();
+		return;
+	}
+	set_face("dft");
 }

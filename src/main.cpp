@@ -1,7 +1,7 @@
 #if (defined WIN32) && (defined USE_D3D)
 #include "Platform/Win32D3D11.h"
 #endif
-
+//#include "RefCountPtr.h"
 #include "Platform/GLFWApp.h"
 #include "Object.h"
 #include "RBMath/Inc/RBMath.h"
@@ -13,6 +13,75 @@ public:
 	int key;
 };
 
+
+#ifdef TEST
+
+
+
+
+class TObj:public FRefCountedObject
+{
+public:
+	TObj():a(1){}
+	int a;
+};
+
+class TSp;
+class TComp :public TObj
+{
+public:
+	TSp* host;
+};
+
+class C1 :public TComp
+{
+public:
+	C1() :b(0){}
+	int b;
+};
+
+class C2 :public TComp
+{
+public:
+	C2() :b(0){}
+	int b;
+};
+
+class TSp :public TObj
+{
+public:
+	~TSp()
+	{
+		printf("dec");
+	}
+	void set_comp(TRefCountPtr<TComp> cc)
+	{
+		c1[i++] = cc;
+		cc->host = this;
+	}
+	TRefCountPtr<TComp> c1[3];
+	int i=0;
+};
+
+template <class T>
+T* get()
+{
+	T* p = new T();
+	std::cout << "alloc:" << p << std::endl;
+	return p;
+}
+
+int main()
+{
+	TRefCountPtr<TSp> a = get<TSp>();
+	a->set_comp(get<C1>());
+	a->set_comp(get<C2>());
+	a->set_comp(get<C1>());
+
+	
+}
+
+#else
 int main(int argc,char** argv)
 {  
 #if 0
@@ -47,6 +116,9 @@ int main(int argc,char** argv)
 
 	}
 #endif
+
+
+
 	//can change app according command args 
 	//if defined USE_D3D on windows
 	//linux noly glfw.
@@ -56,6 +128,7 @@ int main(int argc,char** argv)
 	//else
 	//GLFWApp app;
 #else
+
 	GLFWApp app;
 	g_app = &app;
 #endif
@@ -64,3 +137,4 @@ int main(int argc,char** argv)
 	return 0;
 
 }
+#endif

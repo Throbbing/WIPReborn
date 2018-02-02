@@ -23,6 +23,7 @@ _restarted_call_back("restarted_call_back"){
 }
 
 FMOD_RESULT F_CALLBACK StudioSound::EventCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE type, FMOD_STUDIO_EVENTINSTANCE *event, void *parameters){
+	return FMOD_OK;
 std::string c;
 switch (type)
 {
@@ -41,10 +42,10 @@ case FMOD_STUDIO_EVENT_CALLBACK_DESTROYED:
   break;
   
 }
-LOG_NOTE("push %d->%s\n", event, c.c_str());
+//LOG_NOTE("push %d->%s\n", event, c.c_str());
   auto obj = new AudioStudioManager::CallbackEventData(type,event,parameters);
-  if(!AudioStudioManager::instance()->_event_queue.write(obj))
-    LOG_ERROR("Event queue full!\n");
+  if (!AudioStudioManager::instance()->_event_queue.write(obj))
+	  LOG_ERROR("Event queue full!\n");
   return FMOD_OK;
 }
 

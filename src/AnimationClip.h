@@ -1,7 +1,7 @@
 #pragma once
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include <string>
-
+#include "RefCount.h"
 
 #define ATLAS			1
 #define PICTURES		2
@@ -11,7 +11,7 @@ class WIPSpriteFrame;
 class WIPAnimation;
 class WIPAnimationManager;
 
-class WIPAnimationClip
+class WIPAnimationClip : public FRefCountedObject
 {
 public:
 	bool bplaying;
@@ -45,7 +45,7 @@ public:
 
 };
 
-class WIPClipInstance
+class WIPClipInstance :  public FRefCountedObject
 {
 public:
 	typedef void(*clip_callback_t)(void*);

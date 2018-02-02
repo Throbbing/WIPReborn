@@ -13,13 +13,14 @@ const int MAX_SINGLE_LINE_CHAR_NUM = 1024;
 #include <stdio.h>
 #include <string>
 #include <stdarg.h>
+#include "RefCount.h"
 
 
 using namespace std;
 
 //this class will not export to lua
 //to add mutex!
-class WIPLogger
+class WIPLogger : public FRefCountedObject
 {
 public:
 	static WIPLogger*get_instance();

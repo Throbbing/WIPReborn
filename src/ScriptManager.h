@@ -1,9 +1,9 @@
 #pragma once
 #include "../libs/lua523/src/lua.hpp"
-
+#include "RefCount.h"
 
 //note : do compile lua code as c code!
-class WIPScriptManager
+class WIPScriptManager : public FRefCountedObject
 {
 public:
 	static WIPScriptManager* instance();
@@ -14,6 +14,9 @@ public:
 	bool startup();
 	void shutdown();
 	bool load_file(const char* file);
+	bool do_string(const char* file);
+	void remove_global_var(const char* name);
+	void call_table_function(const char* tname, const char* fname, const char* param_types, ...);
 	void call(const char* function);
 	void call(const char* function,const char* param_types,...);
 

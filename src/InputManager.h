@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include "KeyDefinetions.h"
+#include "RefCount.h"
 
 class Input;
 
@@ -24,7 +25,7 @@ union KeyInfo
 //TODO:Use long type to write this class over
 //compare current input with last input not the last frame
 ////Singleton
-class InputManager
+class InputManager : public FRefCountedObject
 {
 public:
 	static InputManager* instance();

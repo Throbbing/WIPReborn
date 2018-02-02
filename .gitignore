@@ -47,5 +47,5 @@ libs/freetype
 libs/glfw
 libs/lua523
 libs/src
-
+*.vssettings
 

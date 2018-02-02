@@ -1,5 +1,10 @@
 #include "Object.h"
 #include "EventSystem.h"
+#include "MemoryManager.h"
+
+WIPMemoryManager* g_mem_manager = new WIPMemoryManager();
+
+
 
 inline unsigned SDBMHash(unsigned hash, unsigned char c)
 {
@@ -68,7 +73,7 @@ void WIPObject::subscribe_event(WIPObject* sender, string_hash evt_tp, EventHand
 void WIPObject::remove_event_sender(WIPObject* sender)
 {
 	event_list_t::iterator handler = _event_handlers.begin();
-	EventHandlerBase* prev;
+	//EventHandlerBase* prev;
 	while (handler!=_event_handlers.end())
 	{
 		if ((*handler)->get_sender() == sender)

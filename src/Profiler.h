@@ -3,9 +3,9 @@
 #include "RBTimer.h"
 #include <map>
 #include <string>
+#include "RefCount.h"
 
-
-class Profiler
+class Profiler : public FRefCountedObject
 {
 private:
 	typedef std::map<std::string,float> GartherMap;

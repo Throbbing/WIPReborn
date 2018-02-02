@@ -2,12 +2,13 @@
 #include "./RBMath/Inc/Colorf.h"
 #include <string>
 #include <vector>
+#include "RefCount.h"
 
 //screen coord is lb
 using std::string;
 
 //base class
-class WIPBaseTexture
+class WIPBaseTexture : public FRefCountedObject
 {
 public:
 	WIPBaseTexture(u32 in_mips,u32 in_samples,const RBColorf& in_clear_color ):
@@ -53,7 +54,7 @@ protected:
 };
 
 //base class
-class WIPShaderBase
+class WIPShaderBase : public FRefCountedObject
 {
 public:
 	virtual bool load_and_compile(const char* text)
@@ -85,7 +86,7 @@ public:
 
 
 //interface
-class WIPBoundShader
+class WIPBoundShader : public FRefCountedObject
 {
 public:
 	virtual void bind_attribute(unsigned int location, const string & name)=0;
@@ -94,13 +95,13 @@ public:
 };
 
 
-class WIPIndexBuffer
+class WIPIndexBuffer : public FRefCountedObject
 {
 public:
 	virtual void* get_rhi_resource() const=0;
 };
 
-class WIPVertexBuffer
+class WIPVertexBuffer : public FRefCountedObject
 {
 public:
 	virtual void* get_rhi_resource() const=0;
@@ -113,7 +114,7 @@ enum VertexType
 	E_TOTAL
 };
 
-class WIPVertexElement
+class WIPVertexElement : public FRefCountedObject
 {
 public:
 	WIPVertexElement(int cnt,VertexType tp = VertexType::E_FLOAT):type(tp),count(cnt){}
@@ -122,7 +123,7 @@ public:
 
 };
 
-class WIPVertexFormat
+class WIPVertexFormat : public FRefCountedObject
 {
 public:
 	WIPVertexFormat():total_count(0){}
@@ -133,7 +134,7 @@ public:
 	int total_count;
 };
 
-class WIPViewPort
+class WIPViewPort : public FRefCountedObject
 {
 public:
 	WIPViewPort(int ix, int iy, float iw, float ih) :

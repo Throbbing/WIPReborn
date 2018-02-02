@@ -8,8 +8,9 @@
 #include <atomic>
 #include <vector>
 #include <queue>
+#include "RefCount.h"
 
-class RBSem
+class RBSem : public FRefCountedObject
 {
 public:
 	RBSem(int init_c = 0) :count(init_c) {}

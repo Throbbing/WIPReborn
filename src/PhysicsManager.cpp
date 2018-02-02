@@ -2,6 +2,45 @@
 #include "Sprite.h"
 #include "Render.h"
 
+
+void WIPPhysicsManager::WIPBox2dSpriteContactListener::BeginContact(b2Contact* contact)
+{
+	void* bodyUserData1 = contact->GetFixtureA()->GetBody()->GetUserData();
+	void* bodyUserData2 = contact->GetFixtureB()->GetBody()->GetUserData();
+	CHECK(bodyUserData1&&bodyUserData2);
+	{
+		WIPSprite* s1 = static_cast<WIPSprite*>(bodyUserData1);
+		WIPSprite* s2 = static_cast<WIPSprite*>(bodyUserData2);
+
+		CHECK(s1->_collider);
+		CHECK(s2->_collider);
+
+		s1->_collider->on_begin_contact(s2);
+		s2->_collider->on_begin_contact(s1);
+	}
+	
+}
+void WIPPhysicsManager::WIPBox2dSpriteContactListener::EndContact(b2Contact* contact)
+{
+
+	void* bodyUserData1 = contact->GetFixtureA()->GetBody()->GetUserData();
+	void* bodyUserData2 = contact->GetFixtureB()->GetBody()->GetUserData();
+	CHECK(bodyUserData1&&bodyUserData2);
+	{
+		WIPSprite* s1 = static_cast<WIPSprite*>(bodyUserData1);
+		WIPSprite* s2 = static_cast<WIPSprite*>(bodyUserData2);
+
+		CHECK(s1->_collider);
+		CHECK(s2->_collider);
+
+		s1->_collider->on_end_contact(s2);
+		s2->_collider->on_end_contact(s1);
+	}
+	
+}
+
+
+
 WIPPhysicsManager* WIPPhysicsManager::instance()
 {
 	static WIPPhysicsManager* _instance;
@@ -68,12 +107,13 @@ bool WIPPhysicsManager::startup()
 	positionIterations = 2;
 	debug_draw.SetFlags(b2Draw::e_shapeBit);
 	_phy_space->SetDebugDraw(&debug_draw);
+	_phy_space->SetContactListener(&contact_listener);
 	return true;
 }
 
 void WIPPhysicsManager::set_gravity(const RBVector2& g)
 {
-	_phy_space->SetGravity(b2Vec2(g.x,g.y));
+	_phy_space->SetGravity(b2Vec2(g.x, g.y));
 }
 
 void WIPPhysicsManager::shutdown()
@@ -81,21 +121,22 @@ void WIPPhysicsManager::shutdown()
 	delete _phy_space;
 }
 
-void  WIPPhysicsManager::update(WIPScene* scene,f32 dt)
+void  WIPPhysicsManager::update(WIPScene* scene, f32 dt)
 {
 
-	for (b2Body* b = _phy_space->GetBodyList(); b;b=b->GetNext())
+	for (b2Body* b = _phy_space->GetBodyList(); b; b = b->GetNext())
 	{
 		WIPSprite* s = (WIPSprite*)b->GetUserData();
 		if (!s->_render)
 			continue;
 		if (!s->_collider->_active)
 			continue;
+		/*
 		RBVector2 vert[4];
 		b2Vec2 v1[4];
 		RBVector2 scale2(s->_transform->scale_x, s->_transform->scale_y);
 		s->get_anchor_vertices(vert);
-		vert[0] *=scale2;
+		vert[0] *= scale2;
 		vert[1] *= scale2;
 		vert[2] *= scale2;
 		vert[3] *= scale2;
@@ -110,16 +151,19 @@ void  WIPPhysicsManager::update(WIPScene* scene,f32 dt)
 
 		v1[3].x = vert[1].x*s->_collider->_cb_scale_x;
 		v1[3].y = vert[1].y*s->_collider->_cb_scale_y;
-		s->_collider->_polygon_shape->Set(v1, 4);
+		*/
+		//s->_collider->_polygon_shape->Set(v1, 4);
 		//lt lb rt rb
 		//s->_collider->_polygon_shape->SetAsBox((v1[2].x - v1[0].x)*0.5f, (v1[0].y - v1[1].y)*0.5f, b2Vec2(0,0), 0);
-		
-		b2Fixture* fixture = b->GetFixtureList();
+
+		//b2Fixture* fixture = b->GetFixtureList();
+		/*
 		if (fixture)
 		{
 			b->DestroyFixture(fixture);
 			b2FixtureDef fixturedef;
 			fixturedef.userData = s;
+			//fixturedef.isSensor = true;
 			fixturedef.shape = s->_collider->_polygon_shape;
 			b->CreateFixture(&fixturedef);
 		}
@@ -127,14 +171,15 @@ void  WIPPhysicsManager::update(WIPScene* scene,f32 dt)
 		{
 			LOG_WARN("No fixture!");
 		}
-		
+		*/
 		b->SetTransform(b2Vec2(s->_transform->world_x, s->_transform->world_y), s->_transform->rotation);
 		b->SetAwake(true);
+		
 	}
 
 
 	_phy_space->Step(dt, velocityIterations, positionIterations);
-	//_phy_space->DrawDebugData();
+	_phy_space->DrawDebugData();
 
 
 	for (b2Body* b = _phy_space->GetBodyList(); b; b = b->GetNext())
@@ -161,10 +206,10 @@ void  WIPPhysicsManager::update(WIPScene* scene,f32 dt)
 WIPPhysicsManager* g_physics_manager = WIPPhysicsManager::instance();
 
 
-void WIPBox2dDebugDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) 
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
 	RBVector2 verts[4];
-	for (int i = 0; i < 4; i++) 
+	for (int i = 0; i < 4; i++)
 	{
 		verts[i].x = vertices[i].x;
 		verts[i].y = vertices[i].y;
@@ -176,7 +221,7 @@ void WIPBox2dDebugDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, c
 	g_rhi->end_debug_context();
 }
 
-void WIPBox2dDebugDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) 
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
 	RBVector2 verts[4];
 	for (int i = 0; i < 4; i++)
@@ -185,33 +230,33 @@ void WIPBox2dDebugDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCou
 		verts[i].y = vertices[i].y;
 	}
 	g_rhi->begin_debug_context();
-	g_rhi->change_debug_color(RBColorf(color.r,color.g,color.b,color.a));
+	g_rhi->change_debug_color(RBColorf(color.r, color.g, color.b, color.a));
 	g_rhi->debug_draw_box(verts, cam);
 	g_rhi->debug_submit();
 	g_rhi->end_debug_context();
 }
 
-void WIPBox2dDebugDraw::DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) 
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color)
 {
 
 }
 
-void WIPBox2dDebugDraw::DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) 
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color)
 {
 
 }
 
-void WIPBox2dDebugDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color)
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color)
 {
 
 }
 
-void WIPBox2dDebugDraw::DrawTransform(const b2Transform& xf) 
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawTransform(const b2Transform& xf)
 {
 
 }
 
-void WIPBox2dDebugDraw::DrawPoint(const b2Vec2& p, float32 size, const b2Color& color)
+void WIPPhysicsManager::WIPBox2dDebugDraw::DrawPoint(const b2Vec2& p, float32 size, const b2Color& color)
 {
 
 }

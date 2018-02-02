@@ -10,6 +10,7 @@ root(), depth(dp), scene_ref(in_scene)
 	world_bound.reset();
 	world_bound.include(RBVector2(-a, -b));
 	world_bound.include(RBVector2(a, b));
+
 }
 
 WIPQuadTree::WIPQuadTree(int dp, const WIPScene* in_scene) :

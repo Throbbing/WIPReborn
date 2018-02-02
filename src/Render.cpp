@@ -173,13 +173,13 @@ void WorldRender::culling(const WIPCamera* cam)
 	cam_bound.include(RBVector2(cam->world_x - hw, cam->world_y - hh));
 	cam_bound.include(RBVector2(cam->world_x + hw, cam->world_y + hh));
 
-	vector<const WIPSprite*> out_index;
+	vector<TRefCountPtr<const WIPSprite>> out_index;
 	scene_ref->quad_tree->get_intersected_node(cam_bound, out_index);
 	sort(out_index.begin(), out_index.end());
-	const WIPSprite* pre = nullptr;
+	TRefCountPtr<const WIPSprite> pre = nullptr;
 	for (int i = 0; i < out_index.size(); ++i)
 	{
-		const WIPSprite* s = out_index[i];
+		TRefCountPtr<const WIPSprite> s = out_index[i];
 		if (!s->_render->is_visible)
 			continue;
 		if (s != pre)
@@ -302,7 +302,7 @@ int WorldRender::_pack_sprites_blend(void *mem, int n, int offset_n, const WIPCa
 		memcpy(p, s, sizeof(float) * 44);
 		p += 44;
 		//LOG_WARN("%d",p-mem);
-		if ((int)(p + 44 - (float*)mem) >= vertex_buffer_size / sizeof(float))
+		if ((size_t)(p + 44 - (float*)mem) >= (size_t)(vertex_buffer_size / sizeof(float)))
 		{
 			//LOG_WARN("Copy overflow!Break!");
 			change_texture = false;
@@ -408,7 +408,7 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 		memcpy(p, s, sizeof(float) * 44);
 		p += 44;
 		//LOG_WARN("%d",p-mem);
-		if ((int)(p + 44 - (float*)mem) >= vertex_buffer_size / sizeof(float))
+		if ((size_t)(p + 44 - (float*)mem) >= (size_t)(vertex_buffer_size / sizeof(float)))
 		{
 			//LOG_WARN("Copy overflow!Break!");
 			change_texture = false;
@@ -418,11 +418,11 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 	//pack done!
 	return opaque_objects.size();
 }
-bool WorldRender::comp_less(const WIPSprite* lhs, const WIPSprite* rhs)
+bool WorldRender::comp_less(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
 {
 	return (lhs->_render->material.texture) < (rhs->_render->material.texture);
 }
-bool WorldRender::comp_greater(const WIPSprite* lhs, const WIPSprite* rhs)
+bool WorldRender::comp_greater(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
 {
 	return (lhs->_transform->z_order) > (rhs->_transform->z_order);
 }

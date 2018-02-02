@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{0587d7a3-f2ce-4d56-b84f-a0005d3bfce6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources">
+      <UniqueIdentifier>{08e36723-ce4f-4cff-9662-c40801cf1acf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mat">
+      <UniqueIdentifier>{f1c9acf8-2e53-492d-9c07-3ebf432a76dc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_impl_dx11.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Function.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Matrix.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Plane.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Quaternion.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\RBMath.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\RBMathBase.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\RBMathUtilities.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\RBVectors.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Vector2.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Vector3.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Vector4.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\AABB.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Axis.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Box.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Color.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Color32.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Colorf.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Complex.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Curves.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\FFT.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Platform\WindowsPlatformTemp.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="RBMath\Inc\Platform\RBBasedata.h">
+      <Filter>mat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\imgui_dock.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_dx11.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="RBMath\Src\RBMathImpl.cpp">
+      <Filter>mat</Filter>
+    </ClCompile>
+    <ClCompile Include="RBMath\Src\Color32.cpp">
+      <Filter>mat</Filter>
+    </ClCompile>
+    <ClCompile Include="RBMath\Src\Colorf.cpp">
+      <Filter>mat</Filter>
+    </ClCompile>
+    <ClCompile Include="RBMath\Src\RBMath.cpp">
+      <Filter>mat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\imgui_dock.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.txt" />
+  </ItemGroup>
+</Project>

@@ -41,11 +41,11 @@ public:
 	class WIPAnimationClip* clip;
 	class WIPScene* scene;
 
-	class WIPSprite* sprites[MAXN];
+	 TRefCountPtr<WIPSprite> sprites[MAXN];
 	int draw_state;
 
 	std::vector<int> get_ids;
-	std::vector<WIPSprite*> get_objects;
+	std::vector<TRefCountPtr<WIPSprite>> get_objects;
 
 	class WIPQuadTree* quad_tree;
 	bool debug;

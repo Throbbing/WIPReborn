@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-
+#include "RefCount.h"
 //from Urho3D
 
 /// Return files.
@@ -12,7 +12,7 @@ static const unsigned SCAN_DIRS = 0x2;
 /// Return also hidden files.
 static const unsigned SCAN_HIDDEN = 0x4;
 
-class WIPFileSystem 
+class WIPFileSystem : public FRefCountedObject
 {
 public:
   static WIPFileSystem* get_instance()

@@ -43,7 +43,7 @@ bool WIPIniHelper::reset_ini_from_text(const char* content,int len)
 	}
 }
 
-//读取一个指定名字name的值存放到des，没有此项目返回false.
+//read a spercific term to put to [des].return false if no this term
 bool WIPIniHelper::get_int(char*section_name,char* name,int& des)
 {
 	if (_filename=="")
@@ -77,10 +77,6 @@ bool  WIPIniHelper::get_string(char*section_name,char* name,std::string& des)
 	return true;
 }
 
-/*写入一个指定名字那么的值，如果此项目存在重写那个值，如果不存在:
- *section_name==NULL 则创建一个section名为[NULL],在那一section后面新建此值并写入
- *否则 则在指定section_name后面新建此值并写入
-*/
 void  WIPIniHelper::set_int(char* name,int val,char* section_name)
 {
 	if (_filename=="")

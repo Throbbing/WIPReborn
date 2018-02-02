@@ -1,7 +1,7 @@
 #pragma once
 #ifndef __RBTIMER_H__
 #define __RBTIMER_H__
-
+#include "RefCount.h"
 #ifdef WIN32
 #include "windows.h"
 #include <ctime>
@@ -13,7 +13,7 @@
 //支持镶嵌计时
 namespace rb
 {
-	class rb_timer_t
+	class rb_timer_t : public FRefCountedObject
 	{
 	public:
 		static const int max_stack_n = 32;

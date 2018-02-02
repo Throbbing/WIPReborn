@@ -122,7 +122,7 @@ public:
 
   _Menu* find_menu(const std::string& name)
   {
-    for (int i = 0; i < _menus.size(); ++i)
+    for (size_t i = 0; i < _menus.size(); ++i)
     {
       if (_menus[i]->name == name)
         return _menus[i];
@@ -132,7 +132,7 @@ public:
   
   bool find_menu_item(const std::string& name,menu_item_type& mi)
   {
-    for (int i = 0; i < mi.size(); ++i)
+    for (size_t i = 0; i < mi.size(); ++i)
     {
       if (mi[i] == name)
         return true;

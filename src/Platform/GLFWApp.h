@@ -48,14 +48,15 @@ public:
   {
 	  _exit_requist = true;
   }
-  void pending_objects(class WIPSprite* s);
+  WIPSprite* get_by_tag(std::string name) const;
+  void pending_objects( TRefCountPtr<WIPSprite> s);
   //add object to scene in case of destory iterator.
-  void creating_object(class WIPSprite* s);
+  void creating_object( TRefCountPtr<WIPSprite> s);
   GLFWwindow *window;
-
+  f32 get_cur_time() const;
 private:
-	std::vector<class WIPSprite*> deleting_objects;
-	std::vector<class WIPSprite*> creating_objects;
+	std::vector< TRefCountPtr<WIPSprite>> deleting_objects;
+	std::vector< TRefCountPtr<WIPSprite>> creating_objects;
 
 
 	bool _exit_requist;
@@ -103,12 +104,12 @@ private:
 	class WIPAnimationClip* pop_clip;
 
 
-#define ANIMYNUM 52
-	WIPSprite* enemy[ANIMYNUM];
-	WIPSprite* block;
-	WIPSprite* player;
-	WIPSprite* pop[ANIMYNUM];
-	WIPSprite* bullets[ANIMYNUM];
+#define ANIMYNUM 1
+	TRefCountPtr<WIPSprite> enemy[ANIMYNUM];
+	TRefCountPtr<WIPSprite> block;
+	TRefCountPtr<WIPSprite> player;
+	TRefCountPtr<WIPSprite> pop[ANIMYNUM];
+	TRefCountPtr<WIPSprite> bullets[ANIMYNUM];
 
 	//
 	class WorldRender* world_renderer;
@@ -125,7 +126,7 @@ private:
 	int draw_state;
 
 	std::vector<int> get_ids;
-	std::vector<const WIPSprite*> get_objects;
+	std::vector<TRefCountPtr<const WIPSprite>> get_objects;
 
 	class WIPQuadTree* quad_tree;
 	bool debug;
@@ -136,14 +137,14 @@ private:
   std::vector<WIPCamera*> cameras;
   class WIPScene* scene;
   std::vector<std::wstring> resw;
-  WIPSprite* bg;
-  WIPSprite* bg_mask;
-  WIPSprite* man;
-  WIPSprite* man_lixiaoyao;
-  WIPSprite* zaji1;
-  WIPSprite* zaji2;
-  WIPSprite* crowd;
-  WIPSprite* fogs;
+  TRefCountPtr<WIPSprite> bg;
+  TRefCountPtr<WIPSprite> bg_mask;
+  TRefCountPtr<WIPSprite> man;
+  TRefCountPtr<WIPSprite> man_lixiaoyao;
+  TRefCountPtr<WIPSprite> zaji1;
+  TRefCountPtr<WIPSprite> zaji2;
+  TRefCountPtr<WIPSprite> crowd;
+  TRefCountPtr<WIPSprite> fogs;
   int scoller_y;
 
   std::vector<WIPTexture2D*> textures;

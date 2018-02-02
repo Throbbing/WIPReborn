@@ -52,9 +52,9 @@ float rt_x4, float rt_y4
 
 
 WIPComponent::WIPComponent() :host_object(nullptr){}
-void WIPComponent::set_host(WIPSprite* ho)
+void WIPComponent::set_host(TRefCountPtr<WIPSprite> ho)
 {
-	host_object = ho;
+	host_object = ho.GetReference();
 }
 
 WIPComponent::WIPComponent(WIPSprite* s) :host_object(s){}
@@ -62,7 +62,7 @@ WIPComponent::WIPComponent(WIPSprite* s) :host_object(s){}
 //every subclass call base destructor so this must be defined.
 WIPComponent::~WIPComponent(){}
 
-WIPTickComponent::WIPTickComponent(WIPSprite* host) : WIPComponent(host){}
+WIPTickComponent::WIPTickComponent(TRefCountPtr<WIPSprite> host) : WIPComponent(host){}
 
 WIPTickComponent::~WIPTickComponent(){}
 
@@ -270,31 +270,47 @@ void WIPAnimation::playeQueue(WIPAnimationQueue* queue)
 
 WIPSprite::~WIPSprite()
 {
-
+	//LOG_NOTE("ssss");
+	//删除组件前移除所有依赖！！
+	delete _transform;
+	delete _collider;
+	delete _render;
+	delete _animation;
+	for (size_t i = 0; i < components.size(); ++i)
+	{
+		delete components[i];
+	}
+	for (size_t i = 0; i < tick_components.size(); ++i)
+	{
+		delete tick_components[i];
+	}
 }
 
-void WIPSprite::destroy(WIPSprite* s)
+void WIPSprite::destroy(TRefCountPtr<WIPSprite> s)
 {
 	for (auto i : s->related_scenes)
 	{
 		i->remove_sprite(s, false);
 	}
 	s->related_scenes.clear();
+	s->_collider->destroy();
 	//删除组件前移除所有依赖！！
-	delete s->_transform;
-	delete s->_collider;
-	delete s->_render;
-	delete s->_animation;
-	for (int i = 0; i < s->components.size(); ++i)
+	//delete s->_transform;
+	//delete s->_collider;
+	//delete s->_render;
+	//delete s->_animation;
+	for (size_t i = 0; i < s->components.size(); ++i)
 	{
-		delete s->components[i];
+		s->destroy_components();
+		//delete s->components[i];
 	}
-	for (int i = 0; i < s->tick_components.size(); ++i)
+	for (size_t i = 0; i < s->tick_components.size(); ++i)
 	{
-		delete s->tick_components[i];
+		s->destroy_components();
+		//delete s->tick_components[i];
 	}
 	ids.push_back(s->key);
-	delete s;
+	//delete s;
 }
 
 void WIPSprite::add_to_scene(WIPScene* scene)
@@ -305,7 +321,7 @@ void WIPSprite::add_to_scene(WIPScene* scene)
 void WIPSprite::update_world()
 {
 	cache_world_position();
-	for (int i = 0; i < related_scenes.size(); ++i)
+	for (size_t i = 0; i < related_scenes.size(); ++i)
 	{
 		related_scenes[i]->update_sprite(this);
 	}
@@ -330,9 +346,9 @@ void WIPSprite::leave_scene(WIPScene* scene)
 
 
 
-WIPSprite* WIPSpriteFactory::create_sprite(const WIPSpriteCreator& creator)
+TRefCountPtr<WIPSprite> WIPSpriteFactory::create_sprite(const WIPSpriteCreator& creator)
 {
-	WIPSprite* s = WIPSprite::create(creator.w, creator.h, creator.body_tp, creator.collider_sx, creator.collider_sy);
+	TRefCountPtr<WIPSprite> s = WIPSprite::create(creator.w, creator.h, creator.body_tp, creator.collider_sx, creator.collider_sy);
 	s->_render->material.material_type = creator.mt;
 	switch (creator.mt)
 	{
@@ -365,17 +381,17 @@ void WIPSprite::destroy_self()
 int WIPSprite::cur_id=0;
 std::vector<int> WIPSprite::ids;
 
-WIPSprite* WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes tp , f32 sx , f32 sy )
+TRefCountPtr<WIPSprite> WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes tp, f32 sx, f32 sy)
 {
-	WIPSprite* ret = new WIPSprite();
+	TRefCountPtr<WIPSprite> ret = new WIPSprite();
 	ret->_transform = new WIPTransform();
 	ret->_render = new WIPRenderComponent(width, height);
 	ret->_animation = new WIPAnimation();
 	if (tp != 4)
 	{
-		ret->_collider = WIPCollider::create_collider(ret, tp);
+		ret->_collider = WIPCollider::create_collider(ret, tp,sx,sy);
 		ret->_collider->set_sprite(ret);
-		ret->_collider->set_mesh_box(sx, sy);
+		
 	}
 	else
 	{
@@ -398,6 +414,12 @@ WIPSprite* WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes
 	return ret;
 }
 
+void WIPSprite::update_collider()
+{
+	_collider->reset_polygon_vertices(this);
+	_collider->recreate_fixture();
+}
+
 void WIPSprite::get_anchor_vertices(RBVector2* vertices) const
 {
 	if (!vertices)
@@ -415,6 +437,29 @@ void WIPSprite::get_anchor_vertices(RBVector2* vertices) const
 	vertices[2] = rt1;
 	vertices[3] = rb1;
 }
+
+WIPComponent* WIPSprite::get_component_by_name(const char* name) const
+{
+	int name_hash = get_string_hash(name);
+	for (auto i : tick_components)
+	{
+		if (i->get_type() == name_hash)
+		{
+			return i;
+		}
+	}
+	for (auto i : components)
+	{
+		if (i->get_type() == name_hash)
+		{
+			return i;
+		}
+	}
+	return nullptr;
+}
+
+
+
 void WIPSprite::cache_world_position()
 {
 	
@@ -475,8 +520,24 @@ void WIPSprite::get_world_position(RBVector2* vertices) const
 	memcpy(vertices, _transform->vertices_cache, sizeof(RBVector2) * 4);
 }
 
+
+void WIPSprite::on_contact()
+{
+	auto* it = _collider->_contact_objects.head();
+	while (it)
+	{
+		for (auto j : tick_components)
+		{
+			j->on_contact(it->data);
+		}
+		it = it->next;
+	}
+}
+
 void WIPSprite::update(f32 dt)
 {
+	if (_collider&&!_collider->_contact_objects.empty())
+		on_contact();
 	for (auto i : tick_components)
 	{
 		i->update(dt);
@@ -498,10 +559,40 @@ void WIPSprite::init_components()
 	}
 }
 
+void WIPSprite::start_components()
+{
+	for (auto i : tick_components)
+	{
+		i->start();
+	}
+}
+
+void WIPSprite::end_components()
+{
+	for (auto i : tick_components)
+	{
+		i->end();
+	}
+}
+
 void WIPSprite::destroy_components()
 {
 	for (auto i : tick_components)
 	{
 		i->destroy();
 	}
+}
+
+#include "ScriptManager.h"
+
+void WIPSprite::link_lua_object(const char* tname)
+{
+	CHECK(_lua_name == "");
+	_lua_name = tname;
+}
+
+
+void WIPSpriteunlink_lua_object()
+{
+
 }

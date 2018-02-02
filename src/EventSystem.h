@@ -2,6 +2,7 @@
 #include "Object.h"
 #include <map>
 #include <vector>
+#include "RefCount.h"
 
 class WIPObject;
 
@@ -22,7 +23,7 @@ public:
 
 };
 
-class EventManager
+class EventManager : public FRefCountedObject
 {
 public:
   static EventManager* get_instance();

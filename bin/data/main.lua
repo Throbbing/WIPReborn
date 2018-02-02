@@ -1,7 +1,10 @@
 --require "init"
 local app = require "lib"
 
-
+function genertate_component_by_name(component_name)
+	s = "local _ = require \""..component_name.."\";return _:new()"
+	return loadstring(s)
+end
 
 function init()
 end
@@ -25,6 +28,4 @@ end
 function finalization()
 
 end
-
-
 

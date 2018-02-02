@@ -7,7 +7,7 @@
 #include "ResourceManager.h"
 #include "Logger.h"
 #include "RBMath/Inc/Vector2.h"
-
+#include "RefCount.h"
 
 using std::map;
 using std::string;
@@ -20,7 +20,7 @@ enum class BufferType
 	E_STREAM_DRAW
 };
 
-class WIPDynamicRHI
+class WIPDynamicRHI : public FRefCountedObject
 {
 protected:
 	map<string,WIPVertexShader*> _vertex_shaders;
@@ -28,7 +28,7 @@ protected:
 
 	WIPViewPort* _active_view_port;
 
-	int _debug_buffer_size;
+	size_t _debug_buffer_size;
 	unsigned char* _debug_vertex_buffer;
 	int _debug_update_count;
 public:
@@ -69,7 +69,7 @@ public:
 	virtual WIPViewPort* change_viewport(WIPViewPort* viewport) = 0;
 	virtual void set_back_buffer(const WIPRenderTexture2D* render_texture) const = 0;
 	virtual void set_main_back_buffer() const = 0;
-	virtual void clear_back_buffer(const RBColorf& c) const = 0;
+	virtual void clear_back_buffer(const RBColorf& c=RBColorf::blank) const = 0;
 	virtual void set_uniform4f(const char* uniform_name,const RBColorf& c)=0;
 	virtual void set_uniform_texture(const char* uniform_name,int loc,const WIPBaseTexture* texture)=0;
 	virtual void set_uniform_texture(const char* uniform_name, int loc, const WIPRenderTexture2D* texture) = 0;
@@ -85,7 +85,7 @@ public:
 	virtual void disable_blend() const = 0;
 	virtual void set_blend_function() const = 0;
 
-	virtual void begin_debug_context() = 0;
+	virtual bool begin_debug_context() = 0;
 	virtual void change_debug_color(const RBColorf& color) = 0;
 	virtual void debug_draw_aabb2d(const RBVector2& minp, const RBVector2& maxp, const class WIPCamera* cam) = 0;
 	virtual void debug_draw_box(const RBVector2* v,const class WIPCamera* cam) = 0;
@@ -102,7 +102,7 @@ class WIPCamera;
 class WIPScene;
 class WIPSprite;
 
-class WIPRender
+class WIPRender : public FRefCountedObject
 {
 public:
 	virtual void init(const WIPCamera* cam = nullptr) = 0;
@@ -215,8 +215,8 @@ public:
 			p += 6;
 		}
 	}
-	static bool comp_less(const WIPSprite* lhs, const WIPSprite* rhs);
-	static bool comp_greater(const WIPSprite* lhs, const WIPSprite* rhs);
+	static bool comp_less( TRefCountPtr< WIPSprite> lhs, TRefCountPtr< WIPSprite> rhs);
+	static bool comp_greater(TRefCountPtr< WIPSprite> lhs, TRefCountPtr< WIPSprite> rhs);
 	void sort_by_texture();
 	void sort_by_zorder();
 	WIPIndexBuffer* index_buffer;
@@ -229,8 +229,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector<const WIPSprite*> opaque_objects;
-	vector<const WIPSprite*> blend_objects;
+	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
+	vector< TRefCountPtr<const WIPSprite>> blend_objects;
 
 	float* pack_mem;
 
@@ -275,8 +275,8 @@ public:
 			p += 6;
 		}
 	}
-	static bool comp_less(const WIPSprite* lhs, const WIPSprite* rhs);
-	static bool comp_greater(const WIPSprite* lhs, const WIPSprite* rhs);
+	static bool comp_less( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
+	static bool comp_greater( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
 	void sort_by_texture();
 	void sort_by_zorder();
 	WIPIndexBuffer* index_buffer;
@@ -289,8 +289,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector<const WIPSprite*> opaque_objects;
-	vector<const WIPSprite*> blend_objects;
+	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
+	vector< TRefCountPtr<const WIPSprite>> blend_objects;
 
 	float* pack_mem;
 
@@ -703,7 +703,7 @@ public:
 
 	virtual void destroy()
 	{
-		for (int i = 0; i < search_container.size(); ++i)
+		for (size_t i = 0; i < search_container.size(); ++i)
 		{
 			delete search_container[i];
 		}
@@ -1231,7 +1231,7 @@ public:
 
 	virtual void destroy()
 	{
-		for (int i = 0; i < index.size(); ++i)
+		for (size_t i = 0; i < index.size(); ++i)
 		{
 			delete index[i];
 		}
