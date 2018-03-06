@@ -22,6 +22,7 @@ WIPScriptManager::~WIPScriptManager()
 	delete _instance;
 }
 
+#ifdef USELUA
 bool WIPScriptManager::startup()
 {
 	_L = luaL_newstate();
@@ -185,6 +186,54 @@ void WIPScriptManager::generate_api()
 	//luaL_setfuncs(_L,lib,1);
 }
 
+#else
+bool WIPScriptManager::startup()
+{
+  return true;
+}
 
+bool WIPScriptManager::do_string(const char* s)
+{
+  return true;
+}
+
+void WIPScriptManager::remove_global_var(const char* name)
+{
+
+}
+
+void WIPScriptManager::shutdown()
+{
+
+}
+
+bool WIPScriptManager::load_file(const char* file)
+{
+  return true;
+}
+
+void WIPScriptManager::call(const char* function)
+{
+
+}
+
+void WIPScriptManager::call(const char* function, const char* param_types, ...)
+{
+
+}
+
+void WIPScriptManager::call_table_function(const char* tname, const char* fname, const char* param_types, ...)
+{
+
+}
+
+
+void WIPScriptManager::generate_api()
+{
+
+}
+
+
+#endif
 
 WIPScriptManager* g_script_manager = WIPScriptManager::instance();

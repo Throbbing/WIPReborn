@@ -8,6 +8,7 @@
 #include "AudioManager.h"
 #include "Sound.h"
 #include "ScriptManager.h"
+#include <queue>
 
 //Lua逻辑的组件,lua内所有组件都继承与一个抽象的lua逻辑组件，以保证素有函数都有实现
 //创建代码入口都是从lua开始，首先创建Sprite，使用一个全局的子表来保存创建的Spritelua对象，还要把这个名称传回宿主对象，宿主对象通过这个名称查找到对应的lua对象（对象销毁时要注意销毁次索引项）
@@ -16,6 +17,7 @@
 class WIPScriptComponent:public WIPTickComponent
 {
 public:
+	//WIPTICKCOMPONENT(WIPScriptComponent);
 	WIPOBJECT(WIPScriptComponent, WIPTickComponent);
 	WIP_MEM(WIPScriptComponent);
 	WIPScriptComponent(WIPSprite* s, const char* script_path) :
@@ -56,16 +58,18 @@ public:
 	std::string _name;
 };
 
+#ifdef ML
 #include "./tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 using namespace tiny_dnn::layers;
+#endif
 
 class MapGrid
 {
 public:
-	MapGrid(TRefCountPtr<WIPSprite> sp,int sub)
+	MapGrid(WIPSprite*  sp,int sub)
 	{
 		bg = sp;
 		w = bg->_render->mesh.get_witdh();
@@ -165,7 +169,7 @@ public:
 		g_rhi->end_debug_context();
 	}
 	char* bitmap;
-	TRefCountPtr<WIPSprite> bg;
+	WIPSprite*  bg;
 	f32 w, h;
 	int sub;
 
@@ -182,9 +186,46 @@ struct NPCMental
 
 };
 
+struct Ac
+{
+  Ac()
+  {
+    end = false;
+    begin = false;
+    time = 0.f;
+    id = RBMath::get_rand_i(1999);
+  }
+  virtual bool run(float dt)
+  {
+    if (end)
+      return true;
+    if (!begin)
+    {
+      //init
+      begin = true;
+    }
+    time += dt;
+    LOG_NOTE("Doing %d", id);
+    if (time>2)
+    {
+      end = true;
+      LOG_NOTE("Change");
+      return true;
+    }
+    return false;
+  }
+  virtual bool doing(float dt){ return true; }
+  virtual void init(float dt){}
+  int id;
+  float time;
+  bool end;
+  bool begin;
+};
+
 class MapComponent : public WIPTickComponent
 {
 public:
+	
 	enum class ManState
 	{
 		E_LEFT,
@@ -196,12 +237,15 @@ public:
 		E_TITLE,
 		E_TALK,
 		E_PLAYER_CONTROLL,
+    E_ACTION,
+    E_END,
 		E_TOTAL
 	};
+	WIPTICKCOMPONENT(MapComponent);
 	WIPOBJECT(MapComponent, WIPTickComponent);
 	WIP_MEM(MapComponent);
 
-	MapComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+	MapComponent(WIPSprite*  s) :WIPTickComponent(s)
 	{
 
 	}
@@ -212,7 +256,7 @@ public:
 	}
 	void change_to_talk(string_hash tp, void* data);
 	void change_to_player(string_hash tp, void* data);
-	void fix_sprite_position(TRefCountPtr<WIPSprite> sprite)
+	void fix_sprite_position(WIPSprite*  sprite)
 	{
 		if (grid->get_position_state(man->_transform->world_x, man->_transform->world_y))
 		{
@@ -220,23 +264,29 @@ public:
 		}
 	}
 	void init();
-	void destroy()
-	{
-		delete grid;
-	}
+	void destroy();
 	void update(f32 dt);
 	
 	void fix_update(f32 dt)
 	{
 
 	}
+	void on_load(void* data)
+	{
 
-	
+	}
 
-	TRefCountPtr<WIPSprite> man;
-	TRefCountPtr<WIPSprite> fogs;
+  
+
+ 
+
+  std::vector<Ac*> actions;
+
+	WIPSprite*  man;
+	WIPSprite*  fogs;
 	RBVector2 fog_dir;
-	TRefCountPtr<WIPSprite> bg;
+	WIPSprite*  bg;
+  WIPSprite* woman;
 
 	WIPCamera* cam;
 	WIPScene* scene;
@@ -284,10 +334,9 @@ public:
   string_hash component_update;
 
 
-  GameState game_state = GameState::E_TITLE;
+  GameState game_state = GameState::E_PLAYER_CONTROLL;
   const NPCDisplayData* cur_npc_ui = nullptr;
 
-  WIPRenderTexture2D* render_texture2d;
 
   //title resouces
   WIPTexture2D* ext_bt;
@@ -297,14 +346,23 @@ public:
   WIPTexture2D* title;
   int title_state = 0;
 
+  WIPTexture2D* move_bar;
+  WIPTexture2D* end_tex;
+
+  bool action_bg = false;
+  RBVector2 trans_target;
+
+  std::string mask_path;
+
 };
 
 class NPCComponent : public WIPTickComponent
 {
 public:
+	WIPTICKCOMPONENT(NPCComponent);
 	WIPOBJECT(NPCComponent, WIPTickComponent);
 	WIP_MEM(NPCComponent);
-	NPCComponent(TRefCountPtr<WIPSprite> s);
+	NPCComponent(WIPSprite*  s);
 	~NPCComponent();
 	virtual void init();
 	virtual void update(f32 dt);
@@ -324,8 +382,60 @@ public:
 	std::queue<wchar_t*> words[2];
 	std::map<int, WIPTexture2D*> npc_faces;
 	MapComponent* map_component=nullptr;
+	void on_load(void* data)
+	{
+
+	}
 };
 
+#define UPDATE_EVENT 0
+#define BEGIN_EVENT 1
+#define CONTACT_EVENT 2
+#define END_EVENT 3
+#define LEVEL_START 4
+#define LEVEL_END 5
+
+
+
+class TransformComponent : public WIPTickComponent
+{
+public:
+  WIPTICKCOMPONENT(TransformComponent);
+  WIPOBJECT(TransformComponent, WIPTickComponent);
+  WIP_MEM(TransformComponent);
+  TransformComponent(WIPSprite*  s);
+  ~TransformComponent();
+  virtual void init();
+  virtual void update(f32 dt);
+  virtual void fix_update(f32 dt)
+  {
+
+  }
+  virtual void destroy();
+  void on_begin_contact(const WIPSprite* s);
+  void on_end_contact(const WIPSprite* s);
+  void on_contact(const WIPSprite* s);
+  MapComponent* map_component=nullptr;
+  void on_load(void* data)
+  {
+
+  }
+  virtual void start();
+  virtual void end();
+  void* call_data[6];
+  void(*func_begin)(void*, const WIPSprite*, TransformComponent* t) = 0;
+  void(*func_contact)(void*, const WIPSprite*, TransformComponent* t) = 0;
+  void(*func_end)(void*, const WIPSprite*, TransformComponent* t) = 0;
+  void(*func_update)(void*, float, TransformComponent* t) = 0;
+  void(*func_level_start)(void*, TransformComponent* t) = 0;
+  void(*func_level_end)(void*, TransformComponent* t) = 0;
+
+
+
+};
+
+
+#if 0
 class EnemeyComponent : public WIPTickComponent
 {
 public:
@@ -349,10 +459,11 @@ public:
 		E_RIGHT,
 		E_UP, E_DOWN
 	};
+	WIPTICKCOMPONENT(EnemeyComponent);
 	WIPOBJECT(EnemeyComponent, WIPTickComponent);
 	WIP_MEM(EnemeyComponent);
 
-	EnemeyComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+	EnemeyComponent(WIPSprite*  s) :WIPTickComponent(s)
 	{
 		pre_clip = nullptr;
 		clip = nullptr;
@@ -378,8 +489,8 @@ public:
 	f32 acc_t;
 	int cur_direction;
 
-	TRefCountPtr<WIPSprite> blt;
-	TRefCountPtr<WIPSprite> player_ref;
+	WIPSprite*  blt;
+	WIPSprite*  player_ref;
 
 	StudioSound* sound;
 	StudioSound* sound_death;
@@ -393,7 +504,10 @@ public:
 	std::ofstream fout;
 
 	network<sequential> nn;
+	void on_load(void* data)
+	{
 
+	}
 };
 
 class PlayerComponent : public WIPTickComponent
@@ -406,10 +520,11 @@ public:
 		E_UP, E_DOWN
 	};
 	ManState man_state;
+	WIPTICKCOMPONENT(PlayerComponent);
 	WIPOBJECT(PlayerComponent, WIPTickComponent);
 	WIP_MEM(PlayerComponent);
 
-	PlayerComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+	PlayerComponent(WIPSprite*  s) :WIPTickComponent(s)
 	{
 		pre_clip = nullptr;
 		clip = nullptr;
@@ -433,7 +548,7 @@ public:
 	WIPAnimationClip* clip;
 	WIPCamera* cam;
 
-	TRefCountPtr<WIPSprite> blt;
+	WIPSprite*  blt;
 
 	StudioSound* sound;
 	StudioSound* sound_start;
@@ -462,16 +577,20 @@ public:
 	class StudioSound* sound_fire;
 	class StudioSound* sound_blast;
 	class StudioSound* sound_death_enemy;
+	void on_load(void* data)
+	{
 
+	}
 };
 
 class BulletComponent : public WIPTickComponent
 {
 public:
+	WIPTICKCOMPONENT(BulletComponent);
 	WIPOBJECT(BulletComponent, WIPTickComponent);
 	WIP_MEM(BulletComponent);
 
-	BulletComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+	BulletComponent(WIPSprite*  s) :WIPTickComponent(s)
 	{
 	}
 
@@ -490,20 +609,25 @@ public:
 
 	}
 	RBVector2 v;
-	TRefCountPtr<WIPSprite> pop_obj;
+	WIPSprite*  pop_obj;
 	StudioSound* sound;
 	RBVector2 pos;
 	f32 s = 0;
 	int main_axis = -1;
+	void on_load(void* data)
+	{
+
+	}
 };
 
 class BulletComponent1 : public WIPTickComponent
 {
 public:
+	WIPTICKCOMPONENT(BulletComponent1);
 	WIPOBJECT(BulletComponent1, WIPTickComponent);
 	WIP_MEM(BulletComponent1);
 
-	BulletComponent1(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+	BulletComponent1(WIPSprite*  s) :WIPTickComponent(s)
 	{
 	}
 
@@ -522,7 +646,12 @@ public:
 
 	}
 	RBVector2 v;
-	TRefCountPtr<WIPSprite> pop_obj;
+	WIPSprite*  pop_obj;
 	StudioSound* sound;
 	RBVector2 pos;
+	void on_load(void* data)
+	{
+
+	}
 };
+#endif

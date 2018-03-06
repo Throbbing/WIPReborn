@@ -9,7 +9,7 @@
 class WIPCamera;
 class WIPSprite;
 
-
+extern void regist_user_component();
 
 class GLFWApp : public WIPApp 
 {
@@ -21,11 +21,9 @@ public:
 
   virtual void run();
 
-  void init_rpg_demo();
-  void update_rpg_demo();
-
-  void init_tank_demo();
-  void update_tank_demo();
+  void load_rpg_demo();
+  void load_tank_demo();
+  void load_avg_demo();
 
   bool init_gl(const char *title, int width, int height);
   bool create_window(const char *title) 
@@ -48,15 +46,10 @@ public:
   {
 	  _exit_requist = true;
   }
-  WIPSprite* get_by_tag(std::string name) const;
-  void pending_objects( TRefCountPtr<WIPSprite> s);
-  //add object to scene in case of destory iterator.
-  void creating_object( TRefCountPtr<WIPSprite> s);
   GLFWwindow *window;
   f32 get_cur_time() const;
+  class WorldRender* world_renderer;
 private:
-	std::vector< TRefCountPtr<WIPSprite>> deleting_objects;
-	std::vector< TRefCountPtr<WIPSprite>> creating_objects;
 
 
 	bool _exit_requist;
@@ -67,91 +60,31 @@ private:
 	double curTime;
 	float _frame;
 
-	//demo
-	bool show_text;
 
-	class WIPTexture2D* tex2d;
-	class WIPTexture2D* tex2d1;
-	class WIPTexture2D* tex2d1mask;
-	class WIPTexture2D* tex2d_fog;
-	class WIPTexture2D* tex2d_lixiaoyao;
-	class WIPTexture2D* tex2d_zaji1;
-	class WIPTexture2D* tex2d_zaji2;
-	class WIPTexture2D* tex2d_crowd;
-	class WIPTexture2D* face;
-
-	class WIPAnimationClip* clip;
-	class WIPAnimationClip* clip1;
-	class WIPAnimationClip* clip2;
-	class WIPAnimationClip* clip3;
-	class WIPAnimationClip* clip_s;
-	class WIPAnimationClip* clip1_s;
-	class WIPAnimationClip* clip2_s;
-	class WIPAnimationClip* clip3_s;
-	class WIPAnimationClip* pre_clip;
-
-	//demo tank
-	class WIPTexture2D* enemy_texture;
-	class WIPTexture2D* player_texture;
-	class WIPTexture2D* block_texture;
-	class WIPTexture2D* pop_texture;
-	class WIPTexture2D* bullet_texture;
-
-	class WIPAnimationClip* enemy_clip;
-	class WIPAnimationClip* player_clip;
-
-
-	class WIPAnimationClip* pop_clip;
+	
 
 
 #define ANIMYNUM 1
-	TRefCountPtr<WIPSprite> enemy[ANIMYNUM];
-	TRefCountPtr<WIPSprite> block;
-	TRefCountPtr<WIPSprite> player;
-	TRefCountPtr<WIPSprite> pop[ANIMYNUM];
-	TRefCountPtr<WIPSprite> bullets[ANIMYNUM];
-
-	//
-	class WorldRender* world_renderer;
-//#define Text1
-#ifdef Text1
-	class LargeTexture_TextRender* text_renderer;
-#else
-	class TextRender* text_renderer;
-#endif
-	class UIRender* ui_renderer;
-	class LargeTexture_TextRender* text_renderer1;
+	WIPSprite* enemy[ANIMYNUM];
+	WIPSprite* block;
+	WIPSprite* player;
+	WIPSprite* pop[ANIMYNUM];
+	WIPSprite* bullets[ANIMYNUM];
 
 
-	int draw_state;
 
-	std::vector<int> get_ids;
-	std::vector<TRefCountPtr<const WIPSprite>> get_objects;
-
-	class WIPQuadTree* quad_tree;
 	bool debug;
 
 
-  float zoom;
-
-  std::vector<WIPCamera*> cameras;
-  class WIPScene* scene;
+  
   std::vector<std::wstring> resw;
-  TRefCountPtr<WIPSprite> bg;
-  TRefCountPtr<WIPSprite> bg_mask;
-  TRefCountPtr<WIPSprite> man;
-  TRefCountPtr<WIPSprite> man_lixiaoyao;
-  TRefCountPtr<WIPSprite> zaji1;
-  TRefCountPtr<WIPSprite> zaji2;
-  TRefCountPtr<WIPSprite> crowd;
-  TRefCountPtr<WIPSprite> fogs;
   int scoller_y;
-
-  std::vector<WIPTexture2D*> textures;
+  std::vector<class WIPTexture2D*> textures;
   std::vector<std::wstring> paths;
 
+
   GlfwImguiRender* imgui_renderer;
-  class WIPRenderTexture2D* render_texture2d;
+  class WIPLevelLoader* loader;
 };
 
 extern GLFWApp* g_app;

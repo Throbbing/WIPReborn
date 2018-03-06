@@ -8,6 +8,7 @@
 #include "Logger.h"
 #include "RBMath/Inc/Vector2.h"
 #include "RefCount.h"
+#include "Camera.h"
 
 using std::map;
 using std::string;
@@ -143,8 +144,8 @@ public:
 	{
 		f32 vert[] = {
 			-0.88f, -0.88f, 0.f, 1.f,
-			-0.88f, -0.3f, 0.f, 0.f,
-			0.88f, -0.3f, 1.f, 0.f,
+			-0.88f, -0.75f, 0.f, 0.f,
+			0.88f, -0.75f, 1.f, 0.f,
 			0.88f, -0.88f, 1.f, 1.f
 		};
 
@@ -229,8 +230,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
-	vector< TRefCountPtr<const WIPSprite>> blend_objects;
+	vector< const WIPSprite* > opaque_objects;
+	vector< const WIPSprite* > blend_objects;
 
 	float* pack_mem;
 
@@ -275,8 +276,8 @@ public:
 			p += 6;
 		}
 	}
-	static bool comp_less( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
-	static bool comp_greater( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
+	static bool comp_less( const WIPSprite*  lhs,  const WIPSprite*  rhs);
+	static bool comp_greater( const WIPSprite*  lhs,  const WIPSprite*  rhs);
 	void sort_by_texture();
 	void sort_by_zorder();
 	WIPIndexBuffer* index_buffer;
@@ -289,8 +290,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
-	vector< TRefCountPtr<const WIPSprite>> blend_objects;
+	vector< const WIPSprite* > opaque_objects;
+	vector< const WIPSprite* > blend_objects;
 
 	float* pack_mem;
 
@@ -1546,3 +1547,89 @@ private:
 
 	int text_to_render;
 };
+
+class TempUISys : public FRefCountedObject
+{
+public:
+	static TempUISys* instance();
+	void startup()
+	{
+#ifdef Text1
+		text_renderer = new LargeTexture_TextRender(2048, 2048);
+#else
+		text_renderer = new TextRender(512, 512);
+#endif
+		text_renderer->init();
+		text_renderer->load_font("./font/simkai.ttf", 24, 24);
+	}
+	void change_camera(WIPCamera* cam)
+	{
+		reset_target_camera(cam);
+		delete ui_renderer;
+		ui_renderer = new UIRender();
+		ui_renderer->init(cam);
+	}
+	void reset_target_camera(WIPCamera* cam)
+	{
+		target_cam_ref = cam;
+		resize(cam->window_w, cam->window_h);
+	}
+	void resize(uint w,uint h)
+	{
+		delete render_texture2d;
+		render_texture2d = g_rhi->RHICreateRenderTexture2D(w, h, RBColorf::black);
+	}
+	void begin()
+	{
+		g_rhi->set_back_buffer(render_texture2d);
+	}
+	void end()
+	{
+		g_rhi->set_main_back_buffer();
+	}
+	void clear()
+	{
+		should_clear = true;
+	}
+	void draw_picture(int px, int py, int w, int h, const WIPTexture2D* tex)
+	{
+		ui_renderer->render_pic(px,py,w,h,tex);
+	}
+	void draw_box(int px, int py, int w, int h, const RBColorf& c)
+	{
+		ui_renderer->render_box(px,py,w,h,c);
+	}
+	void draw_text(int px, int py, const wchar_t* chs, int len, int maxw)
+	{
+		text_renderer->render_text(px, py, chs, len, maxw, target_cam_ref);
+	}
+	void render()
+	{
+		begin();
+		text_renderer->render(target_cam_ref);
+		end();
+		ui_renderer->render_pic(0, 0, render_texture2d->get_width(), render_texture2d->get_height(), render_texture2d);
+
+		if (should_clear)
+		{
+			g_rhi->set_back_buffer(render_texture2d);
+			g_rhi->clear_back_buffer();
+			g_rhi->set_main_back_buffer();
+			should_clear = false;
+		}
+	}
+	~TempUISys()
+	{
+		delete render_texture2d;
+		delete text_renderer;
+		delete ui_renderer;
+	}
+	WIPRenderTexture2D* render_texture2d=nullptr;
+	TextRender* text_renderer=nullptr;
+	UIRender* ui_renderer=nullptr;
+	WIPCamera* target_cam_ref=nullptr;
+
+	bool should_clear = false;
+};
+
+extern TempUISys* g_temp_uisys;

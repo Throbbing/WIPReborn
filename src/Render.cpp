@@ -173,13 +173,13 @@ void WorldRender::culling(const WIPCamera* cam)
 	cam_bound.include(RBVector2(cam->world_x - hw, cam->world_y - hh));
 	cam_bound.include(RBVector2(cam->world_x + hw, cam->world_y + hh));
 
-	vector<TRefCountPtr<const WIPSprite>> out_index;
+	vector<const WIPSprite* > out_index;
 	scene_ref->quad_tree->get_intersected_node(cam_bound, out_index);
 	sort(out_index.begin(), out_index.end());
-	TRefCountPtr<const WIPSprite> pre = nullptr;
+	const WIPSprite*  pre = nullptr;
 	for (int i = 0; i < out_index.size(); ++i)
 	{
-		TRefCountPtr<const WIPSprite> s = out_index[i];
+		const WIPSprite*  s = out_index[i];
 		if (!s->_render->is_visible)
 			continue;
 		if (s != pre)
@@ -418,11 +418,11 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 	//pack done!
 	return opaque_objects.size();
 }
-bool WorldRender::comp_less(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
+bool WorldRender::comp_less(const WIPSprite*  lhs, const WIPSprite*  rhs)
 {
 	return (lhs->_render->material.texture) < (rhs->_render->material.texture);
 }
-bool WorldRender::comp_greater(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
+bool WorldRender::comp_greater(const WIPSprite*  lhs, const WIPSprite*  rhs)
 {
 	return (lhs->_transform->z_order) > (rhs->_transform->z_order);
 }
@@ -709,4 +709,14 @@ void LargeTexture_TextRender::render(const WIPCamera* cam)
 
 	g_rhi->enable_depth_test();
 	text_to_render = 0;
+}
+
+TempUISys* g_temp_uisys = TempUISys::instance();
+
+TempUISys* TempUISys::instance()
+{
+	static TempUISys* _instance;
+	if (!_instance)
+		_instance = new TempUISys();
+	return _instance;
 }

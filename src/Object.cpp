@@ -252,8 +252,17 @@ void WIPObject::handle_event(WIPObject* sender, string_hash event_type, void* da
   }
 
 }
-
-
+std::map<string_hash, WIPTickComponent*(*)(WIPSprite*)> WIPObject::_tick_component_register_tb;
+WIPTickComponent* WIPObject::create_tick_component(const char* cname, WIPSprite* host)
+{
+	std::map<string_hash, WIPTickComponent*(*)(WIPSprite*)>::iterator it = _tick_component_register_tb.find(get_string_hash(cname));
+	if (it != _tick_component_register_tb.end())
+	{
+		return it->second(host);
+	}
+	LOG_ERROR("%s not regist...", cname);
+	return nullptr;
+}
 
 //mem
 

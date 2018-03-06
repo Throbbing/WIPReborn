@@ -6,7 +6,7 @@ WIPCollider*  WIPCollider::create_collider(std::vector<RBVector2>& poly)
 	return nullptr;
 }
 
-WIPCollider* WIPCollider::create_collider(TRefCountPtr<WIPSprite> m, WIPCollider::_CollisionTypes tp,f32 sx,f32 sy)
+WIPCollider* WIPCollider::create_collider(WIPSprite* m, WIPCollider::_CollisionTypes tp,f32 sx,f32 sy)
 {
 
 	WIPCollider* ret;
@@ -93,7 +93,7 @@ void WIPCollider::destroy()
 	g_physics_manager->delete_body(_body);
 }
 
-void WIPCollider::reset_polygon_vertices(TRefCountPtr<WIPSprite> s, i32 n)
+void WIPCollider::reset_polygon_vertices(WIPSprite* s, i32 n)
 {
 	if (!s->_render)
 		return;
@@ -229,10 +229,10 @@ f32 WIPCollider::get_speed_y()
 
 }
 
-void WIPCollider::set_sprite(TRefCountPtr<WIPSprite> sprite)
+void WIPCollider::set_sprite(WIPSprite* sprite)
 {
 	if (_body)
-		_body->SetUserData((WIPSprite *)sprite);
+		_body->SetUserData(sprite);
 }
 
 void WIPCollider::on_begin_contact(const WIPSprite* s)

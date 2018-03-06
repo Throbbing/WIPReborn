@@ -5,6 +5,17 @@
 //object should belongs to a world not scene
 #include "GLFWApp.h"
 
+void regist_user_component()
+{
+	MapComponent::register_tick_component();
+	NPCComponent::register_tick_component();
+  TransformComponent::register_tick_component();
+	//EnemeyComponent::register_tick_component();
+	//PlayerComponent::register_tick_component();
+	//BulletComponent::register_tick_component();
+	//BulletComponent1::register_tick_component();
+}
+
 void WIPScriptComponent::init()
 {
 	g_script_manager->call_table_function(_name.data(), "init",nullptr);
@@ -109,29 +120,278 @@ void MapComponent::change_to_talk(string_hash tp, void* data)
 
 void MapComponent::change_to_player(string_hash tp, void* data)
 {
-	g_rhi->set_back_buffer(render_texture2d);
-	g_rhi->clear_back_buffer();
-	g_rhi->set_main_back_buffer();
+	g_temp_uisys->clear();
 	cur_npc_ui = nullptr;
 	game_state = GameState::E_PLAYER_CONTROLL;
 }
 
+//actions
+struct MovetoPlayer :public Ac
+{
+  MovetoPlayer(WIPSprite* s, const std::string& ani, float speed);
+  bool run(float dt)
+  {
+    if (!mover) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    /*
+    RBVector2 target(s->_transform->world_x, s->_transform->world_y);
+    RBVector2 mp(mover->_transform->world_x, mover->_transform->world_y);
+    RBVector2 dis(target - mp);
+    dis.normalize();
+    dis = dis*dt*speed;
+    if ((dis + mp - target).squared_size()<1.5f)
+    {
+      mover->_animation->play_name("stand_down", true);
+      end = true;
+      return true;
+    }
+    mover->translate(dis.x, dis.y);
+    */
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  virtual bool doing(float dt)
+  {
+    RBVector2 target(s->_transform->world_x, s->_transform->world_y);
+    RBVector2 mp(mover->_transform->world_x, mover->_transform->world_y);
+    RBVector2 dis(target - mp);
+    dis.normalize();
+    dis = dis*dt*speed;
+    if ((dis + mp - target).squared_size()<1.5f)
+    {
+      mover->_animation->play_name("stand_down", true);
+      end = true;
+      return true;
+    }
+    mover->translate(dis.x, dis.y);
+    time += dt;
+    return false;
+  }
+  void init(float dt)
+  {
+    mover->_animation->play_name(ani_name, true);
+    s = g_scene->get_sprite_by_tag("man");
+  }
+  WIPSprite* mover = 0;
+  std::string ani_name;
+  WIPSprite* s = 0;
+  float speed;
+};
+
+struct Moveto :public Ac
+{
+  Moveto(WIPSprite* s, const std::string& ani, float speed, const RBVector2& pos);
+  bool run(float dt)
+  {
+    if (!mover) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  bool doing(float dt)
+  {
+    RBVector2 target(tar);
+    RBVector2 mp(mover->_transform->world_x, mover->_transform->world_y);
+    RBVector2 dis(target - mp);
+    dis.normalize();
+    dis = dis*dt*speed;
+    if ((dis + mp - target).squared_size()<0.005f)
+    {
+      mover->_animation->play_name("stand_down", true);
+      
+      return true;
+    }
+    mover->translate(dis.x, dis.y);
+    time += dt;
+    return false;
+  }
+  void init(float dt)
+  {
+    mover->_animation->play_name(ani_name, true);
+  }
+  WIPSprite* mover = 0;
+  std::string ani_name;
+  float speed;
+  RBVector2 tar;
+};
+
+struct TurnoffBGM : public Ac
+{
+  TurnoffBGM(const std::string& name){ event_name = name; }
+  bool run(float dt)
+  {
+    if (event_name.empty()) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      g_audio_manager->Stop(event_name);
+      begin = true;
+    }
+    end = true;
+    return true;
+  }
+  std::string event_name;
+};
+
+struct PlayBGM :public Ac
+{
+  PlayBGM(const std::string& name){ event_name = name; }
+  bool run(float dt)
+  {
+    if (event_name.empty()) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      g_audio_manager->Play(event_name);
+      begin = true;
+    }
+    end = true;
+    return true;
+  }
+  std::string event_name;
+};
+
+struct ShowTexture :public Ac
+{
+  ShowTexture(MapComponent* tex){ t=tex; }
+  bool run(float dt)
+  {
+    if (!t) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      t->game_state = MapComponent::GameState::E_END;
+      //g_temp_uisys->draw_picture(0, 0, t->get_width(), t->get_height(), t);
+      begin = true;
+    }
+    end = true;
+    return true;
+  }
+  MapComponent* t;
+};
+
+struct CameraZoom :public Ac
+{
+  CameraZoom(float tar, WIPCamera* c, float sp){ target = tar; cam = c; speed = sp; }
+  bool run(float dt)
+  {
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  void init(float dt)
+  {
+    
+  }
+  bool doing(float dt)
+  {
+    float d = dt*(target - cam->_zoom)*speed;
+    if (RBMath::abs(cam->_zoom+d-target)<0.05f)
+    {
+      return true;
+    }
+    cam->_zoom += d;
+    return false;
+  }
+  float target;
+  float speed;
+  WIPCamera* cam;
+};
+
+//if you want use combine action you must implemente the doing function and init function
+struct CombineAc2 :public Ac
+{
+  CombineAc2(Ac* ac1,Ac* ac2)
+  {
+    a = ac1;
+    b = ac2;
+  }
+  bool run(float dt)
+  {
+    if (!a || !b) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  void init(float dt)
+  {
+    a->init(dt);
+    b->init(dt);
+  }
+  bool doing(float dt)
+  {
+    bool ad = a->doing(dt);
+    bool bd = b->doing(dt);
+    return ad&&bd;
+  }
+  Ac* a;
+  Ac* b;
+};
+
 void MapComponent::init()
 {
+	cam = g_scene->get_camera("MainCam");
+	scene = g_scene;
+	man = g_scene->get_sprite_by_tag("man");
+  woman = g_scene->get_sprite_by_tag("npc1");
+	fogs = g_scene->get_sprite_by_tag("fog");
 
 	pre_clip = nullptr;
 	bg = host_object;
 	old_pos = RBVector2::zero_vector;
 	grid = new MapGrid(bg, 100);
-	grid->load_mask_data("./a.mask");
+	grid->load_mask_data(mask_path.c_str());
 	draw_debug = false;
 	newpx = 0;
 	newpy = 0;
 	fog_dir = RBVector2(1.f, 1.f);
 	fog_dir.normalize();
 
-	g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
-	g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
+	
 	sound = g_audio_manager->CreateSound("event:/bgm");
 	sound_t = g_audio_manager->CreateSound("event:/bgm1");
 	g_audio_manager->Play(sound_t);
@@ -210,8 +470,61 @@ void MapComponent::init()
 
 		title = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
 	}
+  {
+    auto res_extbt = g_res_manager->load_resource("./pic/fd/Black background2.png", WIPResourceType::TEXTURE);
+    int w = ((TextureData *)(res_extbt->extra))->width;
+    int h = ((TextureData *)(res_extbt->extra))->height;
 
+    move_bar = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+  }
+
+  {
+    auto res_extbt = g_res_manager->load_resource("./pic/fd/zhaougouqd.png", WIPResourceType::TEXTURE);
+    int w = ((TextureData *)(res_extbt->extra))->width;
+    int h = ((TextureData *)(res_extbt->extra))->height;
+
+    end_tex = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
+  }
+  //actions.push_back(new CameraZoom(cam->_zoom - 0.2f, cam, 1.5f));
+
+  actions.push_back(new CombineAc2(new Moveto(man, "walk_down", 1.f, RBVector2(3.3f, 8.2f)), new MovetoPlayer(woman, "walk_up", 1.f)));
+
+  actions.push_back(new TurnoffBGM("event:/bgm1"));
+  actions.push_back(new PlayBGM("event:/grass_bgm"));
+  actions.push_back(new Moveto(man, "walk_down", 1.5f,RBVector2(3.3f,11.2f)));
+  actions.push_back(new PlayBGM("event:/fly_cry"));
+  actions.push_back(new Moveto(woman, "stand_up", 0.5f, RBVector2(5.f, 2.3f)));
+  actions.push_back(new PlayBGM("event:/last_cry"));
+  actions.push_back(new CombineAc2(new MovetoPlayer(woman, "walk_up", 16.f), new CameraZoom(cam->_zoom - 0.7f, cam, 8.5f)));
+  actions.push_back(new ShowTexture(this));
 }
+void MapComponent::destroy()
+{
+	g_audio_manager->StopAll();
+	delete sound;// = g_audio_manager->CreateSound("event:/bgm");
+	delete sound_t;// = g_audio_manager->CreateSound("event:/bgm1");
+	delete grid;
+  for (int i = 0; i < actions.size(); ++i)
+    delete actions[i];
+}
+
+MovetoPlayer::MovetoPlayer(WIPSprite* s, const std::string& ani, float inspeed) : Ac()
+{
+  mover = s;
+  ani_name = ani;
+  speed = inspeed;
+}
+
+
+
+Moveto::Moveto(WIPSprite* s, const std::string& ani, float inspeed,const RBVector2& pos) : Ac()
+{
+  mover = s;
+  ani_name = ani;
+  speed = inspeed;
+  tar = pos;
+}
+
 
 void MapComponent::update(f32 dt)
 {
@@ -221,8 +534,8 @@ void MapComponent::update(f32 dt)
 	{
 	case GameState::E_TITLE:
 	{
-		g_rhi->set_back_buffer(render_texture2d);
-		ui_renderer->render_pic(1, 0, t_bg->get_width(), t_bg->get_height(), t_bg);
+		g_temp_uisys->begin();
+		g_temp_uisys->draw_picture(1, 0, t_bg->get_width(), t_bg->get_height(), t_bg);
 
 		if (Input::get_key_down(WIP_W))
 		{
@@ -240,18 +553,18 @@ void MapComponent::update(f32 dt)
 		{
 		case 0:
 		{
-			ui_renderer->render_pic(330, 600 - 391, stt_bt->get_width(), stt_bt->get_height(), stt_bt);
+			g_temp_uisys->draw_picture(330, 600 - 391, stt_bt->get_width(), stt_bt->get_height(), stt_bt);
 		}
 		break;
 		case 1:
 		{
-			ui_renderer->render_pic(330, 600 - 450, ctn_bt->get_width(), ctn_bt->get_height(), ctn_bt);
+			g_temp_uisys->draw_picture(330, 600 - 450, ctn_bt->get_width(), ctn_bt->get_height(), ctn_bt);
 
 		}
 		break;
 		case 2:
 		{
-			ui_renderer->render_pic(330, 600 - 520, ext_bt->get_width(), ext_bt->get_height(), ext_bt);
+			g_temp_uisys->draw_picture(330, 600 - 520, ext_bt->get_width(), ext_bt->get_height(), ext_bt);
 
 		}
 		break;
@@ -259,7 +572,7 @@ void MapComponent::update(f32 dt)
 			break;
 		}
 
-		g_rhi->set_main_back_buffer();
+		g_temp_uisys->end();
 
 		if (Input::get_sys_key_down(WIP_SPACE))
 		{
@@ -291,6 +604,7 @@ void MapComponent::update(f32 dt)
 	break;
 	case GameState::E_PLAYER_CONTROLL:
 	{
+    
 		float speed = 3.2f;
 		if (Input::get_key_pressed(WIP_W))
 		{
@@ -360,17 +674,57 @@ void MapComponent::update(f32 dt)
 	{
 		if (cur_npc_ui)
 		{
-			g_rhi->set_back_buffer(render_texture2d);
-			ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3f, 0.3f, 0.5f, 0.5f));
+      
+			g_temp_uisys->begin();
+			g_temp_uisys->draw_box(0, 0, 0, 0, RBColorf(0.f, 0.f, 0.f, 0.5f));
 			if (cur_npc_ui->face)
-				ui_renderer->render_pic(600, 50, cur_npc_ui->face->get_width(), cur_npc_ui->face->get_height(), cur_npc_ui->face);
+				g_temp_uisys->draw_picture(600, 50, cur_npc_ui->face->get_width(), cur_npc_ui->face->get_height(), cur_npc_ui->face);
 			wchar_t *words1 = cur_npc_ui->words;
-			text_renderer->render_text(100, 170, words1, wcslen(words1), g_app->window_w, cam);
-			text_renderer->render(cam);
-			g_rhi->set_main_back_buffer();
+			g_temp_uisys->draw_text(100,48, words1, wcslen(words1), g_app->window_w);
+			g_temp_uisys->end();
 		}
 	}
 	break;
+  case GameState::E_ACTION:
+  {
+    man->_animation->play_name("stand_down", false);
+    g_temp_uisys->begin();
+    g_temp_uisys->draw_picture(1, 0, move_bar->get_width(), move_bar->get_height(), move_bar);
+    g_temp_uisys->end();
+    for (int i = 0; i < actions.size(); ++i)
+    {
+      bool r = actions[i]->run(dt);
+      if (!r)
+        break;
+    }
+
+    /*
+    
+    woman->_animation->play_name("walk_up", true);
+    g_temp_uisys->begin();
+    g_temp_uisys->draw_picture(1, 0, move_bar->get_width(), move_bar->get_height(), move_bar);
+    g_temp_uisys->end();
+    RBVector2 wp(woman->_transform->world_x, woman->_transform->world_y);
+    RBVector2 mp(man->_transform->world_x, man->_transform->world_y);
+    if (!action_bg)
+    {
+      action_bg = true;
+      trans_target = wp + 0.8f*(mp - wp);
+    }
+    RBVector2 dis(trans_target - wp);
+    dis.normalize();
+    dis = dis*dt;
+    woman->translate(dis.x, dis.y);
+    */
+  }
+  break;
+  case GameState::E_END:
+  {
+    g_temp_uisys->begin();
+    g_temp_uisys->draw_picture(1, 0, end_tex->get_width(), end_tex->get_height(), end_tex);
+    g_temp_uisys->end();
+  }
+  break;
 	default:
 		break;
 	}
@@ -408,8 +762,9 @@ void MapComponent::update(f32 dt)
 			grid->clear_data();
 		}
 		char text[256];
-		memset(text, 0, 256);
+		::memset(text, 0, 256);
 		ImGui::Text(get_utf8(L"鼠标左键绘制碰撞，鼠标右键擦除碰撞", text));
+    ImGui::Text("%f,%f", man->_transform->world_x, man->_transform->world_y);
 		ImGui::End();
 	}
 	fix_sprite_position(bg);
@@ -421,12 +776,13 @@ void MapComponent::update(f32 dt)
 	bg->get_world_position(v);
 	RBVector2 lb = v[1];
 	RBVector2 rt = v[3];
+  if (edit_mode)
 	cam->zoomin(Input::get_mouse_scroller()*0.1);
 	RBVector2 daabb(cam->world_w*cam->_zoom*0.5f, cam->world_h*cam->_zoom*0.5f);
 	RBAABB2D bg_bound(lb, rt);
 	RBAABB2D cam_aabb(campos - daabb, campos + daabb);
 
-
+  if (edit_mode)
 	if (!bg_bound.is_contain(cam_aabb))
 		cam->zoomout(Input::get_mouse_scroller()*0.1);
 
@@ -508,6 +864,7 @@ void MapComponent::update(f32 dt)
 
 	scene->update_zorder_by_type_tag("character");
 
+#if 1
 
 	wchar_t wbuf[3] = L"确定";
 
@@ -530,7 +887,8 @@ void MapComponent::update(f32 dt)
 
 
 
-	text_renderer->render_text(0, 700, wbuf_out, wcslen(wbuf_out), 200, cam);
+	//text_renderer->render_text(0, 700, wbuf_out, wcslen(wbuf_out), 200, cam);
+
 
 	char t[9];
 	memset(t, 0, 9);
@@ -573,7 +931,7 @@ void MapComponent::update(f32 dt)
 				sname += ".clip";
 				std::ofstream fout(sname.data(), std::ios::ate);
 
-				fout << "[head]\ntexture = " << cname << ".png\ntotal_frame = " << wh[1] << std::endl;
+				fout << "[head]\ntexture = " << cname << ".png\ntotal_frame = " << wh[0] << std::endl;
 				char outs[128] = "lb_x = %f\nlb_y = %f\nlt_x = %f\nlt_y = %f\nrt_x = %f\nrt_y = %f\nrb_x = %f\nrb_y = %f\n\0";
 				char outs1[256] = { 0 };
 				f32 xbase = 0.f;
@@ -600,8 +958,20 @@ void MapComponent::update(f32 dt)
 		}
 	}
 	ImGui::End();
+
+
+	if (Input::get_key_up(WIP_R))
+	{
+		g_scene->reload_level();
+	}
+	if (Input::get_key_up(WIP_L))
+	{
+		g_scene->load_level();
+	}
+#endif
 }
 
+#if 0
 void PlayerComponent::init()
 {
 	man_state = ManState::E_UP;
@@ -637,7 +1007,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 				ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 				ctor_man.collider_sx = 1.f;
 				ctor_man.collider_sy = 1.f;
-				TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man);
+				WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man);
 				sp->_animation->add_clip(enemy_clip, enemy_clip->name);
 				sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
 				sp->set_tag("enemy");
@@ -656,7 +1026,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 				ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 				ctor_blt.collider_sx = 1.f;
 				ctor_blt.collider_sy = 1.f;
-				TRefCountPtr<WIPSprite> spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+				WIPSprite*  spblt = WIPSpriteFactory::create_sprite(ctor_blt);
 				spblt->_animation->add_clip(player_clip, player_clip->name);
 				spblt->_animation->play_name(player_clip->name, false);
 				spblt->_render->is_visible = false;
@@ -679,7 +1049,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 					ctor_pop.collider_sx = 1.f;
 					ctor_pop.collider_sy = 1.f;
-					TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					WIPSprite*  sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 					//sp_pop->_animation->play_name(pop_clip->name, false);
 					sp_pop->set_z_order(-0.1f);
@@ -713,7 +1083,7 @@ void PlayerComponent::add_hp(string_hash tp, void* ud)
 					ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 					ctor_pop.collider_sx = 1.f;
 					ctor_pop.collider_sy = 1.f;
-					TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+					WIPSprite*  sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 					sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 					//sp_pop->_animation->play_name(pop_clip->name, false);
 					sp_pop->set_z_order(-0.1f);
@@ -1264,9 +1634,9 @@ void BulletComponent1::update(f32 dt)
 		host_object->translate(v.x*blt_speed*dt, v.y*blt_speed*dt);
 	}
 }
+#endif
 
-
-NPCComponent::NPCComponent(TRefCountPtr<WIPSprite> s) :WIPTickComponent(s)
+NPCComponent::NPCComponent(WIPSprite*  s) :WIPTickComponent(s)
 {
 
 }
@@ -1280,10 +1650,15 @@ void NPCComponent::init()
 	data.face = nullptr;
 	data.words = nullptr;
 	set_default_face();
-	map_component = (MapComponent*)g_app->get_by_tag("bg")->get_component<MapComponent>();
+	map_component = (MapComponent*)g_scene->get_sprite_by_tag("bg")->get_component<MapComponent>();
 }
 void NPCComponent::update(f32 dt)
 {
+	/*
+	WIPTickComponent* tc = WIPObject::create_tick_component("MapComponent", this->host_object);
+	tc->init();
+	tc->update(1);
+	*/
 	return;
 }
 void NPCComponent::destroy()
@@ -1293,6 +1668,7 @@ void NPCComponent::destroy()
 
 void NPCComponent::on_begin_contact(const WIPSprite* s)
 {
+  
 	//LOG_INFO("begin contact:%s", s->get_tag().data());
 }
 
@@ -1323,7 +1699,7 @@ void NPCComponent::on_contact(const WIPSprite* s)
 				send_event(get_string_hash("player"));
 				return;
 			}
-
+      g_audio_manager->Play("event:/talk_se");
 			data.words = words[0].front();
 			send_event(get_string_hash("npc talk"), &data);
 			words[1].push(words[0].front());
@@ -1360,4 +1736,73 @@ void NPCComponent::set_default_face()
 		return;
 	}
 	set_face("dft");
+}
+
+
+
+TransformComponent::TransformComponent(WIPSprite*  s) :WIPTickComponent(s)
+{
+  call_data[0] = 0;
+  call_data[1] = 0;
+  call_data[2] = 0;
+  call_data[3] = 0;
+}
+TransformComponent::~TransformComponent()
+{
+
+}
+void TransformComponent::init()
+{
+  map_component = (MapComponent*)g_scene->get_sprite_by_tag("bg")->get_component<MapComponent>();
+ 
+
+}
+void TransformComponent::update(f32 dt)
+{
+  if (func_update)
+    func_update(call_data[0], dt,this);
+  return;
+}
+void TransformComponent::destroy()
+{
+  delete call_data[0];
+  delete call_data[1];
+  delete call_data[2];
+  delete call_data[3];
+}
+
+void TransformComponent::on_begin_contact(const WIPSprite* s)
+{
+  //此处处于物理模拟中不能在此创建对象
+  //TODO：任何创建销毁都应该被推迟到帧尾
+  if (func_begin)
+  func_begin(call_data[1], s,this);
+
+}
+
+void TransformComponent::on_end_contact(const WIPSprite* s)
+{
+  if (func_end)
+  func_end(call_data[3], s,this);
+}
+
+void TransformComponent::on_contact(const WIPSprite* s)
+{
+  //g_scene->load_level(id,pos);
+  if (func_contact)
+  func_contact(call_data[2], s,this);
+  return;
+}
+
+
+void TransformComponent::start()
+{
+  if (func_level_start)
+    func_level_start(call_data[LEVEL_START], this);
+}
+
+void TransformComponent::end()
+{
+  if (func_level_end)
+    func_level_end(call_data[LEVEL_END], this);
 }

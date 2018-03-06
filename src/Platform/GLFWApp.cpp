@@ -52,22 +52,28 @@ std::string wstring_to_string(const std::wstring &wstr)
 	return str;
 }
 
-void GLFWApp::pending_objects(TRefCountPtr<WIPSprite> s)
-{
-	deleting_objects.push_back(s);
-}
-
-void GLFWApp::creating_object(TRefCountPtr<WIPSprite> s)
-{
-	creating_objects.push_back(s);
-}
 
 f32 GLFWApp::get_cur_time() const
 {
 	return timer->get_time_ms();
 }
 
-void GLFWApp::init_tank_demo()
+void GLFWApp::load_tank_demo()
+{
+	//loader->test_load_level1();
+}
+
+#if 0
+void WIPLevelLoader::test_reload_level1()
+{
+	scene->reset_level_load_state();
+	scene->set_level_unload();
+	scene->set_level_load();
+
+	test_load_level1();
+}
+
+void WIPLevelLoader::test_load_level1()
 {
 	g_audio_manager->LoadBank("./audio/Desktop/master.bank", false);
 	g_audio_manager->LoadBank("./audio/Desktop/master.strings.bank", false);
@@ -76,17 +82,17 @@ void GLFWApp::init_tank_demo()
 	StudioSound* sound_death_enemy = g_audio_manager->CreateSound("event:/Death 1");
 	StudioSound* sound_death = g_audio_manager->CreateSound("event:/Death 2");
 	StudioSound* sound_start = g_audio_manager->CreateSound("event:/start");
+	scene->reset_level_load_state();
+	scene->set_level_load();
+	WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+	cam->set_name("MainCam");
+	cam->move_to(5.f, 5.f);
+	g_temp_uisys->change_camera(cam);
+	g_physics_manager->set_debug_camera(cam);
+	scene->load_camera(cam);
+	WorldRender* world_renderer = g_app->world_renderer;
 
-	cameras.push_back(scene->create_camera(20, 20, window_w, window_h, window_w, window_h));
-	cameras[0]->move_to(5, 5);
-
-	ui_renderer = new UIRender();
-	ui_renderer->init(cameras[0]);
-
-	g_physics_manager->set_debug_camera(cameras[0]);
-
-	render_texture2d = g_rhi->RHICreateRenderTexture2D(200, 200, RBColorf::black);
-	/*
+	
 	class WIPTexture2D* enemy_texture;
 	class WIPTexture2D* player_texture;
 	class WIPTexture2D* block_texture;
@@ -98,12 +104,12 @@ void GLFWApp::init_tank_demo()
 	class WIPAnimationClip* pop_clip;
 
 	#define ANIMYNUM 7
-	TRefCountPtr<WIPSprite> enemy[ANIMYNUM];
-	TRefCountPtr<WIPSprite> block;
-	TRefCountPtr<WIPSprite> player;
-	TRefCountPtr<WIPSprite> pop[ANIMYNUM];
-	TRefCountPtr<WIPSprite> bullet_texture[ANIMYNUM];
-	*/
+	WIPSprite*  enemy[ANIMYNUM];
+	WIPSprite*  block;
+	WIPSprite*  player;
+	WIPSprite*  pop[ANIMYNUM];
+	WIPSprite*  bullet_texture[ANIMYNUM];
+	
 	enemy_clip = WIPAnimationClip::create_with_atlas("enemy_run", "./clips/tank/tank.clip");
 
 	player_clip = WIPAnimationClip::create_with_atlas("player_run", "./clips/tank/tank.clip");
@@ -134,7 +140,7 @@ void GLFWApp::init_tank_demo()
 	pop_texture = g_rhi->RHICreateTexture2D(ww1pop, hh1pop, res_handle1fog->ptr);
 	bullet_texture = g_rhi->RHICreateTexture2D(ww1blt, hh1blt, res_handlebullet->ptr);
 
-	TRefCountPtr<WIPSprite> splayer = nullptr;
+	WIPSprite*  splayer = nullptr;
 	{
 		WIPSpriteCreator ctor_man1(1.8f, 1.8f, WIPMaterialType::E_TRANSLUCENT);
 		ctor_man1.texture = player_texture;
@@ -142,12 +148,12 @@ void GLFWApp::init_tank_demo()
 		ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 		ctor_man1.collider_sx = 1.f;
 		ctor_man1.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+		WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 		splayer = sp;
 		sp->_animation->add_clip(player_clip, player_clip->name);
 		sp->set_tag("player");
 
-		PlayerComponent* pcc = new PlayerComponent(sp);
+		PlayerComponent* pcc = (PlayerComponent*)WIPObject::create_tick_component("PlayerComponent", sp);
 		pcc->sound_death = sound_death;
 		pcc->sound_start = sound_start;
 		pcc->sound = sound_fire;
@@ -175,11 +181,11 @@ void GLFWApp::init_tank_demo()
 		ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 		ctor_blt.collider_sx = 1.f;
 		ctor_blt.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+		WIPSprite*  spblt = WIPSpriteFactory::create_sprite(ctor_blt);
 		spblt->_animation->add_clip(player_clip, player_clip->name);
 		spblt->_animation->play_name(player_clip->name, false);
 		spblt->_render->is_visible = false;
-		BulletComponent* pcc1 = new BulletComponent(spblt);
+		BulletComponent* pcc1 = (BulletComponent*)WIPObject::create_tick_component("BulletComponent", spblt);
 		pcc1->sound = sound_blast;
 		spblt->add_tick_component(pcc1);
 		spblt->set_tag("bullet");
@@ -194,7 +200,7 @@ void GLFWApp::init_tank_demo()
 		ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 		ctor_pop.collider_sx = 1.f;
 		ctor_pop.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+		WIPSprite*  sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 		sp_pop->set_z_order(-0.1f);
 		sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 		//sp_pop->_animation->play_name(pop_clip->name, false);
@@ -218,11 +224,11 @@ void GLFWApp::init_tank_demo()
 		ctor_man.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 		ctor_man.collider_sx = 1.f;
 		ctor_man.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man);
+		WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man);
 		sp->_animation->add_clip(enemy_clip, enemy_clip->name);
 		sp->translate_to(RBMath::get_rand_range_f(-20, 20), RBMath::get_rand_range_f(-20, 20));
 		sp->set_tag("enemy");
-		EnemeyComponent* pcc = new EnemeyComponent(sp);
+		EnemeyComponent* pcc = (EnemeyComponent*)WIPObject::create_tick_component("EnemeyComponent", sp);
 		pcc->player_ref = splayer;
 		pcc->sound = sound_fire;
 		pcc->sound_death = sound_death_enemy;
@@ -236,14 +242,14 @@ void GLFWApp::init_tank_demo()
 		ctor_blt.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
 		ctor_blt.collider_sx = 1.f;
 		ctor_blt.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> spblt = WIPSpriteFactory::create_sprite(ctor_blt);
+		WIPSprite*  spblt = WIPSpriteFactory::create_sprite(ctor_blt);
 		spblt->_animation->add_clip(player_clip, player_clip->name);
 		spblt->_animation->play_name(player_clip->name, false);
 		spblt->_render->is_visible = false;
 		int r = RBMath::get_rand_i(800);
 		if (r < 0)
 		{
-			BulletComponent* pcc1 = new BulletComponent(spblt);
+			BulletComponent* pcc1 = (BulletComponent*)WIPObject::create_tick_component("BulletComponent", spblt);;
 			pcc1->sound = sound_blast;
 			spblt->add_tick_component(pcc1);
 			spblt->set_tag("bullet_enemy");
@@ -258,7 +264,7 @@ void GLFWApp::init_tank_demo()
 			ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 			ctor_pop.collider_sx = 1.f;
 			ctor_pop.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+			WIPSprite*  sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 			sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 			//sp_pop->_animation->play_name(pop_clip->name, false);
 			sp_pop->set_z_order(-0.1f);
@@ -275,7 +281,7 @@ void GLFWApp::init_tank_demo()
 		}
 		else
 		{
-			BulletComponent1* pcc1 = new BulletComponent1(spblt);
+			BulletComponent1* pcc1 = (BulletComponent1*)WIPObject::create_tick_component("BulletComponent1", spblt);;
 			pcc1->sound = sound_blast;
 			spblt->add_tick_component(pcc1);
 			spblt->set_tag("bullet_enemy");
@@ -290,7 +296,7 @@ void GLFWApp::init_tank_demo()
 			ctor_pop.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
 			ctor_pop.collider_sx = 1.f;
 			ctor_pop.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
+			WIPSprite*  sp_pop = WIPSpriteFactory::create_sprite(ctor_pop);
 			sp_pop->_animation->add_clip(pop_clip, pop_clip->name);
 			//sp_pop->_animation->play_name(pop_clip->name, false);
 			sp_pop->set_z_order(-0.1f);
@@ -305,8 +311,8 @@ void GLFWApp::init_tank_demo()
 
 			pcc1->pop_obj = sp_pop;
 		}
-		
-		
+
+
 	}
 
 
@@ -321,7 +327,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 			scene->add_sprite(sp);
 			sp->translate_to(0, 8 + i*1.8);
@@ -338,7 +344,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
@@ -352,7 +358,7 @@ void GLFWApp::init_tank_demo()
 		ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 		ctor_man1.collider_sx = 1.f;
 		ctor_man1.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+		WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 		sp->set_tag("block");
 
 		scene->add_sprite(sp);
@@ -365,7 +371,7 @@ void GLFWApp::init_tank_demo()
 		ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 		ctor_man1.collider_sx = 1.f;
 		ctor_man1.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+		WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 		sp->set_tag("block");
 
 		scene->add_sprite(sp);
@@ -378,7 +384,7 @@ void GLFWApp::init_tank_demo()
 		ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 		ctor_man1.collider_sx = 1.f;
 		ctor_man1.collider_sy = 1.f;
-		TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+		WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 		sp->set_tag("block");
 
 		scene->add_sprite(sp);
@@ -394,7 +400,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
@@ -412,7 +418,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
@@ -427,7 +433,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
@@ -441,11 +447,11 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
-			sp->translate_to(-20 , -20+i*1.8);
+			sp->translate_to(-20, -20 + i*1.8);
 		}
 		for (int i = 0; i < 23; ++i)
 		{
@@ -455,7 +461,7 @@ void GLFWApp::init_tank_demo()
 			ctor_man1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
 			ctor_man1.collider_sx = 1.f;
 			ctor_man1.collider_sy = 1.f;
-			TRefCountPtr<WIPSprite> sp = WIPSpriteFactory::create_sprite(ctor_man1);
+			WIPSprite*  sp = WIPSpriteFactory::create_sprite(ctor_man1);
 			sp->set_tag("block");
 
 			scene->add_sprite(sp);
@@ -463,67 +469,655 @@ void GLFWApp::init_tank_demo()
 		}
 	}
 #endif
-	show_text = false;
+}
+#endif
+void WIPLevelLoader::test_load_persistent()
+{
+	scene->set_level_load();
 
 }
 
-void GLFWApp::update_tank_demo()
+void WIPLevelLoader::test_load_level1()
 {
-	if (show_text)
-	{
-		wchar_t words1[] = L"死了!";
-		//std::wstring wbuf = string_to_wstring(buf);
-		
-		text_renderer->render_text(200, 400, words1, wcslen(words1), window_w, cameras[0]);
-		text_renderer->render(cameras[0]);
-	}
+
+}
+
+void WIPLevelLoader::test_reload_level()
+{
+	//scene->reset_level_load_state();
+	scene->set_level_unload();
+	//scene->set_level_load();
+
+	test_load_level();
 }
 
 
-void GLFWApp::update_rpg_demo()
+void WIPLevelLoader::load_level_findingdogs_1()
 {
-	ui_renderer->render_pic(0, 0, render_texture2d->get_width(), render_texture2d->get_height(), render_texture2d);
-	g_rhi->set_back_buffer(render_texture2d);
-	g_rhi->clear_back_buffer();
-	g_rhi->set_main_back_buffer();
-	//ui_renderer->render_box(0, 0, 0, 0, RBColorf(0.3, 0.3, 0.5, 0.5));
-	//ui_renderer->render_pic(700, 50, face->get_width(), face->get_height(), face);
-	//wchar_t words1[] = L"趙靈兒:\n好……放了他，我就跟你們走……";
-	//text_renderer->render_text(100, 200, words1, wcslen(words1), window_w, cameras[0]);
-	//text_renderer->render(cameras[0]);
-	
+  scene->set_level_unload();
+  scene->set_level_load();
+  WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+  cam->set_name("MainCam");
+  cam->move_to(5.f, 5.f);
+  g_temp_uisys->change_camera(cam);
+  g_physics_manager->set_debug_camera(cam);
+  scene->load_camera(cam);
+  WorldRender* world_renderer = g_app->world_renderer;
+  auto *clip_down = WIPAnimationClip::create_with_atlas("walk_down", "./pic/fd/fd_clip_0.clip");
+  auto *clip_left = WIPAnimationClip::create_with_atlas("walk_left", "./pic/fd/fd_clip_1.clip");
+  auto *clip_right = WIPAnimationClip::create_with_atlas("walk_right", "./pic/fd/fd_clip_2.clip");
+  auto *clip_up = WIPAnimationClip::create_with_atlas("walk_up", "./pic/fd/fd_clip_3.clip");
+  auto *clip_s_down = WIPAnimationClip::create_with_atlas("stand_down", "./pic/fd/fd_clip_0_s.clip");
+  auto *clip_s_left = WIPAnimationClip::create_with_atlas("stand_left", "./pic/fd/fd_clip_1_s.clip");
+  auto *clip_s_right = WIPAnimationClip::create_with_atlas("stand_right", "./pic/fd/fd_clip_2_s.clip");
+  auto *clip_s_up = WIPAnimationClip::create_with_atlas("stand_up", "./pic/fd/fd_clip_3_s.clip");
+
+  auto res_handle_background = g_res_manager->load_resource("./pic/fd/mudian.jpg", WIPResourceType::TEXTURE);
+  int bg_w = ((TextureData *)(res_handle_background->extra))->width;
+  int bg_h = ((TextureData *)(res_handle_background->extra))->height;
+
+
+  auto res_handle_c1 = g_res_manager->load_resource("./pic/fd/c1.png", WIPResourceType::TEXTURE);
+  int c1_w = ((TextureData *)(res_handle_c1->extra))->width;
+  int c1_h = ((TextureData *)(res_handle_c1->extra))->height;
+
+  auto res_handle_c2 = g_res_manager->load_resource("./pic/fd/c2.png", WIPResourceType::TEXTURE);
+  int c2_w = ((TextureData *)(res_handle_c2->extra))->width;
+  int c2_h = ((TextureData *)(res_handle_c2->extra))->height;
+
+  auto res_handle_fls = g_res_manager->load_resource("./pic/fd/flash1.png", WIPResourceType::TEXTURE);
+  int fls_w = ((TextureData *)(res_handle_fls->extra))->width;
+  int fls_h = ((TextureData *)(res_handle_fls->extra))->height;
+
+  auto *tex2d_bg = g_rhi->RHICreateTexture2D(bg_w, bg_h, res_handle_background->ptr);
+  auto *tex2d_c1 = g_rhi->RHICreateTexture2D(c1_w, c1_h, res_handle_c1->ptr,0,0,0,1);
+  auto *tex2d_c2 = g_rhi->RHICreateTexture2D(c2_w, c2_h, res_handle_c2->ptr);
+  auto *tex2d_c3 = g_rhi->RHICreateTexture2D(fls_w, fls_h, res_handle_fls->ptr);
+
+
+  //avator
+  WIPSpriteCreator ctor_c1(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_c1.texture = tex2d_c1;
+  ctor_c1.world_render = world_renderer;
+  ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_c1.collider_sx = 0.5f;
+  ctor_c1.collider_sy = 0.2f;
+  auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+  man_c1->_animation->add_clip(clip_down, clip_down->name);
+  man_c1->_animation->add_clip(clip_left, clip_left->name);
+  man_c1->_animation->add_clip(clip_right, clip_right->name);
+  man_c1->_animation->add_clip(clip_up, clip_up->name);
+  man_c1->_animation->add_clip(clip_s_down, clip_s_down->name);
+  man_c1->_animation->add_clip(clip_s_left, clip_s_left->name);
+  man_c1->_animation->add_clip(clip_s_right, clip_s_right->name);
+  man_c1->_animation->add_clip(clip_s_up, clip_s_up->name);
+  man_c1->_animation->play(clip_s_down);
+  man_c1->set_anchor(0.5f, 0.05f);
+  man_c1->set_tag("man");
+  man_c1->set_type_tag("character");
+  scene->load_sprite(man_c1);
+  man_c1->translate_to(8.f, 1.f);
+  man_c1->set_z_order(0.4f);
+
+
+
+  WIPSpriteCreator ctor_bg(40.f, 40.f*((float)bg_h/bg_w), WIPMaterialType::E_TRANSLUCENT);
+  ctor_bg.texture = tex2d_bg;
+  ctor_bg.world_render = world_renderer;
+  ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* bg = WIPSpriteFactory::create_sprite(ctor_bg);
+  MapComponent* mc = (MapComponent*)WIPObject::create_tick_component("MapComponent", bg);
+  bg->add_tick_component(mc);
+  bg->translate_to(0.f, 0.f);
+  bg->set_z_order(0.9f);
+  scene->load_sprite(bg);
+
+  auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
+  int ww1fog = ((TextureData *)(res_handle1fog->extra))->width;
+  int hh1fog = ((TextureData *)(res_handle1fog->extra))->height;
+  auto *tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
+  WIPSpriteCreator ctor_fog(20.f, 20.f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_fog.texture = tex2d_fog;
+  ctor_fog.world_render = world_renderer;
+  ctor_fog.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* fogs = WIPSpriteFactory::create_sprite(ctor_fog);
+  fogs->set_tag("fog");
+  scene->load_sprite(fogs);
+  fogs->set_type_tag("scene");
+  fogs->translate_to(0.f, 0.f);
+  fogs->set_z_order(0.05f);
 }
 
-void GLFWApp::init_rpg_demo()
+struct MoveParam
 {
-	cameras.push_back(scene->create_camera(20.f, 20.f, window_w, window_h, window_w, window_h));
-	cameras[0]->move_to(5.f, 5.f);
+  MoveParam(int i, const RBVector2& p) :id(i), pos(p){}
+  int id;
+  RBVector2 pos;
+};
 
-	ui_renderer = new UIRender();
-	ui_renderer->init(cameras[0]);
+void transform_event(void* data, const WIPSprite* s, TransformComponent* t)
+{
+  MoveParam* p = (MoveParam*)data;
+  g_scene->load_level(p->id, p->pos);
+}
 
 
-	g_physics_manager->set_debug_camera(cameras[0]);
+void WIPLevelLoader::load_caodi(const RBVector2& postion)
+{
+  scene->set_level_unload();
+  scene->set_level_load();
+  WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+  cam->set_name("MainCam");
+  cam->move_to(postion.x, postion.y);
+  g_temp_uisys->change_camera(cam);
+  g_physics_manager->set_debug_camera(cam);
+  scene->load_camera(cam);
+  WorldRender* world_renderer = g_app->world_renderer;
+  auto *clip_down = WIPAnimationClip::create_with_atlas("walk_down", "./pic/fd/fd_clip_0.clip");
+  auto *clip_left = WIPAnimationClip::create_with_atlas("walk_left", "./pic/fd/fd_clip_1.clip");
+  auto *clip_right = WIPAnimationClip::create_with_atlas("walk_right", "./pic/fd/fd_clip_2.clip");
+  auto *clip_up = WIPAnimationClip::create_with_atlas("walk_up", "./pic/fd/fd_clip_3.clip");
+  auto *clip_s_down = WIPAnimationClip::create_with_atlas("stand_down", "./pic/fd/fd_clip_0_s.clip");
+  auto *clip_s_left = WIPAnimationClip::create_with_atlas("stand_left", "./pic/fd/fd_clip_1_s.clip");
+  auto *clip_s_right = WIPAnimationClip::create_with_atlas("stand_right", "./pic/fd/fd_clip_2_s.clip");
+  auto *clip_s_up = WIPAnimationClip::create_with_atlas("stand_up", "./pic/fd/fd_clip_3_s.clip");
 
-	render_texture2d = g_rhi->RHICreateRenderTexture2D(window_w, window_h, RBColorf::black);
+  auto res_handle_background = g_res_manager->load_resource("./pic/fd/caodi.jpg", WIPResourceType::TEXTURE);
+  int bg_w = ((TextureData *)(res_handle_background->extra))->width;
+  int bg_h = ((TextureData *)(res_handle_background->extra))->height;
 
 
-	clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
-	clip1 = WIPAnimationClip::create_with_atlas("walk_left", "./clips/2.clip");
-	clip2 = WIPAnimationClip::create_with_atlas("walk_right", "./clips/3.clip");
-	clip3 = WIPAnimationClip::create_with_atlas("walk_up", "./clips/4.clip");
-	clip_s = WIPAnimationClip::create_with_atlas("stand_down", "./clips/1s.clip");
-	clip1_s = WIPAnimationClip::create_with_atlas("stand_left", "./clips/2s.clip");
-	clip2_s = WIPAnimationClip::create_with_atlas("stand_right", "./clips/3s.clip");
-	clip3_s = WIPAnimationClip::create_with_atlas("stand_up", "./clips/4s.clip");
+  auto res_handle_c1 = g_res_manager->load_resource("./pic/fd/c1.png", WIPResourceType::TEXTURE);
+  int c1_w = ((TextureData *)(res_handle_c1->extra))->width;
+  int c1_h = ((TextureData *)(res_handle_c1->extra))->height;
+
+  auto res_handle_c2 = g_res_manager->load_resource("./pic/fd/c2.png", WIPResourceType::TEXTURE);
+  int c2_w = ((TextureData *)(res_handle_c2->extra))->width;
+  int c2_h = ((TextureData *)(res_handle_c2->extra))->height;
+
+  auto res_handle_fls = g_res_manager->load_resource("./pic/fd/flash1.png", WIPResourceType::TEXTURE);
+  int fls_w = ((TextureData *)(res_handle_fls->extra))->width;
+  int fls_h = ((TextureData *)(res_handle_fls->extra))->height;
+
+  auto *tex2d_bg = g_rhi->RHICreateTexture2D(bg_w, bg_h, res_handle_background->ptr);
+  auto *tex2d_c1 = g_rhi->RHICreateTexture2D(c1_w, c1_h, res_handle_c1->ptr, 0, 0, 0, 1);
+  auto *tex2d_c2 = g_rhi->RHICreateTexture2D(c2_w, c2_h, res_handle_c2->ptr);
+  auto *tex2d_c3 = g_rhi->RHICreateTexture2D(fls_w, fls_h, res_handle_fls->ptr);
+
+
+  //avator
+  WIPSpriteCreator ctor_c1(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_c1.texture = tex2d_c1;
+  ctor_c1.world_render = world_renderer;
+  ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_c1.collider_sx = 0.5f;
+  ctor_c1.collider_sy = 0.2f;
+  auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+  man_c1->_animation->add_clip(clip_down, clip_down->name);
+  man_c1->_animation->add_clip(clip_left, clip_left->name);
+  man_c1->_animation->add_clip(clip_right, clip_right->name);
+  man_c1->_animation->add_clip(clip_up, clip_up->name);
+  man_c1->_animation->add_clip(clip_s_down, clip_s_down->name);
+  man_c1->_animation->add_clip(clip_s_left, clip_s_left->name);
+  man_c1->_animation->add_clip(clip_s_right, clip_s_right->name);
+  man_c1->_animation->add_clip(clip_s_up, clip_s_up->name);
+  man_c1->_animation->play(clip_s_down);
+  man_c1->set_anchor(0.5f, 0.05f);
+  man_c1->set_tag("man");
+  man_c1->set_type_tag("character");
+  scene->load_sprite(man_c1);
+  man_c1->translate_to(postion.x, postion.y);
+  man_c1->set_z_order(0.4f);
+
+  WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_trs1.texture = tex2d_c3;
+  ctor_trs1.world_render = world_renderer;
+  ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_trs1.collider_sx = 0.5f;
+  ctor_trs1.collider_sy = 0.2f;
+  auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+  man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+  man_trans1->_animation->play_name(clip_s_down->name, true);
+  man_trans1->set_anchor(0.5f, 0.05f);
+  man_trans1->set_tag("trans1");
+  man_trans1->set_type_tag("character");
+  TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+  //tc1->id = 2;
+  //tc1->pos = RBVector2(9.5,-15);
+  tc1->call_data[2] = new MoveParam(2, RBVector2(9.5, -15));
+  tc1->func_contact = transform_event;
+  man_trans1->add_tick_component(tc1);
+  scene->load_sprite(man_trans1);
+  man_trans1->translate_to(-3, 8);
+  man_trans1->set_z_order(0.4f);
+
+
+
+
+  WIPSpriteCreator ctor_bg(20.f, 20.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
+  ctor_bg.texture = tex2d_bg;
+  ctor_bg.world_render = world_renderer;
+  ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* bg = WIPSpriteFactory::create_sprite(ctor_bg);
+  MapComponent* mc = (MapComponent*)WIPObject::create_tick_component("MapComponent", bg);
+  mc->mask_path = "./caodi.mask";
+  bg->add_tick_component(mc);
+  bg->translate_to(0.f, 0.f);
+  bg->set_z_order(0.9f);
+  bg->set_tag("bg");
+  scene->load_sprite(bg);
+
+  auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
+  int ww1fog = ((TextureData *)(res_handle1fog->extra))->width;
+  int hh1fog = ((TextureData *)(res_handle1fog->extra))->height;
+  auto *tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
+  WIPSpriteCreator ctor_fog(20.f, 20.f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_fog.texture = tex2d_fog;
+  ctor_fog.world_render = world_renderer;
+  ctor_fog.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* fogs = WIPSpriteFactory::create_sprite(ctor_fog);
+  fogs->set_tag("fog");
+  scene->load_sprite(fogs);
+  fogs->set_type_tag("scene");
+  fogs->translate_to(0.f, 0.f);
+  fogs->set_z_order(0.05f);
+
+}
+void WIPLevelLoader::load_huangdi(const RBVector2& postion)
+{
+  scene->set_level_unload();
+  scene->set_level_load();
+  WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+  cam->set_name("MainCam");
+  cam->move_to(postion.x, postion.y);
+  g_temp_uisys->change_camera(cam);
+  g_physics_manager->set_debug_camera(cam);
+  scene->load_camera(cam);
+  WorldRender* world_renderer = g_app->world_renderer;
+  auto *clip_down = WIPAnimationClip::create_with_atlas("walk_down", "./pic/fd/fd_clip_0.clip");
+  auto *clip_left = WIPAnimationClip::create_with_atlas("walk_left", "./pic/fd/fd_clip_1.clip");
+  auto *clip_right = WIPAnimationClip::create_with_atlas("walk_right", "./pic/fd/fd_clip_2.clip");
+  auto *clip_up = WIPAnimationClip::create_with_atlas("walk_up", "./pic/fd/fd_clip_3.clip");
+  auto *clip_s_down = WIPAnimationClip::create_with_atlas("stand_down", "./pic/fd/fd_clip_0_s.clip");
+  auto *clip_s_left = WIPAnimationClip::create_with_atlas("stand_left", "./pic/fd/fd_clip_1_s.clip");
+  auto *clip_s_right = WIPAnimationClip::create_with_atlas("stand_right", "./pic/fd/fd_clip_2_s.clip");
+  auto *clip_s_up = WIPAnimationClip::create_with_atlas("stand_up", "./pic/fd/fd_clip_3_s.clip");
+
+  auto res_handle_background = g_res_manager->load_resource("./pic/fd/huangdi.png", WIPResourceType::TEXTURE);
+  int bg_w = ((TextureData *)(res_handle_background->extra))->width;
+  int bg_h = ((TextureData *)(res_handle_background->extra))->height;
+
+
+  auto res_handle_c1 = g_res_manager->load_resource("./pic/fd/c1.png", WIPResourceType::TEXTURE);
+  int c1_w = ((TextureData *)(res_handle_c1->extra))->width;
+  int c1_h = ((TextureData *)(res_handle_c1->extra))->height;
+
+  auto res_handle_c2 = g_res_manager->load_resource("./pic/fd/c2.png", WIPResourceType::TEXTURE);
+  int c2_w = ((TextureData *)(res_handle_c2->extra))->width;
+  int c2_h = ((TextureData *)(res_handle_c2->extra))->height;
+
+  auto res_handle_fls = g_res_manager->load_resource("./pic/fd/flash1.png", WIPResourceType::TEXTURE);
+  int fls_w = ((TextureData *)(res_handle_fls->extra))->width;
+  int fls_h = ((TextureData *)(res_handle_fls->extra))->height;
+
+  auto *tex2d_bg = g_rhi->RHICreateTexture2D(bg_w, bg_h, res_handle_background->ptr);
+  auto *tex2d_c1 = g_rhi->RHICreateTexture2D(c1_w, c1_h, res_handle_c1->ptr, 0, 0, 0, 1);
+  auto *tex2d_c2 = g_rhi->RHICreateTexture2D(c2_w, c2_h, res_handle_c2->ptr);
+  auto *tex2d_c3 = g_rhi->RHICreateTexture2D(fls_w, fls_h, res_handle_fls->ptr);
+
+
+  //avator
+  WIPSpriteCreator ctor_c1(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_c1.texture = tex2d_c1;
+  ctor_c1.world_render = world_renderer;
+  ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_c1.collider_sx = 0.5f;
+  ctor_c1.collider_sy = 0.2f;
+  auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+  man_c1->_animation->add_clip(clip_down, clip_down->name);
+  man_c1->_animation->add_clip(clip_left, clip_left->name);
+  man_c1->_animation->add_clip(clip_right, clip_right->name);
+  man_c1->_animation->add_clip(clip_up, clip_up->name);
+  man_c1->_animation->add_clip(clip_s_down, clip_s_down->name);
+  man_c1->_animation->add_clip(clip_s_left, clip_s_left->name);
+  man_c1->_animation->add_clip(clip_s_right, clip_s_right->name);
+  man_c1->_animation->add_clip(clip_s_up, clip_s_up->name);
+  man_c1->_animation->play(clip_s_down);
+  man_c1->set_anchor(0.5f, 0.05f);
+  man_c1->set_tag("man");
+  man_c1->set_type_tag("character");
+  scene->load_sprite(man_c1);
+  man_c1->translate_to(postion.x, postion.y);
+  man_c1->set_z_order(0.4f);
+
+
+
+  WIPSpriteCreator ctor_bg(40.f, 40.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
+  ctor_bg.texture = tex2d_bg;
+  ctor_bg.world_render = world_renderer;
+  ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* bg = WIPSpriteFactory::create_sprite(ctor_bg);
+  MapComponent* mc = (MapComponent*)WIPObject::create_tick_component("MapComponent", bg);
+  mc->mask_path = "./huangdi.mask";
+  bg->add_tick_component(mc);
+  bg->set_tag("bg");
+  bg->translate_to(0.f, 0.f);
+  bg->set_z_order(0.9f);
+  scene->load_sprite(bg);
+
+  auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
+  int ww1fog = ((TextureData *)(res_handle1fog->extra))->width;
+  int hh1fog = ((TextureData *)(res_handle1fog->extra))->height;
+  auto *tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
+  WIPSpriteCreator ctor_fog(20.f, 20.f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_fog.texture = tex2d_fog;
+  ctor_fog.world_render = world_renderer;
+  ctor_fog.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* fogs = WIPSpriteFactory::create_sprite(ctor_fog);
+  fogs->set_tag("fog");
+  scene->load_sprite(fogs);
+  fogs->set_type_tag("scene");
+  fogs->translate_to(0.f, 0.f);
+  fogs->set_z_order(0.05f);
+
+  {
+    WIPSpriteCreator ctor_c1(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+    ctor_c1.texture = tex2d_c2;
+    ctor_c1.world_render = world_renderer;
+    ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+    ctor_c1.collider_sx = 0.5f;
+    ctor_c1.collider_sy = 0.2f;
+    auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+    man_c1->_animation->add_clip(clip_down, clip_down->name);
+    man_c1->_animation->add_clip(clip_left, clip_left->name);
+    man_c1->_animation->add_clip(clip_right, clip_right->name);
+    man_c1->_animation->add_clip(clip_up, clip_up->name);
+    man_c1->_animation->add_clip(clip_s_down, clip_s_down->name);
+    man_c1->_animation->add_clip(clip_s_left, clip_s_left->name);
+    man_c1->_animation->add_clip(clip_s_right, clip_s_right->name);
+    man_c1->_animation->add_clip(clip_s_up, clip_s_up->name);
+    man_c1->_animation->play(clip_s_down);
+    man_c1->set_anchor(0.5f, 0.05f);
+    man_c1->set_tag("npc1");
+    man_c1->set_type_tag("character");
+    scene->load_sprite(man_c1);
+    man_c1->translate_to(5, -1.5);
+    man_c1->set_z_order(0.4f);
+
+    NPCComponent* npcc = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", man_c1);
+    npcc->words[0].push(L"我刚才明明看见我的狗从这里走上去...");
+    npcc->words[0].push(L"一回头她就不见了...");
+    npcc->words[0].push(L"难道是幻觉？");
+    npcc->words[0].push(L"......");
+
+
+    man_c1->add_tick_component(npcc);
+
+    mc->subscribe_event(npcc, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
+    mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
+  }
+
+
+  WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_trs1.texture = tex2d_c3;
+  ctor_trs1.world_render = world_renderer;
+  ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+  ctor_trs1.collider_sx = 0.5f;
+  ctor_trs1.collider_sy = 0.2f;
+  auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+  man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+  man_trans1->_animation->play_name(clip_s_down->name, true);
+  man_trans1->set_anchor(0.5f, 0.05f);
+  man_trans1->set_tag("trans1");
+  man_trans1->set_type_tag("character");
+  TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+  //tc1->id = 1;
+  //tc1->pos = RBVector2(-3, 6.5);
+  tc1->call_data[2] = new MoveParam(1, RBVector2(-3, 6.5));
+  tc1->func_contact = transform_event;
+  man_trans1->add_tick_component(tc1);
+  scene->load_sprite(man_trans1);
+  man_trans1->translate_to(9.6, -16.6);
+  man_trans1->set_z_order(0.4f);
+
+
+  {
+    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+    ctor_trs1.texture = tex2d_c3;
+    ctor_trs1.world_render = world_renderer;
+    ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+    ctor_trs1.collider_sx = 0.5f;
+    ctor_trs1.collider_sy = 0.2f;
+    auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+    man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+    man_trans1->_animation->play_name(clip_s_down->name, true);
+    man_trans1->set_anchor(0.5f, 0.05f);
+    man_trans1->set_tag("trans2");
+    man_trans1->set_type_tag("character");
+    TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+    //tc1->id = 3;
+    //tc1->pos = RBVector2(7.9, -14.5);
+    tc1->call_data[2] = new MoveParam(3, RBVector2(7.9, -14.5));
+    tc1->func_contact = transform_event;
+    man_trans1->add_tick_component(tc1);
+    scene->load_sprite(man_trans1);
+    man_trans1->translate_to(3, 15);
+    man_trans1->set_z_order(0.4f);
+  }
+
+  {
+    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+    ctor_trs1.texture = tex2d_c3;
+    ctor_trs1.world_render = world_renderer;
+    ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_GHOST;
+    ctor_trs1.collider_sx = 0.5f;
+    ctor_trs1.collider_sy = 0.2f;
+    auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+    man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+    man_trans1->_animation->play_name(clip_s_down->name, true);
+    man_trans1->set_anchor(0.5f, 0.05f);
+    man_trans1->set_tag("over_event");
+    man_trans1->set_type_tag("event");
+    man_trans1->_render->is_visible = false;
+      TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+      tc1->func_level_start = [](void* data, TransformComponent* t)->void
+      {
+        if (t->map_component->game_state == MapComponent::GameState::E_ACTION) return;
+        if (g_scene->game_varible["already pass"].number.integer == 1)
+        {
+          t->map_component->game_state = MapComponent::GameState::E_ACTION;
+        }
+    };
+    man_trans1->add_tick_component(tc1);
+    scene->load_sprite(man_trans1);
+    man_trans1->translate_to(0, 0.32);
+    man_trans1->set_z_order(0.4f);
+  }
+}
+void WIPLevelLoader::load_mudi(const RBVector2& postion)
+{
+  scene->set_level_unload();
+  scene->set_level_load();
+  WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+  cam->set_name("MainCam");
+  cam->move_to(postion.x, postion.y);
+  g_temp_uisys->change_camera(cam);
+  g_physics_manager->set_debug_camera(cam);
+  scene->load_camera(cam);
+  WorldRender* world_renderer = g_app->world_renderer;
+  auto *clip_down = WIPAnimationClip::create_with_atlas("walk_down", "./pic/fd/fd_clip_0.clip");
+  auto *clip_left = WIPAnimationClip::create_with_atlas("walk_left", "./pic/fd/fd_clip_1.clip");
+  auto *clip_right = WIPAnimationClip::create_with_atlas("walk_right", "./pic/fd/fd_clip_2.clip");
+  auto *clip_up = WIPAnimationClip::create_with_atlas("walk_up", "./pic/fd/fd_clip_3.clip");
+  auto *clip_s_down = WIPAnimationClip::create_with_atlas("stand_down", "./pic/fd/fd_clip_0_s.clip");
+  auto *clip_s_left = WIPAnimationClip::create_with_atlas("stand_left", "./pic/fd/fd_clip_1_s.clip");
+  auto *clip_s_right = WIPAnimationClip::create_with_atlas("stand_right", "./pic/fd/fd_clip_2_s.clip");
+  auto *clip_s_up = WIPAnimationClip::create_with_atlas("stand_up", "./pic/fd/fd_clip_3_s.clip");
+
+  auto res_handle_background = g_res_manager->load_resource("./pic/fd/mudian.jpg", WIPResourceType::TEXTURE);
+  int bg_w = ((TextureData *)(res_handle_background->extra))->width;
+  int bg_h = ((TextureData *)(res_handle_background->extra))->height;
+
+
+  auto res_handle_c1 = g_res_manager->load_resource("./pic/fd/c1.png", WIPResourceType::TEXTURE);
+  int c1_w = ((TextureData *)(res_handle_c1->extra))->width;
+  int c1_h = ((TextureData *)(res_handle_c1->extra))->height;
+
+  auto res_handle_c2 = g_res_manager->load_resource("./pic/fd/c2.png", WIPResourceType::TEXTURE);
+  int c2_w = ((TextureData *)(res_handle_c2->extra))->width;
+  int c2_h = ((TextureData *)(res_handle_c2->extra))->height;
+
+  auto res_handle_fls = g_res_manager->load_resource("./pic/fd/flash2.png", WIPResourceType::TEXTURE);
+  int fls_w = ((TextureData *)(res_handle_fls->extra))->width;
+  int fls_h = ((TextureData *)(res_handle_fls->extra))->height;
+
+  auto *tex2d_bg = g_rhi->RHICreateTexture2D(bg_w, bg_h, res_handle_background->ptr);
+  auto *tex2d_c1 = g_rhi->RHICreateTexture2D(c1_w, c1_h, res_handle_c1->ptr, 0, 0, 0, 1);
+  auto *tex2d_c2 = g_rhi->RHICreateTexture2D(c2_w, c2_h, res_handle_c2->ptr);
+  auto *tex2d_c3 = g_rhi->RHICreateTexture2D(fls_w, fls_h, res_handle_fls->ptr);
+
+
+  //avator
+  WIPSpriteCreator ctor_c1(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_c1.texture = tex2d_c1;
+  ctor_c1.world_render = world_renderer;
+  ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_c1.collider_sx = 0.5f;
+  ctor_c1.collider_sy = 0.2f;
+  auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+  man_c1->_animation->add_clip(clip_down, clip_down->name);
+  man_c1->_animation->add_clip(clip_left, clip_left->name);
+  man_c1->_animation->add_clip(clip_right, clip_right->name);
+  man_c1->_animation->add_clip(clip_up, clip_up->name);
+  man_c1->_animation->add_clip(clip_s_down, clip_s_down->name);
+  man_c1->_animation->add_clip(clip_s_left, clip_s_left->name);
+  man_c1->_animation->add_clip(clip_s_right, clip_s_right->name);
+  man_c1->_animation->add_clip(clip_s_up, clip_s_up->name);
+  man_c1->_animation->play(clip_s_down);
+  man_c1->set_anchor(0.5f, 0.05f);
+  man_c1->set_tag("man");
+  man_c1->set_type_tag("character");
+  scene->load_sprite(man_c1);
+  man_c1->translate_to(postion.x, postion.y);
+  man_c1->set_z_order(0.4f);
+
+
+
+  WIPSpriteCreator ctor_bg(40.f, 40.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
+  ctor_bg.texture = tex2d_bg;
+  ctor_bg.world_render = world_renderer;
+  ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* bg = WIPSpriteFactory::create_sprite(ctor_bg);
+  MapComponent* mc = (MapComponent*)WIPObject::create_tick_component("MapComponent", bg);
+  mc->mask_path = "./mudian.mask";
+  bg->add_tick_component(mc);
+  bg->set_tag("bg");
+  bg->translate_to(0.f, 0.f);
+  bg->set_z_order(0.9f);
+  scene->load_sprite(bg);
+
+  auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
+  int ww1fog = ((TextureData *)(res_handle1fog->extra))->width;
+  int hh1fog = ((TextureData *)(res_handle1fog->extra))->height;
+  auto *tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
+  WIPSpriteCreator ctor_fog(20.f, 20.f, WIPMaterialType::E_TRANSLUCENT);
+  ctor_fog.texture = tex2d_fog;
+  ctor_fog.world_render = world_renderer;
+  ctor_fog.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* fogs = WIPSpriteFactory::create_sprite(ctor_fog);
+  fogs->set_tag("fog");
+  scene->load_sprite(fogs);
+  fogs->set_type_tag("scene");
+  fogs->translate_to(0.f, 0.f);
+  fogs->set_z_order(0.05f);
+
+  {
+    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+    ctor_trs1.texture = tex2d_c3;
+    ctor_trs1.world_render = world_renderer;
+    ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+    ctor_trs1.collider_sx = 0.5f;
+    ctor_trs1.collider_sy = 0.2f;
+    auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+    man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+    man_trans1->_animation->play_name(clip_s_down->name, true);
+    man_trans1->set_anchor(0.5f, 0.05f);
+    man_trans1->set_tag("trans2");
+    man_trans1->set_type_tag("character");
+    TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+    //tc1->id = 2;
+    //tc1->pos = RBVector2(2.9, 13.3);
+    tc1->call_data[2] = new MoveParam(2, RBVector2(2.9, 13.3));
+    tc1->func_contact = transform_event;
+    man_trans1->add_tick_component(tc1);
+    scene->load_sprite(man_trans1);
+    man_trans1->translate_to(10, -16);
+    man_trans1->set_z_order(0.4f);
+  }
+
+  {
+    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
+    ctor_trs1.texture = tex2d_c3;
+    ctor_trs1.world_render = world_renderer;
+    ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+    ctor_trs1.collider_sx = 0.5f;
+    ctor_trs1.collider_sy = 0.2f;
+    auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+    man_trans1->_animation->add_clip(clip_down, clip_s_down->name);
+    man_trans1->_animation->play_name(clip_s_down->name, true);
+    man_trans1->set_anchor(0.5f, 0.05f);
+    man_trans1->set_tag("pass_event");
+    man_trans1->set_type_tag("character");
+    TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+    tc1->func_begin = [](void* data, const WIPSprite* s, TransformComponent* t)->void{g_scene->game_varible["already pass"] = WIPScene::Game_Varible(1); };
+    man_trans1->add_tick_component(tc1);
+    scene->load_sprite(man_trans1);
+    man_trans1->translate_to(4, 9.32);
+    man_trans1->set_z_order(0.4f);
+    NPCComponent* npcc = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", man_trans1);
+    npcc->words[0].push(L"【闻犬而终，包藏祸心】......");
+    npcc->words[0].push(L"......");
+    npcc->words[0].push(L"这写的都是什么东西...");
+    npcc->words[0].push(L"我怎么走到这个地方来了...");
+    npcc->words[0].push(L"还是赶紧离开吧...");
+
+
+    man_trans1->add_tick_component(npcc);
+
+    mc->subscribe_event(npcc, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
+    mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
+  }
+}
+
+void WIPLevelLoader::test_load_level()
+{
+	//scene->reset_level_load_state();
+	scene->set_level_load();
+	WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
+	cam->set_name("MainCam");
+	cam->move_to(5.f,5.f);
+	g_temp_uisys->change_camera(cam);
+	g_physics_manager->set_debug_camera(cam);
+	scene->load_camera(cam);
+	WorldRender* world_renderer = g_app->world_renderer;
+
+	//load resource
+	auto *clip = WIPAnimationClip::create_with_atlas("walk_down", "./clips/1.clip");
+	auto *clip1 = WIPAnimationClip::create_with_atlas("walk_left", "./clips/2.clip");
+	auto *clip2 = WIPAnimationClip::create_with_atlas("walk_right", "./clips/3.clip");
+	auto *clip3 = WIPAnimationClip::create_with_atlas("walk_up", "./clips/4.clip");
+	auto *clip_s = WIPAnimationClip::create_with_atlas("stand_down", "./clips/1s.clip");
+	auto *clip1_s = WIPAnimationClip::create_with_atlas("stand_left", "./clips/2s.clip");
+	auto *clip2_s = WIPAnimationClip::create_with_atlas("stand_right", "./clips/3s.clip");
+	auto *clip3_s = WIPAnimationClip::create_with_atlas("stand_up", "./clips/4s.clip");
 
 	auto res_handle1 = g_res_manager->load_resource("./pic/zhaolinger_1_8.png", WIPResourceType::TEXTURE);
 	int ww = ((TextureData *)(res_handle1->extra))->width;
 	int hh = ((TextureData *)(res_handle1->extra))->height;
-	auto res_handle2 = g_res_manager->load_resource("./pic/xianling_5.jpg", WIPResourceType::TEXTURE);
+	auto res_handle2 = g_res_manager->load_resource("./pic/xianling_6.jpg", WIPResourceType::TEXTURE);
 	int ww1 = ((TextureData *)(res_handle2->extra))->width;
 	int hh1 = ((TextureData *)(res_handle2->extra))->height;
-	auto res_handle1mask = g_res_manager->load_resource("./pic/xianling_5_2.png", WIPResourceType::TEXTURE);
+	auto res_handle1mask = g_res_manager->load_resource("./pic/xianling_6_2.png", WIPResourceType::TEXTURE);
 	int ww1mask = ((TextureData *)(res_handle1mask->extra))->width;
 	int hh1mask = ((TextureData *)(res_handle1mask->extra))->height;
 	auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
@@ -549,22 +1143,22 @@ void GLFWApp::init_rpg_demo()
 
 	float rotli = wli / (float)hli;
 
-	tex2d = g_rhi->RHICreateTexture2D(ww, hh, res_handle1->ptr);
-	tex2d1 = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle2->ptr);
+	auto *tex2d = g_rhi->RHICreateTexture2D(ww, hh, res_handle1->ptr);
+	auto *tex2d1 = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle2->ptr);
 	//issue:texture boarder
-	tex2d1mask = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle1mask->ptr, 0, 0, 0, 1);
+	auto *tex2d1mask = g_rhi->RHICreateTexture2D(ww1, hh1, res_handle1mask->ptr, 0, 0, 0, 1);
 
-	tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
+	auto *tex2d_fog = g_rhi->RHICreateTexture2D(ww1fog, hh1fog, res_handle1fog->ptr);
 
-	tex2d_lixiaoyao = g_rhi->RHICreateTexture2D(wli, hli, res_lixiaoyao->ptr);
-	tex2d_zaji1 = g_rhi->RHICreateTexture2D(wzaji1, hzaji1, res_zaji1->ptr);
-	tex2d_zaji2 = g_rhi->RHICreateTexture2D(wzaji2, hzaji2, res_zaji2->ptr);
-	tex2d_crowd = g_rhi->RHICreateTexture2D(wcrow, hcrow, res_crowd->ptr);
+	auto *tex2d_lixiaoyao = g_rhi->RHICreateTexture2D(wli, hli, res_lixiaoyao->ptr);
+	auto *tex2d_zaji1 = g_rhi->RHICreateTexture2D(wzaji1, hzaji1, res_zaji1->ptr);
+	auto *tex2d_zaji2 = g_rhi->RHICreateTexture2D(wzaji2, hzaji2, res_zaji2->ptr);
+	auto *tex2d_crowd = g_rhi->RHICreateTexture2D(wcrow, hcrow, res_crowd->ptr);
 
 	auto res_face = g_res_manager->load_resource("./pic/face.png", WIPResourceType::TEXTURE);
 	int fw = ((TextureData *)(res_face->extra))->width;
 	int fh = ((TextureData *)(res_face->extra))->height;
-	face = g_rhi->RHICreateTexture2D(fw, fh, res_face->ptr);
+	auto *face = g_rhi->RHICreateTexture2D(fw, fh, res_face->ptr);
 
 	auto res_face_miaoren = g_res_manager->load_resource("./pic/miaoren.png", WIPResourceType::TEXTURE);
 	fw = ((TextureData *)(res_face_miaoren->extra))->width;
@@ -576,6 +1170,8 @@ void GLFWApp::init_rpg_demo()
 	fh = ((TextureData *)(res_face_251->extra))->height;
 	WIPTexture2D* face_25_1 = g_rhi->RHICreateTexture2D(fw, fh, res_face_251->ptr);
 
+	
+	//create objects
 	WIPSpriteCreator ctor_man(3.6f*0.5, 3.6f, WIPMaterialType::E_TRANSLUCENT);
 	ctor_man.texture = tex2d;
 	ctor_man.world_render = world_renderer;
@@ -627,7 +1223,7 @@ void GLFWApp::init_rpg_demo()
 
 
 
-	man_lixiaoyao = WIPSpriteFactory::create_sprite(ctor_li);
+	auto *man_lixiaoyao = WIPSpriteFactory::create_sprite(ctor_li);
 	man_lixiaoyao->_animation->add_clip(clip, clip->name);
 	man_lixiaoyao->_animation->add_clip(clip1, clip1->name);
 	man_lixiaoyao->_animation->add_clip(clip2, clip2->name);
@@ -638,27 +1234,30 @@ void GLFWApp::init_rpg_demo()
 	man_lixiaoyao->_animation->add_clip(clip3_s, clip3_s->name);
 	man_lixiaoyao->_animation->play(clip1_s);
 	man_lixiaoyao->set_anchor(0.5f, 0);
-	NPCComponent* npcc = new NPCComponent(man_lixiaoyao);
+
+	//temp
+	//for load correctly, we must add some function of sealarization.
+	NPCComponent* npcc = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", man_lixiaoyao);
 	npcc->words[0].push(L"......");
 	npcc->add_faces("dft", face_miaoren);
 	man_lixiaoyao->add_tick_component(npcc);
 
-	zaji1 = WIPSpriteFactory::create_sprite(ctor_zaji1);
+	auto *zaji1 = WIPSpriteFactory::create_sprite(ctor_zaji1);
 	zaji1->_animation->add_clip(clip, clip->name);
 	zaji1->_animation->set_clip_instance_speed(clip->name
 		, 0.2f);
 	zaji1->_animation->play(clip, true);
 	zaji1->set_anchor(0.5f, 0);
-	NPCComponent* npcc1 = new NPCComponent(zaji1);
+	NPCComponent* npcc1 = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", zaji1);
 	npcc1->words[0].push(L"还是不要去打扰他们了...");
 	npcc1->add_faces("dft", face);
 	zaji1->add_tick_component(npcc1);
 
-	zaji2 = WIPSpriteFactory::create_sprite(ctor_zaji2);
+	auto *zaji2 = WIPSpriteFactory::create_sprite(ctor_zaji2);
 	zaji2->_animation->add_clip(clip1_s, clip1_s->name);
 	zaji2->_animation->play(clip1_s, true);
 	zaji2->set_anchor(0.5f, 0);
-	NPCComponent* npcc2 = new NPCComponent(zaji2);
+	NPCComponent* npcc2 = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", zaji2);
 	npcc2->add_faces("dft", face_25_1);
 	npcc2->words[0].push(L"真是可怜的孩子...");
 	npcc2->words[0].push(L"想当年，南诏国大水，灵儿她娘也是这么死的...");
@@ -666,22 +1265,21 @@ void GLFWApp::init_rpg_demo()
 	zaji2->add_tick_component(npcc2);
 
 
-	crowd = WIPSpriteFactory::create_sprite(ctor_crowd);
+	auto *crowd = WIPSpriteFactory::create_sprite(ctor_crowd);
 	crowd->_animation->add_clip(clip_s, clip_s->name);
 	crowd->_animation->play(clip_s);
 	crowd->set_anchor(0.4f, 0.2f);
-	NPCComponent* npcc3 = new NPCComponent(crowd);
+	NPCComponent* npcc3 = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", crowd);
 	npcc3->words[0].push(L"尔等凡人，速速退散！");
 	crowd->add_tick_component(npcc3);
 
-	bg = WIPSpriteFactory::create_sprite(ctor_bg);
-	MapComponent* mc = new MapComponent(bg);
+	auto* bg = WIPSpriteFactory::create_sprite(ctor_bg);
+	MapComponent* mc = (MapComponent*)WIPObject::create_tick_component("MapComponent", bg);
 	bg->add_tick_component(mc);
-	mc->cam = cameras[0];
-	mc->scene = scene;
-	mc->render_texture2d = render_texture2d;
-	bg_mask = WIPSpriteFactory::create_sprite(ctor_mask);
-	man = WIPSpriteFactory::create_sprite(ctor_man);
+
+	auto* bg_mask = WIPSpriteFactory::create_sprite(ctor_mask);
+
+	auto* man = WIPSpriteFactory::create_sprite(ctor_man);
 	man->_animation->add_clip(clip, clip->name);
 	man->_animation->add_clip(clip1, clip1->name);
 	man->_animation->add_clip(clip2, clip2->name);
@@ -690,13 +1288,8 @@ void GLFWApp::init_rpg_demo()
 	man->_animation->add_clip(clip1_s, clip1_s->name);
 	man->_animation->add_clip(clip2_s, clip2_s->name);
 	man->_animation->add_clip(clip3_s, clip3_s->name);
-	mc->man = man;
-
 	man->_animation->play(clip_s);
 	man->set_anchor(0.5f, 0);
-
-	mc->ui_renderer = ui_renderer;
-	mc->text_renderer = text_renderer;
 
 	mc->subscribe_event(npcc, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
 	mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
@@ -726,19 +1319,19 @@ void GLFWApp::init_rpg_demo()
 	zaji2->set_type_tag("character");
 	crowd->set_type_tag("character");
 
-	scene->add_sprite(bg);
-	scene->add_sprite(bg_mask);
-	scene->add_sprite(man);
-	scene->add_sprite(man_lixiaoyao);
-	scene->add_sprite(zaji1);
-	scene->add_sprite(zaji2);
-	scene->add_sprite(crowd);
+	scene->load_sprite(bg);
+	scene->load_sprite(bg_mask);
+	scene->load_sprite(man);
+	scene->load_sprite(man_lixiaoyao);
+	scene->load_sprite(zaji1);
+	scene->load_sprite(zaji2);
+	scene->load_sprite(crowd);
 
 	man_lixiaoyao->set_z_order(0.4f);
 	zaji1->set_z_order(0.4f);
 	zaji2->set_z_order(0.4f);
 	crowd->set_z_order(0.4f);
-	std::vector<TRefCountPtr<const WIPSprite>> sp;
+	std::vector<const WIPSprite* > sp;
 	scene->quad_tree->get_all_nodes(sp);
 	sp.clear();
 
@@ -758,12 +1351,12 @@ void GLFWApp::init_rpg_demo()
 
 
 
-	fogs = WIPSpriteFactory::create_sprite(ctor_fog);
-	scene->add_sprite(fogs);
+	auto* fogs = WIPSpriteFactory::create_sprite(ctor_fog);
+	fogs->set_tag("fog");
+	scene->load_sprite(fogs);
 	fogs->set_type_tag("scene");
 	fogs->translate_to(0.f, 0.f);
 	fogs->set_z_order(0.05f);
-	mc->fogs = fogs;
 
 
 
@@ -774,12 +1367,16 @@ void GLFWApp::init_rpg_demo()
 	man->set_z_order(0.4f);
 	bg_mask->set_z_order(0.1f);
 
-	pre_clip = nullptr;
 }
 
-WIPSprite* GLFWApp::get_by_tag(std::string name) const
+void GLFWApp::load_rpg_demo()
 {
-	return scene->get_sprite_by_tag(name);
+	loader->test_load_level();
+}
+
+void GLFWApp::load_avg_demo()
+{
+  loader->load_caodi(RBVector2::zero_vector);
 }
 
 bool GLFWApp::init()
@@ -875,22 +1472,16 @@ bool GLFWApp::init()
 	imgui_renderer = new GlfwImguiRender();
 	imgui_renderer->imgui_init(window, "./font/simkai.ttf", 19);
 
-	scene = new WIPScene();
-	scene->init(1, 1, 4);
+	g_scene->init(1, 1, 4);
 	LOG_INFO("Creating scene...");
 
 
 	world_renderer = new WorldRender();
 	world_renderer->init();
-	world_renderer->set_world(scene);
+	world_renderer->set_world(g_scene);
+	g_scene->world_renderer = world_renderer;
 	LOG_INFO("Renderer start up...");
-#ifdef Text1
-	text_renderer = new LargeTexture_TextRender(2048, 2048);
-#else
-	text_renderer = new TextRender(512, 512);
-#endif
-	text_renderer->init();
-	text_renderer->load_font("./font/simkai.ttf", 24, 24);
+
 
 	g_physics_manager->startup();
 	LOG_INFO("Physics start up...");
@@ -903,17 +1494,26 @@ bool GLFWApp::init()
 	LOG_INFO("Animation start up...");
 
 	RemoteryProfiler::startup();
+	regist_user_component();
 
+	g_temp_uisys->startup();
 
-	init_rpg_demo();
-	//init_tank_demo();
+	loader = new WIPLevelLoader(g_scene);
+
+	//load_rpg_demo();
+	//load_tank_demo();
+  load_avg_demo();
 
 
 	//use a big delta time to play first frame
 	g_animation_manager->update(1);
 
 
-	scene->init_components();
+	g_scene->init_components();
+
+	
+	g_audio_manager->LoadBank("./audio/Desktop/master bank.bank", false);
+	g_audio_manager->LoadBank("./audio/Desktop/master bank.strings.bank", false);
 	return ret;
 }
 
@@ -964,7 +1564,7 @@ void GLFWApp::run()
 			rmt_EndCPUSample();
 
 			//todo:move to camera::clear add rhi!
-			g_rhi->change_viewport(cameras[0]->viewport);
+			
 			g_rhi->clear_back_buffer(RBColorf::black);
 			//glViewport(0, 0, window_w, window_h);
 			//glClearColor(0.85, 0.85, 0.85, 1);
@@ -997,36 +1597,21 @@ void GLFWApp::run()
 			g_animation_manager->update(clock->get_frame_time());
 			rmt_EndCPUSample();
 			rmt_BeginCPUSample(physics_update, 0);
-			g_physics_manager->update(scene, dt);
+			g_physics_manager->update(g_scene, dt);
 			rmt_EndCPUSample();
 
 			rmt_BeginCPUSample(scene_update, 0);
-			scene->update(dt);
+			g_scene->update(dt);
 
-			scene->fix_update(dt);
+			g_scene->fix_update(dt);
 			rmt_EndCPUSample();
 
 			rmt_BeginCPUSample(begin_render, 0);
-			for (auto i : cameras)
-				world_renderer->render(i);
+			g_scene->render_world();
 			rmt_EndCPUSample();
 
-			/*
-			rmt_BeginCPUSample(begin_render_texture,0);
-			g_rhi->set_back_buffer(render_texture2d);
-			WIPViewPort vp(0, 0, render_texture2d->get_width(), render_texture2d->get_height());
-			g_rhi->change_viewport(&vp);
-
-
-			for (auto i : cameras)
-			world_renderer->render(i);
-
-			g_rhi->set_main_back_buffer();
-			g_rhi->change_viewport(cameras[0]->viewport);
-			rmt_EndCPUSample();
-			*/
-
-			update_rpg_demo();
+			//invoke after world renderer for draw UI
+			g_scene->render_ui();
 			//update_tank_demo();
 
 			// g_script_manager->call("debug_draw");
@@ -1055,26 +1640,13 @@ void GLFWApp::run()
 			// for glfw
 			g_input_manager->clear_scroller();
 			rmt_EndCPUSample();
-
-			for (auto i : deleting_objects)
-			{
-				if (i->get_tag() == "player")
-				{
-					show_text = true;
-				}
-				WIPSprite::destroy(i);
-				
-			}
-			deleting_objects.clear();
-
-			for (auto i : creating_objects)
-			{
-				i->init_components();
-				scene->add_sprite(i);
-
-			}
-			creating_objects.clear();
 			rmt_EndCPUSample();
+
+			//we must change the object layout at the end of a frame in case of some iter trouble
+			//update create/remove object event
+			g_scene->submit_object_change();
+			//update scene load
+			g_scene->submit_level_change();
 
 			
 
@@ -1090,10 +1662,8 @@ void GLFWApp::run()
 
 
 	}
-	scene->destroy_components();
-	scene->clear();
-	delete scene;
-
+	g_scene->clear();
+	delete loader;
 }
 
 GLFWApp::~GLFWApp()

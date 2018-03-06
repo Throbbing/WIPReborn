@@ -118,7 +118,6 @@ int main(int argc,char** argv)
 #endif
 
 
-
 	//can change app according command args 
 	//if defined USE_D3D on windows
 	//linux noly glfw.

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.01.09.00">
+    <object class="AudioFile" id="{78c65bb2-90de-4180-b194-4ed64542768a}">
+        <property name="assetPath">
+            <value>River.ogg</value>
+        </property>
+        <property name="isStreaming">
+            <value>true</value>
+        </property>
+        <property name="frequencyInKHz">
+            <value>22.0499992</value>
+        </property>
+        <property name="channelCount">
+            <value>1</value>
+        </property>
+        <property name="length">
+            <value>10.000045351473922</value>
+        </property>
+        <relationship name="masterAssetFolder">
+            <destination>{52733ce8-fd5c-4c31-8768-cd1a748ba127}</destination>
+        </relationship>
+    </object>
+</objects>

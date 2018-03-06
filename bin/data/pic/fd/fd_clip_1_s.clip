@@ -1,0 +1,12 @@
+[head]
+texture = fd_clip.png
+total_frame = 1
+[1]
+lb_x = 0.333333
+lb_y = 0.250000
+lt_x = 0.333333
+lt_y = 0.500000
+rt_x = 0.666667
+rt_y = 0.500000
+rb_x = 0.666667
+rb_y = 0.250000
