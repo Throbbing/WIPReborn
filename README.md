@@ -47,6 +47,10 @@
    
 # 截图
 
+
 ![](https://github.com/wubugui/WIPReborn/raw/master/example/1.png)
 ![](https://github.com/wubugui/FXXKTracer/raw/master/pic/ll.gif)
 
+# 视频
+
+[![Watch Video](https://github.com/wubugui/FXXKTracer/raw/master/IL/shot.png)](https://youtu.be/lzGFsE28GxI)

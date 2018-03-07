@@ -215,6 +215,7 @@ struct Moveto :public Ac
     RBVector2 dis(target - mp);
     dis.normalize();
     dis = dis*dt*speed;
+    mover->_animation->play_name(ani_name, true);
     if ((dis + mp - target).squared_size()<0.005f)
     {
       mover->_animation->play_name("stand_down", true);
@@ -487,6 +488,7 @@ void MapComponent::init()
   }
   //actions.push_back(new CameraZoom(cam->_zoom - 0.2f, cam, 1.5f));
 
+  //todo:write a debugger!
   actions.push_back(new CombineAc2(new Moveto(man, "walk_down", 1.f, RBVector2(3.3f, 8.2f)), new MovetoPlayer(woman, "walk_up", 1.f)));
 
   actions.push_back(new TurnoffBGM("event:/bgm1"));
