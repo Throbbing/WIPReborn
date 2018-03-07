@@ -53,4 +53,6 @@
 
 # 视频
 
-[![Watch Video](https://github.com/wubugui/FXXKTracer/raw/master/IL/shot.png)](https://youtu.be/lzGFsE28GxI)
+A WIP AVG Game.
+
+[![Watch Video](https://github.com/wubugui/FXXKTracer/raw/master/IL/shot1.png)](https://youtu.be/lzGFsE28GxI)
