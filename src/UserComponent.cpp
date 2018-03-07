@@ -527,6 +527,136 @@ Moveto::Moveto(WIPSprite* s, const std::string& ani, float inspeed,const RBVecto
   tar = pos;
 }
 
+#include <stack>
+
+struct EditorData
+{
+  EditorData()
+  {
+    reload_level_file("LevelCache.h");
+    init_trigger();
+  }
+  ~EditorData()
+  {
+    close_level();
+  }
+  //trigger data
+  void init_trigger()
+  {
+    trigger_size[0] = trigger_size[1] = 1.f;
+    is_visible = false;
+    memset(texture_name, 0, 100);
+    char s[32] = "noname\0";
+    memcpy(event_name,s,32);
+    std::string sc = "[](void* data, const WIPSprite* s, TransformComponent* t)->void\n{\n//add your code \n//you can also edit your code in level file. \n}\0";
+    memcpy(script[BEGIN_EVENT], sc.data(), sc.size());
+    sc = "[](void* data, const WIPSprite* s, TransformComponent* t)->void\n{\n//add your code \n}\0";
+    memcpy(script[END_EVENT], sc.data(), sc.size());
+    sc = "[](void* data, const WIPSprite* s, TransformComponent* t)->void\n{\n//add your code \n}\0";
+    memcpy(script[CONTACT_EVENT], sc.data(), sc.size());
+    sc = "[](void* data, TransformComponent* t)->void\n{\n//add your code \n}\0";
+    memcpy(script[LEVEL_START], sc.data(), sc.size());
+    sc = "[](void* data, TransformComponent* t)->void\n{\n//add your code \n}\0";
+    memcpy(script[LEVEL_END], sc.data(), sc.size());
+    sc = "[](void* data, float dt, TransformComponent* t)->void\n{\n//add your code \n}\0";
+    memcpy(script[UPDATE_EVENT], sc.data(), sc.size());
+    position = RBVector2::zero_vector;
+    rotation = RBVector2::zero_vector;
+  }
+
+
+  void add_trigger()
+  {
+    char out1[10240] =
+      "{\n"
+      "WIPSpriteCreator ctor_trs1(%f, %f, WIPMaterialType::E_OTHER);\n"
+      "ctor_trs1.texture = 0;\n"
+      "ctor_trs1.world_render = 0;\n"
+      "ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_GHOST;\n"
+      "ctor_trs1.collider_sx = 1.0f;\n"
+      "ctor_trs1.collider_sy = 1.0f;\n"
+      "auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);\n"
+      "man_trans1->set_anchor(0.f, 0.f);\n"
+      "man_trans1->set_tag(\"%s\");\n"
+      "man_trans1->set_type_tag(\"trigger\");\n"
+      "TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component(\"TransformComponent\", man_trans1);\n"
+      "tc1->func_begin = %s;\n"
+      "tc1->func_end = %s;\n"
+      "tc1->func_update = %s;\n"
+      "tc1->func_contact = %s;\n"
+      "tc1->func_level_start = %s;\n"
+      "tc1->func_level_end = %s;\n"
+      "man_trans1->add_tick_component(tc1);\n"
+      "scene->load_sprite(man_trans1);\n"
+      "man_trans1->translate_to(%f, %f);\n"
+      "man_trans1->_render->is_visible = false\n;"
+      "man_trans1->rotate_to(%f);}\n\0";
+    char out[10240];
+    sprintf(out, out1, trigger_size[0], trigger_size[1], event_name, script[0], script[1], script[2], script[3], script[4], script[5], position.x, position.y,rotation.x);
+    
+    level_file << out;
+    level_file.flush();
+
+    {
+      WIPSpriteCreator ctor_trs1(trigger_size[0], trigger_size[1], WIPMaterialType::E_OTHER);
+      ctor_trs1.texture = 0;
+      ctor_trs1.world_render = 0;
+      ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_GHOST;
+      ctor_trs1.collider_sx = 1.0f;
+      ctor_trs1.collider_sy = 1.0f;
+      auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+      man_trans1->_render->is_visible = false;
+      man_trans1->set_anchor(0.f, 0.f);
+      man_trans1->set_tag(event_name);
+      man_trans1->set_type_tag("trigger");
+      TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+      man_trans1->add_tick_component(tc1);
+      g_scene->load_sprite(man_trans1);
+      man_trans1->translate_to(position.x, position.y);
+      man_trans1->rotate_to(rotation.x);
+
+      added_sprites.push_back(man_trans1);
+
+    }
+  }
+
+  float trigger_size[2];
+  bool is_visible;
+  char texture_name[100];
+  char event_name[32];
+  char script[6][2048];
+  RBVector2 position;
+  RBVector2 rotation;
+  
+  
+
+  void reload_level_file(const char* name)
+  {
+    if (level_file.is_open())
+      level_file.close();
+    level_file.open(name, std::ios::app);
+
+  }
+
+  void close_level()
+  {
+    level_file.close();
+  }
+
+  void remove_sprite(int id)
+  {
+    if (added_sprites[id] == nullptr)
+      return;
+    g_scene->remove_sprite(added_sprites[id]);
+    bak_id.push(id);
+  }
+  
+  std::fstream level_file;
+  std::vector<WIPSprite*> added_sprites;
+  std::stack<int> bak_id;
+
+
+} g_eddata;
 
 void MapComponent::update(f32 dt)
 {
@@ -768,6 +898,33 @@ void MapComponent::update(f32 dt)
 		ImGui::Text(get_utf8(L"鼠标左键绘制碰撞，鼠标右键擦除碰撞", text));
     ImGui::Text("%f,%f", man->_transform->world_x, man->_transform->world_y);
 		ImGui::End();
+
+    ImGui::Begin("Level Editor");
+    ImGui::BeginGroup();
+    ImGui::CollapsingHeader("Trigger");
+
+    ImGui::InputFloat2("Size", g_eddata.trigger_size);
+    ImGui::InputFloat2("Position", (float*)&g_eddata.position);
+    ImGui::InputFloat2("Rotation", (float*)&g_eddata.rotation);
+    ImGui::InputText("Event name", g_eddata.event_name,32);
+    ImGui::InputTextMultiline("Script 0", g_eddata.script[0], 2048);
+    ImGui::InputTextMultiline("Script 1", g_eddata.script[1], 2048);
+    ImGui::InputTextMultiline("Script 2", g_eddata.script[2], 2048);
+    ImGui::InputTextMultiline("Script 3", g_eddata.script[3], 2048);
+    ImGui::InputTextMultiline("Script 4", g_eddata.script[4], 2048);
+    ImGui::InputTextMultiline("Script 5", g_eddata.script[5], 2048);
+
+
+
+
+
+    if(ImGui::Button("Add Trigger"))
+    {
+      g_eddata.add_trigger();
+    }
+
+    ImGui::EndGroup();
+    ImGui::End();
 	}
 	fix_sprite_position(bg);
 	RBVector2 manpos(man->_transform->world_x, man->_transform->world_y);

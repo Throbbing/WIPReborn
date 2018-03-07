@@ -34,6 +34,9 @@ WIPCollider* WIPCollider::create_collider(WIPSprite* m, WIPCollider::_CollisionT
 	// Override the default friction.
 	fixtureDef.friction = 0.3f;
 
+  if (tp == WIPCollider::_CollisionTypes::E_GHOST)
+    fixtureDef.isSensor = true;
+
 	// Add the shape to the body.
 	ret->_body->CreateFixture(&fixtureDef);
 	return ret;

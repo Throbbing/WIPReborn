@@ -672,7 +672,7 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
   ctor_trs1.texture = tex2d_c3;
   ctor_trs1.world_render = world_renderer;
-  ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_RIGIDBODY;
+  ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_GHOST;
   ctor_trs1.collider_sx = 0.5f;
   ctor_trs1.collider_sy = 0.2f;
   auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
@@ -906,9 +906,9 @@ void WIPLevelLoader::load_huangdi(const RBVector2& postion)
   }
 
   {
-    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
-    ctor_trs1.texture = tex2d_c3;
-    ctor_trs1.world_render = world_renderer;
+    WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_OTHER);
+    ctor_trs1.texture = 0;
+    ctor_trs1.world_render = 0;
     ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_GHOST;
     ctor_trs1.collider_sx = 0.5f;
     ctor_trs1.collider_sy = 0.2f;

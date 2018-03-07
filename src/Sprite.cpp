@@ -157,6 +157,7 @@ bool WIPAnimation::play_name(std::string name, bool loop)
 	_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
 	if (it != _internal_clip_queue.end())
 		return play(it->second, loop);
+  LOG_WARN("play a nil animation [%s]",name.data());
 	return false;
 }
 bool WIPAnimation::play(bool loop)
