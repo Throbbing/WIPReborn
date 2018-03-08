@@ -77,7 +77,42 @@ private:
 
 
 #endif
+struct Game_Varible
+{
+  Game_Varible()
+  {
+    text = "";
+    number.integer = 0;
+  }
+  Game_Varible(const std::string& s)
+  {
+    text = s;
+    tp = E_TEXT;
+  }
+  Game_Varible(float s)
+  {
+    tp = E_FLOAT;
+    number.real = s;
+  }
+  explicit Game_Varible(int s)
+  {
+    tp = E_INT;
+    number.integer = s;
+  }
+  enum VarType
+  {
+    E_TEXT,
+    E_INT,
+    E_FLOAT
+  } tp;
+  std::string text;
+  union Number
+  {
+    int integer;
+    float real;
+  } number;
 
+};
 class WIPScene : public FRefCountedObject
 {
 public:
@@ -145,48 +180,14 @@ private:
 	friend class WIPLevelLoader;
 	std::vector<TRefCountPtr<WIPSprite>> loaded_objects;
 	std::vector<TRefCountPtr<WIPCamera>> loaded_cameras;
+public:
 	WIPLevelLoader* loader=nullptr;
 
 //add_hoc
 public:
   //
   std::vector<int> game_switch;
-  struct Game_Varible
-  {
-    Game_Varible()
-    {
-      text = "";
-      number.integer = 0;
-    }
-    Game_Varible(const std::string& s)
-    {
-      text = s;
-      tp = E_TEXT;
-    }
-    Game_Varible(float s)
-    {
-      tp = E_FLOAT;
-      number.real = s;
-    }
-    explicit Game_Varible(int s)
-    {
-      tp = E_INT;
-      number.integer = s;
-    }
-    enum VarType
-    {
-      E_TEXT,
-      E_INT,
-      E_FLOAT
-    } tp;
-    std::string text;
-    union Number
-    {
-      int integer;
-      float real;
-    } number;
-
-  };
+ 
   std::map<std::string, Game_Varible> game_varible;
 };
 
@@ -213,6 +214,8 @@ public:
   void load_caodi(const RBVector2& postion);
   void load_huangdi(const RBVector2& postion);
   void load_mudi(const RBVector2& postion);
+
+  void init_game();
 
 	/*
 	void test_reload_level1();

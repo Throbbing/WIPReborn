@@ -37,7 +37,7 @@ public:
 	}
 	virtual void init();
 	virtual void on_begin_contact(const WIPSprite* s);
-	virtual void on_contact(const WIPSprite* s);
+  virtual void on_contact(const WIPSprite* s, float dt);
 	virtual void on_end_contact(const WIPSprite* s);
 
 	virtual void update(f32 dt);
@@ -216,6 +216,12 @@ struct Ac
   }
   virtual bool doing(float dt){ return true; }
   virtual void init(float dt){}
+  void reset()
+  {
+    time = 0.f;
+    begin = false;
+    end = false;
+  }
   int id;
   float time;
   bool end;
@@ -258,7 +264,7 @@ public:
 	void change_to_player(string_hash tp, void* data);
 	void fix_sprite_position(WIPSprite*  sprite)
 	{
-		if (grid->get_position_state(man->_transform->world_x, man->_transform->world_y))
+		if (1==grid->get_position_state(man->_transform->world_x, man->_transform->world_y))
 		{
 			man->translate_to(old_pos.x, old_pos.y);
 		}
@@ -277,8 +283,8 @@ public:
 	}
 
   
-
- 
+  float alpha_s = 1.f;
+  float alpha = 1.f;
 
   std::vector<Ac*> actions;
 
@@ -377,7 +383,7 @@ public:
 	void set_default_face();
 	void on_begin_contact(const WIPSprite* s);
 	void on_end_contact(const WIPSprite* s);
-	void on_contact(const WIPSprite* s);
+  void on_contact(const WIPSprite* s, float dt);
 	NPCDisplayData data;
 	std::queue<wchar_t*> words[2];
 	std::map<int, WIPTexture2D*> npc_faces;
@@ -414,7 +420,7 @@ public:
   virtual void destroy();
   void on_begin_contact(const WIPSprite* s);
   void on_end_contact(const WIPSprite* s);
-  void on_contact(const WIPSprite* s);
+  void on_contact(const WIPSprite* s, float dt);
   MapComponent* map_component=nullptr;
   void on_load(void* data)
   {
@@ -422,9 +428,11 @@ public:
   }
   virtual void start();
   virtual void end();
+  //be sure to use pod data!
   void* call_data[6];
+  //event callback
   void(*func_begin)(void*, const WIPSprite*, TransformComponent* t) = 0;
-  void(*func_contact)(void*, const WIPSprite*, TransformComponent* t) = 0;
+  void(*func_contact)(void*, const WIPSprite*,float , TransformComponent* t) = 0;
   void(*func_end)(void*, const WIPSprite*, TransformComponent* t) = 0;
   void(*func_update)(void*, float, TransformComponent* t) = 0;
   void(*func_level_start)(void*, TransformComponent* t) = 0;

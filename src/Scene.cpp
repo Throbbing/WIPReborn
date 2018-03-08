@@ -58,7 +58,8 @@ void WIPScene::init(float world_sizex, float world_sizey, int max_depth)
   //game_play
   game_switch.resize(1024);
 
-  game_varible["already pass"] = Game_Varible(0);
+  
+
 }
 
 void WIPScene::add_sprite(WIPSprite* sprite)

@@ -82,6 +82,7 @@ int main()
 }
 
 #else
+//#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
 int main(int argc,char** argv)
 {  
 #if 0

@@ -25,7 +25,7 @@ void WIPScriptComponent::on_begin_contact(const WIPSprite* s)
 {
 	g_script_manager->call_table_function(_name.data(), "on_begin_contact", nullptr);
 }
-void WIPScriptComponent::on_contact(const WIPSprite* s)
+void WIPScriptComponent::on_contact(const WIPSprite* s, float dt)
 {
 	g_script_manager->call_table_function(_name.data(), "on_contact", nullptr);
 }
@@ -218,7 +218,7 @@ struct Moveto :public Ac
     mover->_animation->play_name(ani_name, true);
     if ((dis + mp - target).squared_size()<0.005f)
     {
-      mover->_animation->play_name("stand_down", true);
+      mover->_animation->play_name("stand_down", false);
       
       return true;
     }
@@ -343,6 +343,10 @@ struct CombineAc2 :public Ac
   bool run(float dt)
   {
     if (!a || !b) return true;
+
+    bool ad = a->run(dt);
+    bool bd = b->run(dt);
+    return ad&&bd;
     if (end)
       return true;
     if (!begin)
@@ -389,11 +393,13 @@ void MapComponent::init()
 	draw_debug = false;
 	newpx = 0;
 	newpy = 0;
-	fog_dir = RBVector2(1.f, 1.f);
+  float s = RBMath::get_rand_range_f(PI, PI*2.f);
+  fog_dir.x = RBMath::sin(s);
+  fog_dir.y = RBMath::cos(s);
 	fog_dir.normalize();
 
 	
-	sound = g_audio_manager->CreateSound("event:/bgm");
+	//sound = g_audio_manager->CreateSound("event:/bgm");
 	sound_t = g_audio_manager->CreateSound("event:/bgm1");
 	g_audio_manager->Play(sound_t);
 
@@ -451,21 +457,21 @@ void MapComponent::init()
 		ctn_bt = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
 	}
 	{
-		auto res_extbt = g_res_manager->load_resource("./pic/start-2.png", WIPResourceType::TEXTURE);
+		auto res_extbt = g_res_manager->load_resource("./pic/fd/end_words.png", WIPResourceType::TEXTURE);
 		int w = ((TextureData *)(res_extbt->extra))->width;
 		int h = ((TextureData *)(res_extbt->extra))->height;
 
 		stt_bt = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
 	}
 	{
-		auto res_extbt = g_res_manager->load_resource("./pic/Snap1.png", WIPResourceType::TEXTURE);
+		auto res_extbt = g_res_manager->load_resource("./pic/fd/title.png", WIPResourceType::TEXTURE);
 		int w = ((TextureData *)(res_extbt->extra))->width;
 		int h = ((TextureData *)(res_extbt->extra))->height;
 
 		t_bg = g_rhi->RHICreateTexture2D(w, h, res_extbt->ptr);
 	}
 	{
-		auto res_extbt = g_res_manager->load_resource("./pic/title.png", WIPResourceType::TEXTURE);
+		auto res_extbt = g_res_manager->load_resource("./pic/fd/title_words.png", WIPResourceType::TEXTURE);
 		int w = ((TextureData *)(res_extbt->extra))->width;
 		int h = ((TextureData *)(res_extbt->extra))->height;
 
@@ -495,9 +501,9 @@ void MapComponent::init()
   actions.push_back(new PlayBGM("event:/grass_bgm"));
   actions.push_back(new Moveto(man, "walk_down", 1.5f,RBVector2(3.3f,11.2f)));
   actions.push_back(new PlayBGM("event:/fly_cry"));
-  actions.push_back(new Moveto(woman, "stand_up", 0.5f, RBVector2(5.f, 2.3f)));
+  actions.push_back(new Moveto(woman, "stand_up", 0.5f, RBVector2(5.f, 4.3f)));
   actions.push_back(new PlayBGM("event:/last_cry"));
-  actions.push_back(new CombineAc2(new MovetoPlayer(woman, "walk_up", 16.f), new CameraZoom(cam->_zoom - 0.7f, cam, 8.5f)));
+  actions.push_back(new CombineAc2(new MovetoPlayer(woman, "walk_up", 8.f), new CameraZoom(cam->_zoom - 0.7f, cam, 8.5f)));
   actions.push_back(new ShowTexture(this));
 }
 void MapComponent::destroy()
@@ -668,7 +674,11 @@ void MapComponent::update(f32 dt)
 	{
 		g_temp_uisys->begin();
 		g_temp_uisys->draw_picture(1, 0, t_bg->get_width(), t_bg->get_height(), t_bg);
-
+    if (alpha >= 1.f || alpha <= 0.f)
+      alpha_s *= -1.f;
+    alpha += dt*alpha_s*RBMath::get_rand_range_f(0.1f,0.5f);
+    g_temp_uisys->draw_picture(1, 0, t_bg->get_width(), t_bg->get_height(), title,RBColorf(1,1,1,alpha));
+#if 0
 		if (Input::get_key_down(WIP_W))
 		{
 			title_state--;
@@ -703,11 +713,12 @@ void MapComponent::update(f32 dt)
 		default:
 			break;
 		}
-
+#endif
 		g_temp_uisys->end();
 
 		if (Input::get_sys_key_down(WIP_SPACE))
 		{
+      /*
 			switch (title_state)
 			{
 			case 0:
@@ -729,6 +740,9 @@ void MapComponent::update(f32 dt)
 			}
 			break;
 			}
+      */
+      g_scene->game_varible["title"].number.integer = 0;
+      change_to_player(0, 0);
 		}
 
 		return;
@@ -854,7 +868,18 @@ void MapComponent::update(f32 dt)
   {
     g_temp_uisys->begin();
     g_temp_uisys->draw_picture(1, 0, end_tex->get_width(), end_tex->get_height(), end_tex);
+    if (alpha >= 1.f || alpha <= 0.f)
+      alpha_s *= -1.f;
+    alpha += dt*alpha_s*RBMath::get_rand_range_f(0.1f, 0.5f);
+    g_temp_uisys->draw_picture(1, 0, t_bg->get_width(), t_bg->get_height(), stt_bt, RBColorf(1, 0.5, 0.5, alpha));
     g_temp_uisys->end();
+    if (Input::get_sys_key_down(WIP_SPACE))
+    {
+      //g_scene->game_varible["already pass"] = Game_Varible(0);
+      //g_scene->game_varible["title"] = Game_Varible(1);
+      g_scene->loader->init_game();
+      g_scene->load_level(1, RBVector2(6.6f, -12.6f));
+    }
   }
   break;
 	default:
@@ -1837,7 +1862,7 @@ void NPCComponent::on_end_contact(const WIPSprite* s)
 	//LOG_INFO("end contact:%s", s->get_tag().data());
 }
 
-void NPCComponent::on_contact(const WIPSprite* s)
+void NPCComponent::on_contact(const WIPSprite* s, float dt)
 {
 	if (s->get_tag() == "man")
 	{
@@ -1912,7 +1937,9 @@ TransformComponent::~TransformComponent()
 }
 void TransformComponent::init()
 {
-  map_component = (MapComponent*)g_scene->get_sprite_by_tag("bg")->get_component<MapComponent>();
+  auto* s = g_scene->get_sprite_by_tag("bg");
+    if (s)
+      map_component = (MapComponent*)s->get_component<MapComponent>();
  
 
 }
@@ -1924,10 +1951,11 @@ void TransformComponent::update(f32 dt)
 }
 void TransformComponent::destroy()
 {
-  delete call_data[0];
-  delete call_data[1];
-  delete call_data[2];
-  delete call_data[3];
+  //delete call_data[0];
+  //delete call_data[1];
+  //delete call_data[2];
+  //delete call_data[3];
+  //parameters should be deleted by level
 }
 
 void TransformComponent::on_begin_contact(const WIPSprite* s)
@@ -1945,11 +1973,11 @@ void TransformComponent::on_end_contact(const WIPSprite* s)
   func_end(call_data[3], s,this);
 }
 
-void TransformComponent::on_contact(const WIPSprite* s)
+void TransformComponent::on_contact(const WIPSprite* s, float dt)
 {
   //g_scene->load_level(id,pos);
   if (func_contact)
-  func_contact(call_data[2], s,this);
+  func_contact(call_data[2], s,dt,this);
   return;
 }
 

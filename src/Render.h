@@ -168,6 +168,8 @@ public:
 	void render_pic(int px, int py, int w, int h, const WIPTexture2D* tex);
 	void render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex);
 
+  void render_pic(int px, int py, int w, int h, const WIPTexture2D* tex,const RBColorf& c);
+  void render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex, const RBColorf& c);
 
 	virtual void destroy()
 	{
@@ -1591,9 +1593,9 @@ public:
 	{
 		should_clear = true;
 	}
-	void draw_picture(int px, int py, int w, int h, const WIPTexture2D* tex)
+	void draw_picture(int px, int py, int w, int h, const WIPTexture2D* tex,const RBColorf& c=RBColorf::white)
 	{
-		ui_renderer->render_pic(px,py,w,h,tex);
+		ui_renderer->render_pic(px,py,w,h,tex,c);
 	}
 	void draw_box(int px, int py, int w, int h, const RBColorf& c)
 	{

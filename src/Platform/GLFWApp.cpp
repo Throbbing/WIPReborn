@@ -595,20 +595,173 @@ struct MoveParam
   RBVector2 pos;
 };
 
-void transform_event(void* data, const WIPSprite* s, TransformComponent* t)
+void transform_event(void* data, const WIPSprite* s, float dt,TransformComponent* t)
 {
   MoveParam* p = (MoveParam*)data;
   g_scene->load_level(p->id, p->pos);
 }
 
 
+
+struct TalkAc :public Ac
+{
+  TalkAc(wchar_t* words, NPCDisplayData* data, MapComponent* mc,TransformComponent* host):
+    _words(words), _data(data), _mc(mc), _tc(host),s(nullptr),Ac()
+  {
+
+  }
+  bool run(float dt)
+  {
+    if (!_mc||!_data||!_words) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  virtual bool doing(float dt)
+  {
+    if (s->get_tag() == "man")
+    {
+      if (_mc->cur_npc_ui != nullptr&&_mc->cur_npc_ui != _data)
+        return false;
+      if (Input::eat_sys_key_down(WIP_SPACE))
+      {
+        g_audio_manager->Play("event:/talk_se");
+        _data->words = _words;
+        _tc->send_event(get_string_hash("npc talk"), _data);
+        end = true;
+        return true;
+      }
+      
+    }
+    time += dt;
+    return false;
+  }
+  void init(float dt)
+  {
+    s = g_scene->get_sprite_by_tag("man");
+  }
+  wchar_t* _words; NPCDisplayData* _data; MapComponent* _mc;
+  WIPSprite* s; TransformComponent* _tc;
+};
+
+struct NPCTalkParam
+{
+  NPCTalkParam()
+  {
+    memset(s, 0, 100*sizeof(TalkAc*));
+  }
+  //npc word is a type of resource
+  Ac* s[100];
+};
+
+struct TalkResetAc :public Ac
+{
+  TalkResetAc(NPCTalkParam* ip, struct TalkStartAc* e, TransformComponent* tc);
+  bool run(float dt)
+  {
+    if (!p) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  virtual bool doing(float dt)
+  {
+    if (s->get_tag() == "man")
+    {
+      if (Input::get_sys_key_down(WIP_SPACE))
+      {
+        for (int i = 0; i < 100; ++i)
+          if (p->s[i] && p->s[i] != this)
+            p->s[i]->reset();
+        _tc->send_event(get_string_hash("player"));
+
+        end = true;
+        return true;
+      }
+    }
+    time += dt;
+    return false;
+  }
+  void init(float dt)
+  {
+    s = g_scene->get_sprite_by_tag("man");
+  }
+  NPCTalkParam* p;
+  Ac* ends;
+  TransformComponent* _tc;
+  WIPSprite* s;
+};
+
+struct TalkStartAc :public Ac
+{
+  TalkStartAc(TalkResetAc* ip) :
+    p(ip), Ac()
+  {
+
+  }
+  bool run(float dt)
+  {
+    if (!p) return true;
+    if (end)
+      return true;
+    if (!begin)
+    {
+      init(dt);
+      begin = true;
+    }
+    if (doing(dt))
+    {
+      end = true;
+      return true;
+    }
+    return false;
+  }
+  virtual bool doing(float dt)
+  {
+    p->reset();
+    end = true;
+    return true;
+  }
+  void init(float dt)
+  {
+
+  }
+  TalkResetAc* p;
+};
+
+TalkResetAc::TalkResetAc(NPCTalkParam* ip, TalkStartAc* e, TransformComponent* tc) :
+p(ip), ends(e),_tc(tc), Ac()
+{
+}
+
+//todo : release level resource ! include Acs textures and so on.
 void WIPLevelLoader::load_caodi(const RBVector2& postion)
 {
   scene->set_level_unload();
   scene->set_level_load();
   WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
   cam->set_name("MainCam");
-  cam->move_to(postion.x, postion.y);
+  cam->move_to(postion.x-0.3f, postion.y-0.3f);
   g_temp_uisys->change_camera(cam);
   g_physics_manager->set_debug_camera(cam);
   scene->load_camera(cam);
@@ -622,10 +775,13 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   auto *clip_s_right = WIPAnimationClip::create_with_atlas("stand_right", "./pic/fd/fd_clip_2_s.clip");
   auto *clip_s_up = WIPAnimationClip::create_with_atlas("stand_up", "./pic/fd/fd_clip_3_s.clip");
 
-  auto res_handle_background = g_res_manager->load_resource("./pic/fd/caodi.jpg", WIPResourceType::TEXTURE);
+  auto res_handle_background = g_res_manager->load_resource("./pic/fd/caodi.png", WIPResourceType::TEXTURE);
   int bg_w = ((TextureData *)(res_handle_background->extra))->width;
   int bg_h = ((TextureData *)(res_handle_background->extra))->height;
 
+  auto res_handle1mask = g_res_manager->load_resource("./pic/fd/caodi_mask.png", WIPResourceType::TEXTURE);
+  int ww1mask = ((TextureData *)(res_handle1mask->extra))->width;
+  int hh1mask = ((TextureData *)(res_handle1mask->extra))->height;
 
   auto res_handle_c1 = g_res_manager->load_resource("./pic/fd/c1.png", WIPResourceType::TEXTURE);
   int c1_w = ((TextureData *)(res_handle_c1->extra))->width;
@@ -640,6 +796,7 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   int fls_h = ((TextureData *)(res_handle_fls->extra))->height;
 
   auto *tex2d_bg = g_rhi->RHICreateTexture2D(bg_w, bg_h, res_handle_background->ptr);
+  auto *tex2d1mask = g_rhi->RHICreateTexture2D(ww1mask, hh1mask, res_handle1mask->ptr, 0, 0, 0, 1);
   auto *tex2d_c1 = g_rhi->RHICreateTexture2D(c1_w, c1_h, res_handle_c1->ptr, 0, 0, 0, 1);
   auto *tex2d_c2 = g_rhi->RHICreateTexture2D(c2_w, c2_h, res_handle_c2->ptr);
   auto *tex2d_c3 = g_rhi->RHICreateTexture2D(fls_w, fls_h, res_handle_fls->ptr);
@@ -682,19 +839,35 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   man_trans1->set_tag("trans1");
   man_trans1->set_type_tag("character");
   TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
-  //tc1->id = 2;
-  //tc1->pos = RBVector2(9.5,-15);
   tc1->call_data[2] = new MoveParam(2, RBVector2(9.5, -15));
-  tc1->func_contact = transform_event;
+  tc1->func_contact = [](void* data, const WIPSprite* s, float dt, TransformComponent* t)->void
+  {
+    std::map<std::string, Game_Varible>::iterator v = g_scene->game_varible.find("step_in");
+    if (v==g_scene->game_varible.end())
+    {
+      g_scene->game_varible["step_in"] = Game_Varible(0);
+    }
+    if (g_scene->game_varible["step_in"].number.integer!=0)
+    {
+      transform_event(data, s, dt,t);
+    }
+    else
+    {
+      g_scene->get_sprite_by_tag("man")->translate_to(6.6,-12.6);
+      //if (g_scene->game_varible["know cannot pass"].number.integer == 0)
+        g_scene->game_varible["know cannot pass"].number.integer += 1;
+    }
+  };
   man_trans1->add_tick_component(tc1);
   scene->load_sprite(man_trans1);
-  man_trans1->translate_to(-3, 8);
+  man_trans1->translate_to(-3.4, 13.4);
   man_trans1->set_z_order(0.4f);
 
 
 
 
-  WIPSpriteCreator ctor_bg(20.f, 20.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
+
+  WIPSpriteCreator ctor_bg(25.f, 25.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
   ctor_bg.texture = tex2d_bg;
   ctor_bg.world_render = world_renderer;
   ctor_bg.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
@@ -706,6 +879,17 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   bg->set_z_order(0.9f);
   bg->set_tag("bg");
   scene->load_sprite(bg);
+
+  WIPSpriteCreator ctor_mask(25.f, 25.f*((float)bg_h / bg_w), WIPMaterialType::E_TRANSLUCENT);
+  ctor_mask.texture = tex2d1mask;
+  ctor_mask.world_render = world_renderer;
+  ctor_mask.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+  auto* bg_mask = WIPSpriteFactory::create_sprite(ctor_mask);
+  bg_mask->set_tag("mask");
+  bg_mask->set_type_tag("scene");
+  bg_mask->translate_to(0.f, 0.f);
+  bg_mask->set_z_order(0.1f);
+  scene->load_sprite(bg_mask);
 
   auto res_handle1fog = g_res_manager->load_resource("./pic/fog.png", WIPResourceType::TEXTURE);
   int ww1fog = ((TextureData *)(res_handle1fog->extra))->width;
@@ -719,8 +903,281 @@ void WIPLevelLoader::load_caodi(const RBVector2& postion)
   fogs->set_tag("fog");
   scene->load_sprite(fogs);
   fogs->set_type_tag("scene");
-  fogs->translate_to(0.f, 0.f);
+  
+  fogs->translate_to(RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y), RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y));
   fogs->set_z_order(0.05f);
+
+  {
+    WIPSpriteCreator ctor_trs1(1.000000, 1.000000, WIPMaterialType::E_OTHER);
+    ctor_trs1.texture = 0;
+    ctor_trs1.world_render = 0;
+    ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+    ctor_trs1.collider_sx = 1.0f;
+    ctor_trs1.collider_sy = 1.0f;
+    auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+    man_trans1->set_anchor(0.f, 0.f);
+    man_trans1->set_tag("eat_host");
+    man_trans1->set_type_tag("trigger");
+    TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+    tc1->func_end = [](void* data, const WIPSprite* s, TransformComponent* t)->void
+    {
+      t->send_event(get_string_hash("player"));
+    };
+    auto* data = new NPCTalkParam();
+    auto* npcdata = new NPCDisplayData();
+    data->s[0] = new TalkStartAc(0);
+    data->s[1] = new TalkAc(L"老夫光绪三十年来此，年生不好啊...", npcdata, mc, tc1);
+    data->s[2] = new TalkAc(L"什么东西都卖不出去，回去的路也找不到了......", npcdata, mc, tc1);
+    data->s[3] = new TalkAc(L"今天来一个人吃了一天了...", npcdata, mc, tc1);
+    data->s[7] = new TalkAc(L"......", npcdata, mc, tc1);
+    data->s[8] = new TalkAc(L"年轻人你这么匆忙，要去哪儿呀？", npcdata, mc, tc1);
+    data->s[4] = new TalkResetAc(data, (TalkStartAc*)data->s[0],tc1);
+    data->s[5] = new TalkAc(L"年轻人，你要离开了吗？...", npcdata, mc, tc1);
+    data->s[6] = new TalkAc(L"请你喝碗茶再走吧...", npcdata, mc, tc1);
+    ((TalkStartAc*)data->s[0])->p = (TalkResetAc*)data->s[4];
+    tc1->call_data[CONTACT_EVENT] = data;
+    tc1->func_contact = [](void* data1, const WIPSprite* s, float dt, TransformComponent* t)->void
+    {
+      NPCTalkParam* data = (NPCTalkParam*)data1;
+      MapComponent* map_component = t->map_component;
+      if (g_scene->game_varible["step_in"].number.integer == 0)
+      {
+        
+          bool r = data->s[0]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[1]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[2]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[3]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[7]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[8]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+        if (!data->s[4]->run(dt))
+          goto ret;
+      }
+      else
+      {
+        bool r = data->s[0]->run(dt);
+        if (!r)
+        {
+          goto ret;
+        }
+          r = data->s[5]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[6]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+        if (!data->s[4]->run(dt))
+          goto ret;
+      }
+      
+    ret:;
+      g_input_manager->restore_eat();
+    };
+    man_trans1->add_tick_component(tc1);
+
+    scene->load_sprite(man_trans1);
+    man_trans1->translate_to(-7.20000, -10.60000);
+    man_trans1->_render->is_visible = false;
+    man_trans1->rotate_to(0.000000);
+
+    mc->subscribe_event(tc1, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
+    mc->subscribe_event(tc1, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
+  }
+
+    {
+      WIPSpriteCreator ctor_trs1(1.000000, 1.000000, WIPMaterialType::E_OTHER);
+      ctor_trs1.texture = 0;
+      ctor_trs1.world_render = 0;
+      ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+      ctor_trs1.collider_sx = 1.0f;
+      ctor_trs1.collider_sy = 1.0f;
+      auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+      man_trans1->set_anchor(0.f, 0.f);
+      man_trans1->set_tag("eat_peopel");
+      man_trans1->set_type_tag("trigger");
+      TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+
+
+
+
+
+      tc1->func_end = [](void* data, const WIPSprite* s, TransformComponent* t)->void
+      {
+        t->send_event(get_string_hash("player"));
+      };
+      auto* data = new NPCTalkParam();
+      auto* npcdata = new NPCDisplayData();
+      data->s[0] = new TalkStartAc(0);
+      data->s[1] = new TalkAc(L"年轻人，你是不是一直在这里走不出去？", npcdata, mc, tc1);
+      data->s[2] = new TalkAc(L"你是不是会莫名其妙地被挡住去路？", npcdata, mc, tc1);
+      data->s[3] = new TalkAc(L"你怕是碰见鬼打墙了...", npcdata, mc, tc1);
+      data->s[4] = new TalkResetAc(data, (TalkStartAc*)data->s[0], tc1);
+      data->s[5] = new TalkAc(L"嘻嘻，跟你开个玩笑，现在你可以走了...", npcdata, mc, tc1);
+      data->s[6] = new TalkAc(L"年生不好，吃饭不饱...", npcdata, mc, tc1);
+      data->s[7] = new TalkAc(L"好吃，吃啊，吃啊，吃啊吃...", npcdata, mc, tc1);
+      ((TalkStartAc*)data->s[0])->p = (TalkResetAc*)data->s[4];
+      tc1->call_data[CONTACT_EVENT] = data;
+      tc1->func_contact = [](void* data1, const WIPSprite* s, float dt, TransformComponent* t)->void
+      {
+        NPCTalkParam* data = (NPCTalkParam*)data1;
+        MapComponent* map_component = t->map_component;
+        if (g_scene->game_varible["know cannot pass"].number.integer > 3)
+        {
+
+          bool r = data->s[0]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[1]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[2]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[3]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[5]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          if (!data->s[4]->run(dt))
+            goto ret;
+
+
+          std::map<std::string, Game_Varible>::iterator v = g_scene->game_varible.find("step_in");
+          if (v == g_scene->game_varible.end())
+          {
+            g_scene->game_varible["step_in"] = Game_Varible(0);
+          }
+          if (g_scene->game_varible["step_in"].number.integer == 0)
+          {
+            g_scene->game_varible["step_in"] = Game_Varible(1);
+          }
+        }
+        else
+        {
+          bool r = data->s[0]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[6]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          r = data->s[7]->run(dt);
+          if (!r)
+          {
+            goto ret;
+          }
+          if (!data->s[4]->run(dt))
+            goto ret;
+        }
+
+      ret:;
+        g_input_manager->restore_eat();
+      };
+      man_trans1->add_tick_component(tc1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
+      //man_trans1->add_tick_component(tc1);
+
+
+
+      scene->load_sprite(man_trans1);
+      man_trans1->translate_to(-5.40000, -2.60000);
+      man_trans1->_render->is_visible = false;
+      man_trans1->rotate_to(0.000000);
+
+      mc->subscribe_event( tc1, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
+      mc->subscribe_event(tc1, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
+    }
+
+    //场景处理触发器
+     {
+       WIPSpriteCreator ctor_trs1(1.000000, 1.000000, WIPMaterialType::E_OTHER);
+       ctor_trs1.texture = 0;
+       ctor_trs1.world_render = 0;
+       ctor_trs1.body_tp = WIPCollider::_CollisionTypes::E_NO_PHYSICS;
+       ctor_trs1.collider_sx = 1.0f;
+       ctor_trs1.collider_sy = 1.0f;
+       auto* man_trans1 = WIPSpriteFactory::create_sprite(ctor_trs1);
+       man_trans1->set_anchor(0.f, 0.f);
+       man_trans1->set_tag("tile");
+       man_trans1->set_type_tag("trigger");
+       TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
+       tc1->call_data[LEVEL_START] = mc;
+       tc1->func_level_start = [](void* data, TransformComponent* t)->void
+       {
+           if (g_scene->game_varible["title"].number.integer == 1)
+           {
+             MapComponent* mc = (MapComponent*)data;
+             mc->game_state = MapComponent::GameState::E_TITLE;
+           }
+         
+       };
+
+       man_trans1->add_tick_component(tc1);
+
+       
+
+       scene->load_sprite(man_trans1);
+       man_trans1->translate_to(-15.40000, -2.60000);
+       man_trans1->_render->is_visible = false;
+       man_trans1->rotate_to(0.000000);
+
+       
+     }
 
 }
 void WIPLevelLoader::load_huangdi(const RBVector2& postion)
@@ -729,7 +1186,7 @@ void WIPLevelLoader::load_huangdi(const RBVector2& postion)
   scene->set_level_load();
   WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
   cam->set_name("MainCam");
-  cam->move_to(postion.x, postion.y);
+  cam->move_to(postion.x - 0.3f, postion.y - 0.3f);
   g_temp_uisys->change_camera(cam);
   g_physics_manager->set_debug_camera(cam);
   scene->load_camera(cam);
@@ -817,7 +1274,7 @@ void WIPLevelLoader::load_huangdi(const RBVector2& postion)
   fogs->set_tag("fog");
   scene->load_sprite(fogs);
   fogs->set_type_tag("scene");
-  fogs->translate_to(0.f, 0.f);
+  fogs->translate_to(RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y), RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y));
   fogs->set_z_order(0.05f);
 
   {
@@ -857,6 +1314,33 @@ void WIPLevelLoader::load_huangdi(const RBVector2& postion)
     mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
   }
 
+  //石碑文字
+  {
+    WIPSpriteCreator ctor_c1(1, 1, WIPMaterialType::E_OTHER);
+    ctor_c1.texture = 0;
+    ctor_c1.world_render = 0;
+    ctor_c1.body_tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY;
+    ctor_c1.collider_sx = 1;
+    ctor_c1.collider_sy = 1;
+    auto* man_c1 = WIPSpriteFactory::create_sprite(ctor_c1);
+    man_c1->set_tag("event");
+    man_c1->set_type_tag("trigger");
+    scene->load_sprite(man_c1);
+    man_c1->translate_to(-13.2, 5.5);
+    man_c1->set_z_order(0.4f);
+
+    NPCComponent* npcc = (NPCComponent*)WIPObject::create_tick_component("NPCComponent", man_c1);
+    npcc->words[0].push(L"一块泡在水里的墓碑...");
+    npcc->words[0].push(L"上书：【光绪三十年...】");
+    npcc->words[0].push(L"【...人之墓】");
+    npcc->words[0].push(L"剩下的字都看不清了...");
+
+
+    man_c1->add_tick_component(npcc);
+
+    mc->subscribe_event(npcc, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
+    mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
+  }
 
   WIPSpriteCreator ctor_trs1(3.6f, 3.6f, WIPMaterialType::E_TRANSLUCENT);
   ctor_trs1.texture = tex2d_c3;
@@ -873,7 +1357,7 @@ void WIPLevelLoader::load_huangdi(const RBVector2& postion)
   TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
   //tc1->id = 1;
   //tc1->pos = RBVector2(-3, 6.5);
-  tc1->call_data[2] = new MoveParam(1, RBVector2(-3, 6.5));
+  tc1->call_data[2] = new MoveParam(1, RBVector2(-3.4, 12.5));
   tc1->func_contact = transform_event;
   man_trans1->add_tick_component(tc1);
   scene->load_sprite(man_trans1);
@@ -940,7 +1424,7 @@ void WIPLevelLoader::load_mudi(const RBVector2& postion)
   scene->set_level_load();
   WIPCamera* cam = WIPScene::create_camera(20.f, 20.f, g_app->window_w, g_app->window_h, g_app->window_w, g_app->window_h);
   cam->set_name("MainCam");
-  cam->move_to(postion.x, postion.y);
+  cam->move_to(postion.x - 0.3f, postion.y - 0.3f);
   g_temp_uisys->change_camera(cam);
   g_physics_manager->set_debug_camera(cam);
   scene->load_camera(cam);
@@ -1028,7 +1512,7 @@ void WIPLevelLoader::load_mudi(const RBVector2& postion)
   fogs->set_tag("fog");
   scene->load_sprite(fogs);
   fogs->set_type_tag("scene");
-  fogs->translate_to(0.f, 0.f);
+  fogs->translate_to(RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y), RBMath::get_rand_range_f(scene->world_size_x, scene->world_size_y));
   fogs->set_z_order(0.05f);
 
   {
@@ -1069,7 +1553,11 @@ void WIPLevelLoader::load_mudi(const RBVector2& postion)
     man_trans1->set_tag("pass_event");
     man_trans1->set_type_tag("character");
     TransformComponent* tc1 = (TransformComponent*)WIPObject::create_tick_component("TransformComponent", man_trans1);
-    tc1->func_begin = [](void* data, const WIPSprite* s, TransformComponent* t)->void{g_scene->game_varible["already pass"] = WIPScene::Game_Varible(1); };
+    tc1->func_contact = [](void* data, const WIPSprite* s, float dt, TransformComponent* t)->void
+    {
+      if (Input::get_sys_key_up(WIP_SPACE))
+        g_scene->game_varible["already pass"] = Game_Varible(1); 
+    };
     man_trans1->add_tick_component(tc1);
     scene->load_sprite(man_trans1);
     man_trans1->translate_to(4, 9.32);
@@ -1087,6 +1575,13 @@ void WIPLevelLoader::load_mudi(const RBVector2& postion)
     mc->subscribe_event(npcc, get_string_hash("npc talk"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_talk, mc));
     mc->subscribe_event(npcc, get_string_hash("player"), WIP_EVENT_HANDLER_OUT(MapComponent, change_to_player, mc));
   }
+}
+
+void WIPLevelLoader::init_game()
+{
+  g_scene->game_varible["already pass"] = Game_Varible(0);
+  g_scene->game_varible["title"] = Game_Varible(1);
+  g_scene->game_varible["know cannot pass"] = Game_Varible(0);
 }
 
 void WIPLevelLoader::test_load_level()
@@ -1376,7 +1871,8 @@ void GLFWApp::load_rpg_demo()
 
 void GLFWApp::load_avg_demo()
 {
-  loader->load_caodi(RBVector2::zero_vector);
+  loader->init_game();
+  loader->load_caodi(RBVector2(6.6f, -12.6f));
 }
 
 bool GLFWApp::init()
@@ -1392,7 +1888,7 @@ bool GLFWApp::init()
 	scoller_y = 0;
 	window_w = 800;
 	window_h = 600;
-	bool ret = create_window("Demo");
+	bool ret = create_window("FindingDog");
 
 	WIPFileSystem &fs = *g_filesystem;
 	std::string cur_path = fs.get_current_dir();

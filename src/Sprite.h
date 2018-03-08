@@ -140,7 +140,7 @@ public:
 	virtual ~WIPTickComponent() = 0;
 	virtual void init() = 0;
 	virtual void on_begin_contact(const WIPSprite* s) {}
-	virtual void on_contact(const WIPSprite* s) {}
+  virtual void on_contact(const WIPSprite* s, float dt) {}
 	virtual void on_end_contact(const WIPSprite* s) {}
 
 	virtual void update(f32 dt)=0;
@@ -471,7 +471,7 @@ public:
 	}
 
 	
-	void on_contact();
+	void on_contact(float dt);
 
 	void update(f32 dt);
 	void fix_update(f32 dt);

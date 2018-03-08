@@ -523,14 +523,14 @@ void WIPSprite::get_world_position(RBVector2* vertices) const
 }
 
 
-void WIPSprite::on_contact()
+void WIPSprite::on_contact(float dt)
 {
 	auto* it = _collider->_contact_objects.head();
 	while (it)
 	{
 		for (auto j : tick_components)
 		{
-			j->on_contact(it->data);
+			j->on_contact(it->data,dt);
 		}
 		it = it->next;
 	}
@@ -539,7 +539,7 @@ void WIPSprite::on_contact()
 void WIPSprite::update(f32 dt)
 {
 	if (_collider&&!_collider->_contact_objects.empty())
-		on_contact();
+		on_contact(dt);
 	for (auto i : tick_components)
 	{
 		i->update(dt);

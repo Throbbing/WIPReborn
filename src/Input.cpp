@@ -53,6 +53,77 @@ bool Input::get_key_pressed(int key)
 	return (bool)(g_input_manager->get_key_info()[1].key_bit&key);
 }
 
+bool Input::eat_sys_key_down(int key)
+{
+  bool r = (bool)(g_input_manager->get_current_down_bit()&key);
+  if (r)
+  { 
+    g_input_manager->get_current_down_bit() &= ~key;
+    g_input_manager->add_eat_down(key);
+  }
+  return r;
+}
+
+bool Input::eat_key_down(int key)
+{
+  bool r = (bool)(g_input_manager->get_current_down_char()&key);
+  if (r)
+  {
+    g_input_manager->get_current_down_char() &= ~key;
+    g_input_manager->add_eat_dc(key);
+  }
+  return r;
+
+}
+
+bool Input::eat_sys_key_up(int key)
+{
+  bool r = (bool)(g_input_manager->get_current_up_bit()&key);
+  if (r)
+  {
+    g_input_manager->get_current_up_bit() &= ~key;
+    g_input_manager->add_eat_up(key);
+  }
+  return r;
+
+}
+
+bool Input::eat_key_up(int key)
+{
+  bool r = (bool)(g_input_manager->get_current_up_char()&key);
+  if (r)
+  {
+    g_input_manager->get_current_up_char() &= ~key;
+    g_input_manager->add_eat_uc(key);
+  }
+  return r;
+
+}
+
+bool Input::eat_sys_key_pressed(int key)
+{
+  bool r = (bool)(g_input_manager->get_key_info()[0].key_bit&key);
+  if (r)
+  {
+    g_input_manager->get_key_info()[0].key_bit &= ~key;
+    g_input_manager->add_eat_sys_pressed(key);
+  }
+  return r;
+
+}
+
+bool Input::eat_key_pressed(int key)
+{
+  bool r = (bool)(g_input_manager->get_key_info()[1].key_bit&key);
+  if (r)
+  {
+    g_input_manager->get_key_info()[1].key_bit &= ~key;
+    g_input_manager->add_eat_pressed(key);
+  }
+  return r;
+
+}
+
 i32 Input::get_mouse_scroller()
 {
 	if(g_input_manager->get_key_info()->key_bit&WIP_MOUSE_SCROLLER_DOWN)
