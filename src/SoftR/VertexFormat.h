@@ -13,13 +13,12 @@ struct VertexP3N3C4
 
 struct VertexP3N3T2
 {
-	VertexP3N3T2() : finish(false)
+	VertexP3N3T2() 
 	{
 
 	}
 	RBVector4 position;
 	RBVector3 normal;
 	RBVector2 text_coord;
-	//用于多线程终结信号	
-	bool finish;
+
 };

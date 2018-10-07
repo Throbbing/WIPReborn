@@ -48,4 +48,7 @@ libs/glfw
 libs/lua523
 libs/src
 *.vssettings
+FindingDogEditor
+FindingDogGame
+WIP
 

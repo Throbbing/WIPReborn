@@ -9,8 +9,8 @@ public:
 	SrStageOM();
 	~SrStageOM();
 
-	void proccess(std::vector<SrFragment*>& _triangles_fragments, SrSSBuffer<RBColor32>& color, SrSSBuffer<float>& depth);
-	void proccess(VertexP3N3T2& px, SrSSBuffer<RBColor32>& color, SrSSBuffer<float>& depth);
+	void proccess(std::vector<SrFragment*>& _triangles_fragments, SrSSBuffer<RBColorf>& color, SrSSBuffer<float>& depth);
+	void proccess(VertexP3N3T2& px, class SrTexture2D* color, SrSSBuffer<RBColor32>* bk, SrSSBuffer<float>& depth);
 private:
 
 };

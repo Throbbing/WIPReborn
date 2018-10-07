@@ -8,7 +8,7 @@
 #include "OpenGL/OpenGLRHI.h"
 #endif
 
-WIPDynamicRHI *g_rhi = WIPDynamicRHI::get_rhi();
+
 
 WIPDynamicRHI *WIPDynamicRHI::get_rhi() {
 #ifndef USE_D3D11
@@ -173,14 +173,14 @@ void WorldRender::culling(const WIPCamera* cam)
 	cam_bound.include(RBVector2(cam->world_x - hw, cam->world_y - hh));
 	cam_bound.include(RBVector2(cam->world_x + hw, cam->world_y + hh));
 
-	vector<TRefCountPtr<const WIPSprite>> out_index;
+	vector<const WIPSprite* > out_index;
 	scene_ref->quad_tree->get_intersected_node(cam_bound, out_index);
 	sort(out_index.begin(), out_index.end());
-	TRefCountPtr<const WIPSprite> pre = nullptr;
+	const WIPSprite*  pre = nullptr;
 	for (int i = 0; i < out_index.size(); ++i)
 	{
-		TRefCountPtr<const WIPSprite> s = out_index[i];
-		if (!s->_render->is_visible)
+		const WIPSprite*  s = out_index[i];
+		if (!s->_render->is_visible||s->_render->material.material_type==WIPMaterialType::E_OTHER)
 			continue;
 		if (s != pre)
 		{
@@ -418,11 +418,11 @@ int WorldRender::_pack_sprites_opaque(void *mem, int n, int offset_n, const WIPC
 	//pack done!
 	return opaque_objects.size();
 }
-bool WorldRender::comp_less(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
+bool WorldRender::comp_less(const WIPSprite*  lhs, const WIPSprite*  rhs)
 {
 	return (lhs->_render->material.texture) < (rhs->_render->material.texture);
 }
-bool WorldRender::comp_greater(TRefCountPtr<const WIPSprite> lhs, TRefCountPtr<const WIPSprite> rhs)
+bool WorldRender::comp_greater(const WIPSprite*  lhs, const WIPSprite*  rhs)
 {
 	return (lhs->_transform->z_order) > (rhs->_transform->z_order);
 }
@@ -440,10 +440,34 @@ void WorldRender::sort_by_zorder()
 
 
 
+int TextRender::get_length_pixel(const wchar_t * chs) 
+{
+	
+	int r = 0;
+	if (chs)
+	{
+		int len = wcslen(chs);
+		for (int i = 0; i < len; ++i)
+		{
+			wchar_t ch = chs[i];
+			if (ch == L'\0')
+				break;
+			if (ch == L'\n')
+				break;
+			TextNode* node = get_node(ch);
+			if (!node)
+				continue;
+			r += node->text_advance;
+		}
+	}
+	return r;
+}
+
 void TextRender::render_text(int px, int py, const wchar_t* chs, int len,int maxw, const WIPCamera* cam)
 {
 	int x = px;
 	int y = py;
+	//maxw = get_length_pixel(chs);
 	for (int i = 0; i < len; ++i)
 	{
 		wchar_t ch = chs[i];
@@ -607,6 +631,72 @@ void UIRender::render_pic(int px, int py, int w, int h, const WIPRenderTexture2D
 	g_rhi->enable_depth_test();
 }
 
+void UIRender::render_pic(int px, int py, int w, int h, const WIPTexture2D* tex, const RBColorf& c)
+{
+  f32 draw_px = px;
+  f32 draw_py = py;
+  RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+  RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+  RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+  RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
+
+  f32 vert[] = {
+    lb.x, lb.y, 0, 0,//lb
+    lt.x, lt.y, 0, 1,//lt
+    rt.x, rt.y, 1, 1,//rt
+    rb.x, rb.y, 1, 0//rb
+  };
+  void* p = g_rhi->lock_vertex_buffer(vb);
+  memcpy(p, vert, sizeof(f32) * 16);
+  g_rhi->unlock_vertex_buffer(vb);
+
+  g_rhi->disable_depth_test();
+  g_rhi->enable_blend();
+  g_rhi->set_blend_function();
+  g_rhi->set_shader(bound_shader_pic);
+  g_rhi->set_index_buffer(ib);
+  g_rhi->set_vertex_buffer(vb);
+  g_rhi->set_vertex_format(vf);
+  g_rhi->set_uniform_texture("in_texture", 0, tex);
+  g_rhi->set_uniform4f("in_color", c);
+  g_rhi->draw_triangles(6, 0);
+
+  g_rhi->enable_depth_test();
+}
+
+void UIRender::render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex, const RBColorf& c)
+{
+  f32 draw_px = px;
+  f32 draw_py = py;
+  RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+  RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+  RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+  RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
+
+  f32 vert[] = {
+    lb.x, lb.y, 0, 0,//lb
+    lt.x, lt.y, 0, 1,//lt
+    rt.x, rt.y, 1, 1,//rt
+    rb.x, rb.y, 1, 0//rb
+  };
+  void* p = g_rhi->lock_vertex_buffer(vb);
+  memcpy(p, vert, sizeof(f32) * 16);
+  g_rhi->unlock_vertex_buffer(vb);
+
+  g_rhi->disable_depth_test();
+  g_rhi->enable_blend();
+  g_rhi->set_blend_function();
+  g_rhi->set_shader(bound_shader_pic);
+  g_rhi->set_index_buffer(ib);
+  g_rhi->set_vertex_buffer(vb);
+  g_rhi->set_vertex_format(vf);
+  g_rhi->set_uniform_texture("in_texture", 0, tex);
+  g_rhi->set_uniform4f("in_color", c);
+  g_rhi->draw_triangles(6, 0);
+
+  g_rhi->enable_depth_test();
+}
+
 
 void LargeTexture_TextRender::render_text(int px, int py, const wchar_t* chs, int len, int maxw, const WIPCamera* cam)
 {
@@ -709,4 +799,49 @@ void LargeTexture_TextRender::render(const WIPCamera* cam)
 
 	g_rhi->enable_depth_test();
 	text_to_render = 0;
+}
+
+TempUISys* g_temp_uisys = TempUISys::instance();
+
+TempUISys* TempUISys::instance()
+{
+	static TempUISys* _instance;
+	if (!_instance)
+		_instance = new TempUISys();
+	return _instance;
+}
+
+void TempUISys::startup()
+{
+#ifdef Text1
+	text_renderer = new LargeTexture_TextRender(2048, 2048);
+#else
+	text_renderer = new TextRender(512, 512);
+#endif
+	text_renderer->init();
+	text_renderer->load_font("./font/simkai.ttf", 18, 18);
+
+	
+
+}
+
+void WaterRender::init(const WIPCamera * cam)
+{
+	camera = cam;
+
+	vb = g_rhi->RHICreateVertexBuffer(1024, 0, BufferType::E_DYNAMIC_DRAW);
+	unsigned int data[] = { 0, 1, 3, 1, 2, 3 };
+	ib = g_rhi->RHICreateIndexBuffer(6 * sizeof(unsigned int), data, BufferType::E_STATIC_DRAW);
+	vf = g_rhi->RHICreateVertexFormat();
+	vf->add_float_vertex_attribute(2);
+	vf->add_float_vertex_attribute(2);
+
+}
+
+void WaterRender::render(const WIPCamera * cam)
+{
+}
+
+void WaterRender::destroy()
+{
 }

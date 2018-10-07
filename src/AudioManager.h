@@ -36,7 +36,7 @@ public:
 
 
   void Play(StudioSoundRef sound);
-  StudioSoundRef Play(const std::string& event_name);
+  void Play(const std::string& event_name);
   void Stop(StudioSoundRef sound, FMOD_STUDIO_STOP_MODE mode = FMOD_STUDIO_STOP_IMMEDIATE);
   void Stop(const std::string& event_name, FMOD_STUDIO_STOP_MODE mode = FMOD_STUDIO_STOP_IMMEDIATE);
   void StopAll(FMOD_STUDIO_STOP_MODE mode = FMOD_STUDIO_STOP_IMMEDIATE);

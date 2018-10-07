@@ -31,7 +31,7 @@ public:
 			frags.resize(max_frag);
 		}
 		vector<VertexP3N3T2> frags;
-		SrSSBuffer<RBColor32>* color;
+		SrSSBuffer<RBColorf>* color;
 		SrSSBuffer<float>* depth;
 		SrStagePS* _stage_ps;
 		SrStageOM* _stage_om;
@@ -44,7 +44,7 @@ public:
 		volatile bool run;
 
 		RBSem sem;
-		void set_container(SrSSBuffer<RBColor32>* color, SrSSBuffer<float>* depth)
+		void set_container(SrSSBuffer<RBColorf>* color, SrSSBuffer<float>* depth)
 		{
 			this->color = color;
 			this->depth = depth;
@@ -79,7 +79,7 @@ public:
 		dtpks[index]->set_stage(_stage_ps, _stage_om);
 	}
 
-	void set_container(int index, SrSSBuffer<RBColor32>* color, SrSSBuffer<float>* depth)
+	void set_container(int index, SrSSBuffer<RBColorf>* color, SrSSBuffer<float>* depth)
 	{
 		dtpks[index]->set_container(color, depth);
 	}
@@ -221,7 +221,7 @@ public:
 
 	}
 
-	void merge_result_color(SrSSBuffer<RBColor32>& out)
+	void merge_result_color(SrSSBuffer<RBColorf>& out)
 	{
 		for (int i = 0; i < out.h; ++i)
 		{

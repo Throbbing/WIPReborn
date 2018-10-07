@@ -8,6 +8,7 @@
 #include <list>
 #include <string>
 #include "..\\RBMath\\Inc\\Platform\\RBBasedata.h"
+#include "RefCount.h"
 
 //#define REPORT
 
@@ -18,7 +19,7 @@
 #define NEW_NODE(single_size) (void*)(((size_t)allocate_aligned(sizeof(void*)+single_size)))
 //这个参数控制单次malloc内存的大小
 const int g_pool_expand_node_number = 1024;
-class RBPoolAllctor
+class RBPoolAllctor : public FRefCountedObject
 {
 public:
   static RBPoolAllctor* instance()

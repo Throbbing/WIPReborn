@@ -5,6 +5,11 @@
 #include "RefCount.h"
 //from Urho3D
 
+std::wstring string_to_wstring(const std::string &str);
+
+//只拷贝低字节至string中
+std::string wstring_to_string(const std::wstring &wstr);
+
 /// Return files.
 static const unsigned SCAN_FILES = 0x1;
 /// Return directories.

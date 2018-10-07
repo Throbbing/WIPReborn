@@ -1,0 +1,5 @@
+{0c4fb658-8a4d-48a5-8703-592d5dc02eb2} event:/bgm
+{8523d4eb-7d17-4312-a69c-c3bd4617351a} event:/bgm1
+{ce045e0a-b19e-4ef7-aa9b-171a6b0c8f2b} bus:/
+{4ffb9567-9411-4ac0-b3e8-e629cbcf1e90} bus:/Reverb
+{4231369f-0b84-43f3-b705-174d132251e6} bank:/master

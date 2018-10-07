@@ -128,7 +128,7 @@ public:
 	virtual ~WIPComponent() = 0;
 	//this is a weak ref!
 	WIPSprite* host_object;
-	void set_host(TRefCountPtr<WIPSprite> ho);
+	void set_host(WIPSprite* ho);
 };
 
 //user component
@@ -136,11 +136,11 @@ class WIPTickComponent : public WIPComponent
 {
 public:
 	WIPOBJECT(WIPTickComponent, WIPComponent);
-	WIPTickComponent(TRefCountPtr<WIPSprite> host);
+	WIPTickComponent(WIPSprite*  host);
 	virtual ~WIPTickComponent() = 0;
 	virtual void init() = 0;
 	virtual void on_begin_contact(const WIPSprite* s) {}
-	virtual void on_contact(const WIPSprite* s) {}
+	virtual void on_contact(const WIPSprite* s, float dt) {}
 	virtual void on_end_contact(const WIPSprite* s) {}
 
 	virtual void update(f32 dt)=0;
@@ -150,6 +150,9 @@ public:
 	//level start/end
 	virtual void start(){}
 	virtual void end(){}
+	//load data
+	virtual void on_load(void* data){}
+	virtual void on_save(){}
 };
 
 class WIPRenderComponent : public WIPComponent
@@ -248,13 +251,13 @@ public:
 	};
 
 	//now noly support polygon shape
-	static WIPCollider* create_collider(TRefCountPtr<WIPSprite> m, WIPCollider::_CollisionTypes tp,f32 sx=1.f,f32 sy=1.f);
+	static WIPCollider* create_collider(WIPSprite* m, WIPCollider::_CollisionTypes tp,f32 sx=1.f,f32 sy=1.f);
 	static WIPCollider* create_collider(std::vector<RBVector2>& poly);
 	WIPCollider();
 	~WIPCollider();
 	void destroy();
 	//n is vertex number v contains 2*v elements
-	void reset_polygon_vertices(TRefCountPtr<WIPSprite> v, i32 n = 4);
+	void reset_polygon_vertices(WIPSprite* v, i32 n = 4);
 	void reset_polygon_position(f32 x, f32 y);
 	void reset_polygon_density(f32 density);
 	void recreate_fixture();
@@ -286,7 +289,7 @@ public:
 	f32 get_speed_x();
 	f32 get_speed_y();
 	void set_active(bool v);
-	void set_sprite( TRefCountPtr<WIPSprite> sprite);
+	void set_sprite(WIPSprite* sprite);
 
 	FORCEINLINE b2Body* get_body(){ return _body; }
 	//these functions can be called saveral times!
@@ -334,10 +337,10 @@ class WIPSprite : public WIPObject
 public:
   WIPOBJECT(WIPSprite,WIPObject);
   WIP_MEM(WIPSprite)
-  static TRefCountPtr<WIPSprite> create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY, f32 sx = 1.f, f32 sy = 1.f);
-	static void destroy(TRefCountPtr<WIPSprite> s);
+  static WIPSprite* create(f32 width, f32 height, WIPCollider::_CollisionTypes tp = WIPCollider::_CollisionTypes::E_STATIC_RIGIDBODY, f32 sx = 1.f, f32 sy = 1.f);
+	static void destroy(WIPSprite*  s);
 	//use for lua
-	static TRefCountPtr<WIPSprite> create()
+	static WIPSprite*  create()
 	{
 		return nullptr;
 	}
@@ -357,7 +360,14 @@ private:
 	
 
 public:
-	
+	FORCEINLINE void set_persistent(bool per = true)
+	{
+		_persistent = per;
+	}
+	FORCEINLINE bool get_persistent()
+	{
+		return _persistent;
+	}
 	void set_z_order(float z)
 	{
 		_transform->z_order = z;
@@ -461,7 +471,7 @@ public:
 	}
 
 	
-	void on_contact();
+	void on_contact(float dt);
 
 	void update(f32 dt);
 	void fix_update(f32 dt);
@@ -512,6 +522,9 @@ public:
 	std::vector<WIPTickComponent* > tick_components;
 
 	std::string _lua_name="";
+private:
+	
+	bool _persistent=false;
 };
 
 struct WIPSpriteCreator
@@ -532,7 +545,7 @@ struct WIPSpriteCreator
 class WIPSpriteFactory
 {
 public:
-	static TRefCountPtr<WIPSprite> create_sprite(const WIPSpriteCreator& creator);
+	static WIPSprite* create_sprite(const WIPSpriteCreator& creator);
 
 };
 

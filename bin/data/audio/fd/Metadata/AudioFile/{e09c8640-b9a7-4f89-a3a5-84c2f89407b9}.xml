@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.01.09.00">
+    <object class="AudioFile" id="{e09c8640-b9a7-4f89-a3a5-84c2f89407b9}">
+        <property name="assetPath">
+            <value>笑.ogg</value>
+        </property>
+        <property name="isStreaming">
+            <value>true</value>
+        </property>
+        <property name="frequencyInKHz">
+            <value>44.0999985</value>
+        </property>
+        <property name="channelCount">
+            <value>2</value>
+        </property>
+        <property name="length">
+            <value>75.464852607709744</value>
+        </property>
+        <relationship name="masterAssetFolder">
+            <destination>{52733ce8-fd5c-4c31-8768-cd1a748ba127}</destination>
+        </relationship>
+    </object>
+</objects>

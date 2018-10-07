@@ -13,8 +13,23 @@
 #include <sys/wait.h>
 #endif
 
-#define MAX_PATH 256
+#define WIP_MAX_PATH 256
 using std::string;
+
+std::wstring string_to_wstring(const std::string &str)
+{
+	std::wstring wstr(str.length(), L' ');
+	std::copy(str.begin(), str.end(), wstr.begin());
+	return wstr;
+}
+
+//只拷贝低字节至string中
+std::string wstring_to_string(const std::wstring &wstr)
+{
+	std::string str(wstr.length(), ' ');
+	std::copy(wstr.begin(), wstr.end(), str.begin());
+	return str;
+}
 
 bool end_with (std::string const &fullString, std::string const &ending)
 {
@@ -66,9 +81,9 @@ bool WIPFileSystem::set_current_dir(const std::string &path_name)
 std::string WIPFileSystem::get_current_dir() const
 {
 #ifdef _WIN32
-    char path[MAX_PATH];
+    char path[WIP_MAX_PATH];
     path[0] = 0;
-    GetCurrentDirectory(MAX_PATH, path);
+    GetCurrentDirectory(WIP_MAX_PATH, path);
     return add_trailing_slash(string(path));
 #else
     char path[MAX_PATH];
@@ -399,4 +414,3 @@ std::string WIPFileSystem::remove_trailing_slash(const std::string& pathName)
     return ret;
 }
 
-WIPFileSystem* g_filesystem = WIPFileSystem::get_instance();

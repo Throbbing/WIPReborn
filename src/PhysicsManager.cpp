@@ -203,7 +203,7 @@ void  WIPPhysicsManager::update(WIPScene* scene, f32 dt)
 
 }
 
-WIPPhysicsManager* g_physics_manager = WIPPhysicsManager::instance();
+
 
 
 void WIPPhysicsManager::WIPBox2dDebugDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)

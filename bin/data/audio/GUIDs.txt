@@ -1,5 +1,26 @@
-{0c4fb658-8a4d-48a5-8703-592d5dc02eb2} event:/bgm
-{8523d4eb-7d17-4312-a69c-c3bd4617351a} event:/bgm1
-{ce045e0a-b19e-4ef7-aa9b-171a6b0c8f2b} bus:/
-{4ffb9567-9411-4ac0-b3e8-e629cbcf1e90} bus:/Reverb
-{4231369f-0b84-43f3-b705-174d132251e6} bank:/master
+{6a8336a5-39d0-47e0-a7c2-cdaec8344f4d} event:/bgm1
+{aa878a0e-ddca-44db-a840-cc603c4959eb} event:/Rain
+{96b5ba01-3645-47f4-be51-e8ddc3673b9e} event:/River
+{41516cda-6274-4367-954a-71bbd7756b48} event:/grass_bgm
+{825530d7-947e-41c1-904d-a3b8e63c8cac} event:/滴水声——长
+{6ab1275b-0a7d-4510-8091-131ac8d9d7e3} event:/Wolf
+{264a3d5d-366e-4242-9b11-a81c6fd53359} event:/womencry1
+{c1f8df9f-8ad5-471d-8622-f9728f9b9c7b} event:/超响的奸笑声 恐怖音效
+{4006ac56-2cef-4dab-a851-5c937160c882} event:/狗的哀嚎
+{38c7abff-3782-43e0-a1f9-70696309f2ec} event:/狗叫
+{b8c6244b-df74-4518-99f4-5555a81e847f} event:/last_cry
+{faee3648-4be2-4191-baea-1085837334cf} event:/猫头鹰扑翅
+{21d0acba-7a33-46a9-8171-89b4e9bbfbdf} event:/fly_cry
+{7ecd4002-3d43-4ede-bb04-6234ad2fe11e} event:/女人恐怖的笑声
+{953b194a-6e93-4c93-8e09-b5c7795b20d9} event:/石头掉落
+{895e11fb-0ea0-45ed-af1d-1af9ca12a868} event:/笑
+{0f24626a-d604-4cc7-875c-b1b2162e1f7f} event:/远处的狼叫
+{fa2c0010-ecf8-4ad1-a85d-a455e6d0ca63} event:/远处雷声
+{413f2339-a6c9-4e8e-89b2-47ed1f9993c7} event:/DALEI
+{e211f38a-8481-4a3d-9626-0c892c29811a} event:/Dog
+{4b2bf642-4210-4cd7-8e8f-350903ae45a6} event:/talk_se
+{76b611e3-bb58-49b6-bcb0-f0dd483890a4} event:/Book2
+{97ea65ac-e4f9-45ef-8036-93c0379c63b2} event:/Cursor1
+{cecb7ba9-e477-4b63-b0ca-7fc900cf1830} bus:/
+{86cf8cc6-460b-44f7-85f4-4d6a5a15e297} bus:/Reverb
+{ea8f288d-bdff-4f14-a577-bbce7690db9a} bank:/Master Bank

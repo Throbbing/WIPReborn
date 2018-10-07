@@ -7,5 +7,5 @@ SrBufferVertex::SrBufferVertex()
 
 SrBufferVertex::~SrBufferVertex()
 {
-
+	delete[] _vert;
 }

@@ -168,7 +168,7 @@ public:
 
 	virtual void set_main_back_buffer() const;
 
-	virtual void clear_back_buffer(const RBColorf& c=RBColorf::blank) const;
+	virtual void clear_back_buffer(const RBColorf& c=RBColorf::black) const;
 
 	virtual void set_uniform4f(const char* uniform_name, const RBColorf& c);
 	

@@ -3,6 +3,7 @@
 #include "RBMath/Inc/Platform/RBBasedata.h"
 #include "RBMath/Inc/Vector2.h"
 #include "RefCount.h"
+#include "MemoryManager.h"
 
 class WIPRenderTexture2D;
 class WIPLayer;
@@ -28,7 +29,8 @@ class WIPSprite;
 class WIPCamera  : public FRefCountedObject
 {
 public:
-	WIPCamera(f32 w,f32 h,f32 pw,f32 ph,int iww,int iwh);
+	WIP_MEM(WIPCamera);
+	WIPCamera(f32 w,f32 h,f32 px,f32 py, f32 pw,f32 ph,int iww,int iwh);
 	~WIPCamera();
 	//left button
 	f32 world_x,world_y;
@@ -44,6 +46,7 @@ public:
 	RBVector2 camera_to_world(const RBVector2& camera_pos) const;
 	RBVector2 world_to_camera(const RBVector2& world_pos) const;
 	RBVector2 screen_to_world(const RBVector2I& screen_pos) const;
+	RBVector2I world_to_screen(const RBVector2& world_pos) const;
 	RBVector2 screen_to_camera(const RBVector2I& screen_pos) const;
 	RBVector2 screen_to_ndc(const RBVector2I& screen_pos) const;
 	void set_background_color(const WIPColorf& color);
@@ -54,7 +57,10 @@ public:
 	inline void zoomin(float dz){ _zoom -= dz; _zoom = RBMath::clamp(_zoom, 0.001f, _zoom); }
 	void set_active(bool val);
 	bool get_active();
-
+	void set_name(const std::string& name)
+	{
+		this->name = name;
+	}
 
 public:
 
@@ -62,6 +68,6 @@ public:
 	float _zoom;
 	int window_w;
 	int window_h;
-
+	std::string name="no name";
 };
 #endif

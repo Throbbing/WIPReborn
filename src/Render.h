@@ -8,6 +8,7 @@
 #include "Logger.h"
 #include "RBMath/Inc/Vector2.h"
 #include "RefCount.h"
+#include "Camera.h"
 
 using std::map;
 using std::string;
@@ -131,23 +132,73 @@ public:
 		bound_shader_pic = g_rhi->RHICreateBoundShader(
 			g_rhi->get_vertex_shader("text_vs"), g_rhi->get_pixel_shader("ui_pic")
 			);
-
+		bound_shader_dialog_box = g_rhi->RHICreateBoundShader(
+			g_rhi->get_vertex_shader("text_vs"), g_rhi->get_pixel_shader("ui_dialog_box")
+		);
+		auto* reh = g_res_manager->load_resource("./pic/fd/ui/Window.png");
+		TextureData* td = (TextureData*)reh->extra;
+		dialog_tex = g_rhi->RHICreateTexture2D(td->width, td->height, reh->ptr);
+		g_res_manager->free(reh, reh->size);
 	}
 
 	virtual void render(const WIPCamera* cam)
 	{
 
 	}
+	void render_dialog_box(int px, int py, int w, int h, const RBColorf& c)
+	{
+		f32 draw_px = px;
+		f32 draw_py = py;
+		RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+		RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+		RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+		RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
 
+		f32 vert[] = {
+			lb.x, lb.y, 0.5, 0.5,//lb
+			lt.x, lt.y, 0.5, 1,//lt
+			rt.x, rt.y, 1, 1,//rt
+			rb.x, rb.y, 1, 0.5//rb
+		};
+		void* p = g_rhi->lock_vertex_buffer(vb);
+		memcpy(p, vert, sizeof(f32) * 16);
+		g_rhi->unlock_vertex_buffer(vb);
+		g_rhi->disable_depth_test();
+		g_rhi->enable_blend();
+		g_rhi->set_blend_function();
+		g_rhi->set_shader(bound_shader_dialog_box);
+		g_rhi->set_index_buffer(ib);
+		g_rhi->set_vertex_buffer(vb);
+		g_rhi->set_vertex_format(vf);
+		g_rhi->set_uniform_texture("in_texture", 0, dialog_tex);
+		g_rhi->set_uniform4f("in_color", c);
+		g_rhi->draw_triangles(6, 0);
+
+		g_rhi->enable_depth_test();
+	}
 	void render_box(int px, int py, int w, int h, const RBColorf& c)
 	{
+    /*
 		f32 vert[] = {
 			-0.88f, -0.88f, 0.f, 1.f,
-			-0.88f, -0.3f, 0.f, 0.f,
-			0.88f, -0.3f, 1.f, 0.f,
+			-0.88f, -0.75f, 0.f, 0.f,
+			0.88f, -0.75f, 1.f, 0.f,
 			0.88f, -0.88f, 1.f, 1.f
 		};
+    */
+    f32 draw_px = px;
+    f32 draw_py = py;
+    RBVector2 lb = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py));
+    RBVector2 lt = camera->screen_to_ndc(RBVector2I(draw_px, camera->window_h - draw_py - h));
+    RBVector2 rt = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py - h));
+    RBVector2 rb = camera->screen_to_ndc(RBVector2I(draw_px + w, camera->window_h - draw_py));
 
+    f32 vert[] = {
+      lb.x, lb.y, 0, 0,//lb
+      lt.x, lt.y, 0, 1,//lt
+      rt.x, rt.y, 1, 1,//rt
+      rb.x, rb.y, 1, 0//rb
+    };
 		void* p = g_rhi->lock_vertex_buffer(vb);
 		memcpy(p, vert, sizeof(f32) * 16);
 		g_rhi->unlock_vertex_buffer(vb);
@@ -167,6 +218,8 @@ public:
 	void render_pic(int px, int py, int w, int h, const WIPTexture2D* tex);
 	void render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex);
 
+  void render_pic(int px, int py, int w, int h, const WIPTexture2D* tex,const RBColorf& c);
+  void render_pic(int px, int py, int w, int h, const WIPRenderTexture2D* tex, const RBColorf& c);
 
 	virtual void destroy()
 	{
@@ -177,8 +230,9 @@ public:
 	WIPIndexBuffer* ib;
 	WIPVertexFormat* vf;
 	WIPBoundShader* bound_shader;
+	WIPBoundShader* bound_shader_dialog_box;
 	WIPBoundShader* bound_shader_pic;
-
+	WIPTexture2D* dialog_tex;
 };
 
 class SimpleWorldRender : public WIPRender
@@ -229,8 +283,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
-	vector< TRefCountPtr<const WIPSprite>> blend_objects;
+	vector< const WIPSprite* > opaque_objects;
+	vector< const WIPSprite* > blend_objects;
 
 	float* pack_mem;
 
@@ -275,8 +329,8 @@ public:
 			p += 6;
 		}
 	}
-	static bool comp_less( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
-	static bool comp_greater( TRefCountPtr<const WIPSprite> lhs,  TRefCountPtr<const WIPSprite> rhs);
+	static bool comp_less( const WIPSprite*  lhs,  const WIPSprite*  rhs);
+	static bool comp_greater( const WIPSprite*  lhs,  const WIPSprite*  rhs);
 	void sort_by_texture();
 	void sort_by_zorder();
 	WIPIndexBuffer* index_buffer;
@@ -289,8 +343,8 @@ public:
 	//maybe use for multithread!
 	unsigned char* cpu_vertex_buffer;
 
-	vector< TRefCountPtr<const WIPSprite>> opaque_objects;
-	vector< TRefCountPtr<const WIPSprite>> blend_objects;
+	vector< const WIPSprite* > opaque_objects;
+	vector< const WIPSprite* > blend_objects;
 
 	float* pack_mem;
 
@@ -359,7 +413,8 @@ public:
 			p += 6;
 		}
 	}
-
+	//dont insert \n , function returns when meeting \n.
+	int get_length_pixel(const wchar_t* chs) ;
 	TextNode* get_node(wchar_t wch)
 	{
 		
@@ -1546,3 +1601,108 @@ private:
 
 	int text_to_render;
 };
+
+class WaterData
+{
+public:
+	virtual void apply_data();
+};
+
+class WaterRender :public WIPRender
+{
+public:
+	virtual void init(const WIPCamera* cam = nullptr);
+	virtual void render(const WIPCamera* cam);
+	virtual void destroy();
+
+private:
+	WIPVertexBuffer* vb;
+	WIPIndexBuffer* ib;
+	WIPVertexFormat* vf;
+	WaterData* wd;
+};
+
+class TempUISys : public FRefCountedObject
+{
+public:
+	static TempUISys* instance();
+	void startup();
+
+	void change_camera(WIPCamera* cam)
+	{
+		reset_target_camera(cam);
+		delete ui_renderer;
+		ui_renderer = new UIRender();
+		ui_renderer->init(cam);
+	}
+	void reset_target_camera(WIPCamera* cam)
+	{
+		target_cam_ref = cam;
+		resize(cam->window_w, cam->window_h);
+	}
+	void resize(uint w,uint h)
+	{
+		delete render_texture2d;
+		render_texture2d = g_rhi->RHICreateRenderTexture2D(w, h, RBColorf::black);
+	}
+	void begin()
+	{
+    if (render_texture2d)
+		  g_rhi->set_back_buffer(render_texture2d);
+	}
+	void end()
+	{
+		g_rhi->set_main_back_buffer();
+	}
+	void clear()
+	{
+		should_clear = true;
+	}
+	void draw_picture(int px, int py, int w, int h, const WIPTexture2D* tex,const RBColorf& c=RBColorf::white)
+	{
+		ui_renderer->render_pic(px,py,w,h,tex,c);
+	}
+	void draw_box(int px, int py, int w, int h, const RBColorf& c)
+	{
+		ui_renderer->render_dialog_box(px,py,w,h,c);
+	}
+	inline int get_text_len(const wchar_t* chs)
+	{
+		return text_renderer->get_length_pixel(chs);
+	}
+	void draw_text(int px, int py, const wchar_t* chs, int len, int maxw)
+	{
+		text_renderer->render_text(px, py, chs, len, maxw, target_cam_ref);
+	}
+	void render()
+	{
+    if (!render_texture2d)
+      return;
+		begin();
+		text_renderer->render(target_cam_ref);
+		end();
+		ui_renderer->render_pic(0, 0, render_texture2d->get_width(), render_texture2d->get_height(), render_texture2d);
+
+		if (should_clear)
+		{
+			g_rhi->set_back_buffer(render_texture2d);
+			g_rhi->clear_back_buffer();
+			g_rhi->set_main_back_buffer();
+			should_clear = false;
+		}
+	}
+	~TempUISys()
+	{
+		delete render_texture2d;
+		delete text_renderer;
+		delete ui_renderer;
+	}
+	WIPRenderTexture2D* render_texture2d=nullptr;
+	TextRender* text_renderer=nullptr;
+	UIRender* ui_renderer=nullptr;
+	WIPCamera* target_cam_ref=nullptr;
+	
+	bool should_clear = false;
+};
+
+extern TempUISys* g_temp_uisys;

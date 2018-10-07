@@ -187,11 +187,12 @@ void AudioStudioManager::Play(StudioSoundRef sound){
   sound->Start();
 }
 
-StudioSoundRef AudioStudioManager::Play(const std::string& event_name){
+void AudioStudioManager::Play(const std::string& event_name)
+{
   auto temp = CreateSound(event_name);
   if (temp)
     temp->Start();
-  return temp;
+  delete temp;
 }
 
 void AudioStudioManager::Stop(StudioSoundRef sound, FMOD_STUDIO_STOP_MODE mode){
@@ -542,4 +543,3 @@ void StudioSound::DescriptionData::StopAll(FMOD_STUDIO_STOP_MODE mode){
   }
 }
 
-AudioStudioManager* g_audio_manager = AudioStudioManager::instance();

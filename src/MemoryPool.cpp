@@ -316,6 +316,7 @@ void RBPoolAllctor::report(void* header, size_t single_size,u32 hash,bool show_l
 
 void RBPoolAllctor::report(bool show_links)
 {
+	if(show_links)
   for (auto link:_links)
   {
     printf("class [%s]:\n", link.name.c_str());

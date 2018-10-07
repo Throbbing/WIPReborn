@@ -2,6 +2,9 @@
 #define __ACTIVEDRAWABLE_H__
 #include <string>
 #include "../wip/RenderTexture.h"
+/*
+2014.11
+*/
 //抽象公有基类，可激活、可渲染的矩形
 //消息传递，激活控制，渲染等等
 //画满Fbo，最终缩放由fbo.draw()来控制

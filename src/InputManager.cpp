@@ -23,11 +23,17 @@ InputManager::InputManager()
 	_current_up_char = 0;
 	bdown = false;
 	_bactive = false;
+  _eat[0] = 0;
+  _eat[1] = 0;
+  _eat[2] = 0;
+  _eat[3] = 0;
+  _eat[4] = 0;
+  _eat[5] = 0;
+
 }
 
 InputManager::~InputManager()
 {
-	delete _instance;
 }
 
 bool InputManager::startup(char* mapfile)
@@ -74,6 +80,42 @@ void InputManager::shutdown()
 	_keyinfo[1].key_bit = 0;
 }
 
+void InputManager::add_eat_down(int key)
+{
+  _eat[0] |= key;
+}
+
+void InputManager::add_eat_up(int key)
+{
+  _eat[1] |= key;
+}
+void InputManager::add_eat_dc(int key)
+{
+  _eat[2] |= key;
+}
+void InputManager::add_eat_uc(int key)
+{
+  _eat[3] |= key;
+}
+
+void InputManager::add_eat_sys_pressed(int key)
+{
+  _eat[4] |= key;
+}
+void InputManager::add_eat_pressed(int key)
+{
+  _eat[5] |= key;
+}
+void InputManager::restore_eat()
+{
+  _current_down_bit|=_eat[0];
+  _current_up_bit |= _eat[1];
+  _current_down_char |= _eat[2];
+  _current_up_char |= _eat[3];
+  _keyinfo[0].key_bit |= _eat[4];
+  _keyinfo[1].key_bit |= _eat[5];
+
+}
 
 bool InputManager::init_key_map(char* mapfile)
 {
@@ -181,6 +223,12 @@ void InputManager::clear_states()
 	_current_up_bit = _current_down_bit = 0;
 	_current_down_char = _current_up_char = 0;
 	set_move(false);
+  _eat[0] = 0;
+  _eat[1] = 0;
+  _eat[2] = 0;
+  _eat[3] = 0;
+  _eat[4] = 0;
+  _eat[5] = 0;
 }
 
 void InputManager::clear_scroller()
@@ -191,22 +239,22 @@ void InputManager::clear_scroller()
 	_last_keyinfo[0].key_bit &= ~WIP_MOUSE_SCROLLER_DOWN;
 }
 
-int InputManager::get_current_down_bit()
+int& InputManager::get_current_down_bit()
 {
 	return _current_down_bit;
 }
 
-int InputManager::get_current_up_bit()
+int& InputManager::get_current_up_bit()
 {
 	return _current_up_bit;
 }
 
-int InputManager::get_current_down_char()
+int& InputManager::get_current_down_char()
 {
 	return _current_down_char;
 }
 
-int InputManager::get_current_up_char()
+int& InputManager::get_current_up_char()
 {
 	return _current_up_char;
 }
@@ -216,4 +264,3 @@ void InputManager::set_move(bool v)
 	_move = v;
 }
 
-InputManager* g_input_manager = InputManager::instance();

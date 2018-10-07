@@ -9,20 +9,27 @@ public:
 	SrBufferVertex();
 	~SrBufferVertex();
 
-	VertexP3N3T2*& operator[](unsigned int index)
+	VertexP3N3T2& operator[](unsigned int index)
 	{
 		return _vert[index];
 	}
-	VertexP3N3T2* operator[](unsigned int index) const
+	const VertexP3N3T2& operator[](unsigned int index) const
 	{
 		return _vert[index];
 	}
 
-	void put_data(VertexP3N3T2* data)
+	void put_data(const VertexP3N3T2& data)
 	{
-		_vert.push_back(data);
+		_vert[pos++]=(data);
+	}
+	void resize(size_t sz)
+	{
+		delete[] _vert;
+		_vert = new VertexP3N3T2[sz];
+		pos = 0;
 	}
 private:
-	std::vector<VertexP3N3T2*> _vert;
+	VertexP3N3T2* _vert=nullptr;
+	size_t pos = 0;
 };
 

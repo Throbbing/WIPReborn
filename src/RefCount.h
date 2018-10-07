@@ -23,6 +23,11 @@ public:
 	virtual ~FRefCountedObject() { 
 		CHECK(!NumRefs); 
 	}
+	//force ref = 1 be careful !
+	void Reduce()
+	{
+		NumRefs = 1;
+	}
 	uint32 AddRef() const
 	{
 		//std::cout << "ref added!\n";

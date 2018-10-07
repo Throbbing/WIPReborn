@@ -52,9 +52,9 @@ float rt_x4, float rt_y4
 
 
 WIPComponent::WIPComponent() :host_object(nullptr){}
-void WIPComponent::set_host(TRefCountPtr<WIPSprite> ho)
+void WIPComponent::set_host(WIPSprite* ho)
 {
-	host_object = ho.GetReference();
+	host_object = ho;
 }
 
 WIPComponent::WIPComponent(WIPSprite* s) :host_object(s){}
@@ -62,7 +62,7 @@ WIPComponent::WIPComponent(WIPSprite* s) :host_object(s){}
 //every subclass call base destructor so this must be defined.
 WIPComponent::~WIPComponent(){}
 
-WIPTickComponent::WIPTickComponent(TRefCountPtr<WIPSprite> host) : WIPComponent(host){}
+WIPTickComponent::WIPTickComponent(WIPSprite*  host) : WIPComponent(host){}
 
 WIPTickComponent::~WIPTickComponent(){}
 
@@ -157,6 +157,7 @@ bool WIPAnimation::play_name(std::string name, bool loop)
 	_Internal_clip_queue::iterator it = _internal_clip_queue.find(name);
 	if (it != _internal_clip_queue.end())
 		return play(it->second, loop);
+  LOG_WARN("play a nil animation [%s]",name.data());
 	return false;
 }
 bool WIPAnimation::play(bool loop)
@@ -286,27 +287,28 @@ WIPSprite::~WIPSprite()
 	}
 }
 
-void WIPSprite::destroy(TRefCountPtr<WIPSprite> s)
+void WIPSprite::destroy(WIPSprite*  s)
 {
 	for (auto i : s->related_scenes)
 	{
 		i->remove_sprite(s, false);
 	}
 	s->related_scenes.clear();
-	s->_collider->destroy();
+	if (s->_collider)
+		s->_collider->destroy();
 	//删除组件前移除所有依赖！！
 	//delete s->_transform;
 	//delete s->_collider;
 	//delete s->_render;
 	//delete s->_animation;
+	s->destroy_components();
 	for (size_t i = 0; i < s->components.size(); ++i)
 	{
-		s->destroy_components();
 		//delete s->components[i];
 	}
 	for (size_t i = 0; i < s->tick_components.size(); ++i)
 	{
-		s->destroy_components();
+		//s->destroy_components();
 		//delete s->tick_components[i];
 	}
 	ids.push_back(s->key);
@@ -346,9 +348,9 @@ void WIPSprite::leave_scene(WIPScene* scene)
 
 
 
-TRefCountPtr<WIPSprite> WIPSpriteFactory::create_sprite(const WIPSpriteCreator& creator)
+WIPSprite* WIPSpriteFactory::create_sprite(const WIPSpriteCreator& creator)
 {
-	TRefCountPtr<WIPSprite> s = WIPSprite::create(creator.w, creator.h, creator.body_tp, creator.collider_sx, creator.collider_sy);
+	WIPSprite* s = WIPSprite::create(creator.w, creator.h, creator.body_tp, creator.collider_sx, creator.collider_sy);
 	s->_render->material.material_type = creator.mt;
 	switch (creator.mt)
 	{
@@ -381,9 +383,9 @@ void WIPSprite::destroy_self()
 int WIPSprite::cur_id=0;
 std::vector<int> WIPSprite::ids;
 
-TRefCountPtr<WIPSprite> WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes tp, f32 sx, f32 sy)
+WIPSprite* WIPSprite::create(f32 width, f32 height, WIPCollider::_CollisionTypes tp, f32 sx, f32 sy)
 {
-	TRefCountPtr<WIPSprite> ret = new WIPSprite();
+	WIPSprite* ret = new WIPSprite();
 	ret->_transform = new WIPTransform();
 	ret->_render = new WIPRenderComponent(width, height);
 	ret->_animation = new WIPAnimation();
@@ -521,14 +523,14 @@ void WIPSprite::get_world_position(RBVector2* vertices) const
 }
 
 
-void WIPSprite::on_contact()
+void WIPSprite::on_contact(float dt)
 {
 	auto* it = _collider->_contact_objects.head();
 	while (it)
 	{
 		for (auto j : tick_components)
 		{
-			j->on_contact(it->data);
+			j->on_contact(it->data,dt);
 		}
 		it = it->next;
 	}
@@ -537,7 +539,7 @@ void WIPSprite::on_contact()
 void WIPSprite::update(f32 dt)
 {
 	if (_collider&&!_collider->_contact_objects.empty())
-		on_contact();
+		on_contact(dt);
 	for (auto i : tick_components)
 	{
 		i->update(dt);

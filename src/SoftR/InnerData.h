@@ -5,16 +5,29 @@
 #include "../MemoryFrame.h"
 #include <vector>
 #include <mutex>
-#define POOL
+//#define POOL
 struct SrTriangle
 {
 	VertexP3N3T2 v[3];
+	int grid_id=0;
 
-	SrTriangle(VertexP3N3T2 v1, VertexP3N3T2 v2, VertexP3N3T2 v3)
+	SrTriangle()
 	{
-		v[0] = v1;
-		v[1] = v2;
-		v[2] = v3;
+		//v[0].finish = true;
+	}
+
+	SrTriangle(const VertexP3N3T2& v1, const VertexP3N3T2& v2, const VertexP3N3T2& v3)
+	{
+		size_t sz = sizeof(VertexP3N3T2);
+		memcpy(&v[0] , &v1,sz);
+		memcpy(&v[1], &v2, sz);
+		memcpy(&v[2], &v3, sz);
+
+	}
+
+	~SrTriangle()
+	{
+		//printf("tr de!\n");
 	}
 
 	static void* operator new(size_t size)
@@ -54,7 +67,7 @@ struct SrTriangle
 
 		frame = new RBFrameAlloctor();
 		//20M
-		frame->init((1 << 20)*20);
+		frame->init((1 << 20)*200,"Triangles");
 		frame->getframe(me, false);
 #endif
 		return true;
@@ -80,7 +93,6 @@ struct SrTriangle
 	
 	void print()
 	{
-		printf("%02X:%f\n",this,v[1].normal.x);
 	}
 #ifdef POOL
 	static void* nodes;
@@ -103,12 +115,32 @@ struct SrFragment
 template <class T>
 struct SrSSBuffer
 {
+	SrSSBuffer(const SrSSBuffer<T>& c)
+	{
+		this->w = c.w;
+		this->h = c.h;
+		_buffer.resize(w*h);
+		offset = w * sizeof(T);
+		size = w*h * sizeof(T);
+		memcpy(&_buffer[0], &c._buffer[0], size);
+	}
+
 	SrSSBuffer()
 	{
 		w = 0;
 		h = 0;
 		offset = 0;
 		size = 0;
+	}
+
+	void clone(const SrSSBuffer<T>& c)
+	{
+		this->w = c.w;
+		this->h = c.h;
+		_buffer.resize(w*h);
+		offset = w * sizeof(T);
+		size = w*h * sizeof(T);
+		memcpy(&_buffer[0], &c._buffer[0], size);
 	}
 
 	void init(int w,int h)
@@ -128,20 +160,33 @@ struct SrSSBuffer
 		}
 	}
 
-	void set_data(int x,int y,T data)
+	void set_data(int x, int y, T data)
 	{
+		//std::lock_guard<std::mutex> lk(lock);
+
+			int index = y*w + x;
+			if (index < _buffer.size())
+			{
+				_buffer[index] = data;
+			}
+
+	}
+
+	void set_data_lock(int x,int y,T data)
+	{
+		//this lock should be added per index other than per function
 		std::lock_guard<std::mutex> lk(lock);
 		int index = y*w + x;
-		if ((size_t)index<_buffer.size())
+		if (index<_buffer.size())
 		{
 			_buffer[index] = data;
 		}
 	}
 
-	T get_data(int x,int y)
+	T get_data(int x,int y) const
 	{
-		int index = y*w + x;
-		if ((size_t)index < _buffer.size())
+		size_t index = y*w + x;
+		if (index < _buffer.size())
 			return _buffer[index];
 		else
 			return _buffer[_buffer.size()-1];

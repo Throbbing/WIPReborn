@@ -53,15 +53,21 @@ public:
 	void clear_scroller();
 	//
 	void shutdown();
-	int get_current_up_bit();
-	int get_current_down_bit();
-	int get_current_down_char();
-	int get_current_up_char();
+	int& get_current_up_bit();
+	int& get_current_down_bit();
+	int& get_current_down_char();
+	int& get_current_up_char();
 	FORCEINLINE bool get_move()
 	{
 		return _move;
 	}
-
+  void add_eat_down(int key);
+  void add_eat_up(int key);
+  void add_eat_dc(int key);
+  void add_eat_uc(int key);
+  void add_eat_sys_pressed(int key);
+  void add_eat_pressed(int key);
+  void restore_eat();
 	void set_move(bool v);
 
 	bool bdown;
@@ -86,6 +92,7 @@ private:
 	bool _bactive;
 
 	i32 _mouse_x,_mouse_y;
+  int _eat[6];
 
 	bool _move;
 	static InputManager* _instance;

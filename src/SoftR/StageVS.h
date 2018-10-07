@@ -20,6 +20,25 @@ public:
 		for (auto i : triangles)
 			_vs->proccess(*i);
 	}
+	void proccess(std::vector<SrTriangle>& triangles, int n)
+	{
+		if (!_vs) return;
+		for (auto& i : triangles)
+			_vs->proccess(i);
+	}
+	void proccess(SrTriangle* triangles,int n)
+	{
+		if (!_vs) return;
+		for (int i = 0; i < n; ++i)
+		{
+			_vs->proccess(triangles[i]);
+		}
+	}
+	void proccess(SrTriangle* triangles)
+	{
+		if (!_vs) return;
+		_vs->proccess(*triangles);
+	}
 	void set_vertex_shader(SrShaderVertex* vs)
 	{
 		_vs = vs;

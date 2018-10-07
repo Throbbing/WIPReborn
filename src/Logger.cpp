@@ -26,7 +26,6 @@ void WIPLogger::shutdown()
 	m_initialized = false;
 	outfile<<_buf.data();
 	outfile.close();
-	delete _instance;
 }
 
 void WIPLogger::flush()
@@ -183,4 +182,3 @@ void WIPLogger::debug( unsigned int flags,const char* buffer,... )
 	}
 }
 
-WIPLogger* g_logger = WIPLogger::get_instance();

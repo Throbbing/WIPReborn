@@ -16,9 +16,16 @@ unsigned get_string_hash(const char* str);
 
 extern RBPoolAllctor* g_pool_allocator;
 
-class WIPMemoryManager 
+class WIPMemoryManager : public FRefCountedObject
 {
 public:
+	static WIPMemoryManager* get_instance()
+	{
+		static WIPMemoryManager* _instance;
+		if (!_instance)
+			_instance = new WIPMemoryManager();
+		return _instance;
+	}
 	void report()
 	{
 
@@ -65,5 +72,20 @@ extern WIPMemoryManager* g_mem_manager;
 	void operator delete(void *p){\
 	if (!p)return;\
 	printf("delete [%s]: %X | %d\n",#classname,p,g_mem_manager->allocated); \
+	WIP_DELETE(p,classname);\
+	}
+
+#define WIP_MEM_NODEBUG(classname)\
+	static void init_mem(){\
+	WIP_NEW_POOL(classname)\
+	}\
+	void* operator new(size_t size){\
+	static struct _{_(){init_mem();}} _; \
+	void* p = g_pool_allocator->alloc(&g_mem_manager->pools[#classname],size);\
+	g_mem_manager->allocated++;\
+	return p;\
+	}\
+	void operator delete(void *p){\
+	if (!p)return;\
 	WIP_DELETE(p,classname);\
 	}

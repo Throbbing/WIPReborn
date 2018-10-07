@@ -6,4 +6,5 @@ SrBufferIndex::SrBufferIndex()
 
 SrBufferIndex::~SrBufferIndex()
 {
+	delete[] _indeces;
 }

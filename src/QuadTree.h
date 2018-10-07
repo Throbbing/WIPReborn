@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <hash_map>
+#include <map>
 #include "Sprite.h"
 #include "RBMath/Inc/AABB.h"
 #include "RefCount.h"
@@ -22,7 +22,7 @@ public:
 		//index.swap(std::vector<int>());
 	}
 #ifdef W
-	typedef std::hash_map< TRefCountPtr<const WIPSprite>, TRefCountPtr<const WIPSprite>> object_list_t;
+	typedef std::map< const WIPSprite* , const WIPSprite* > object_list_t;
 #else
 	typedef HashLink<WIPSprite> object_list_t;
 #endif
@@ -50,9 +50,10 @@ public:
 
 	void build_empty()
 	{
+    root = new WIPQuadTreeNode();
 		if(depth==1)
-			root.leaf = true;
-		_build_empty(&root,depth);
+			root->leaf = true;
+		_build_empty(root,depth);
 	}
 	
 	void _build_empty(WIPQuadTreeNode* root,int cd)
@@ -83,9 +84,9 @@ public:
 			world_bound.include(sprite_bound.min);
 			world_bound.include(sprite_bound.max);
 		}
-		_insert(&root, sprite_bound, world_aabb, &sprite);
+		_insert(root, sprite_bound, world_aabb, &sprite);
 	}
-	void _insert(WIPQuadTreeNode* root,const RBAABB2D& sprite_bound,const RBAABB2D& aabb,TRefCountPtr<const WIPSprite> id)
+	void _insert(WIPQuadTreeNode* root,const RBAABB2D& sprite_bound,const RBAABB2D& aabb,const WIPSprite* id)
 	{
 		if(root->leaf)
 		{
@@ -129,13 +130,13 @@ public:
 		
 
 	}
-	void get_intersected_node(const RBAABB2D& aabb,std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
+	void get_intersected_node(const RBAABB2D& aabb,std::vector< const WIPSprite*>& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
 		if (world_aabb.intersection(aabb))
-			_get_intersected_node(&root,aabb,world_aabb,out_index);
+			_get_intersected_node(root,aabb,world_aabb,out_index);
 	}
-	void _get_intersected_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, std::vector< TRefCountPtr<const WIPSprite> >& out_index) const
+	void _get_intersected_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, std::vector< const WIPSprite* >& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -177,21 +178,21 @@ public:
 			_get_intersected_node(root->child[3],sprite_bound,rbb,out_index);
 		}
 	}
-	void get_near_node(const WIPSprite&  sprite, std::vector<TRefCountPtr<const WIPSprite>>& out_index) const
+	void get_near_node(const WIPSprite&  sprite, std::vector<const WIPSprite* >& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
 		RBAABB2D sprite_bound;
 		RBVector2 vert[4];
 		sprite.get_world_position(vert);
 		sprite_bound.include(vert);
-		_get_near_node(&root,sprite_bound,world_aabb,&sprite,out_index);
+		_get_near_node(root,sprite_bound,world_aabb,&sprite,out_index);
 	}
-	void get_near_node(const RBVector2& pos, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
+	void get_near_node(const RBVector2& pos, std::vector< const WIPSprite* >& out_index) const
 	{
 		RBAABB2D world_aabb(world_bound);
-		_get_near_node_point(&root,pos,world_aabb,out_index);
+		_get_near_node_point(root,pos,world_aabb,out_index);
 	}
-	void _get_near_node_point(const WIPQuadTreeNode* root, const RBVector2& pos, const RBAABB2D& aabb, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
+	void _get_near_node_point(const WIPQuadTreeNode* root, const RBVector2& pos, const RBAABB2D& aabb, std::vector< const WIPSprite* >& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -234,7 +235,7 @@ public:
 		}
 
 	}
-	void _get_near_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, TRefCountPtr<const WIPSprite> id, std::vector<TRefCountPtr<const WIPSprite>>& out_index) const
+	void _get_near_node(const WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb, const WIPSprite*  id, std::vector<const WIPSprite* >& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -281,7 +282,7 @@ public:
 		RBAABB2D world_aabb(world_bound);
 		//ofPushStyle();
 		//ofSetColor(ofColor::blue);
-		_debug_draw(&root,world_aabb,cam);
+		_debug_draw(root,world_aabb,cam);
 		//ofPopStyle();
 	}
 	void _debug_draw(WIPQuadTreeNode* root,const RBAABB2D& aabb,const WIPCamera*cam)
@@ -309,9 +310,9 @@ public:
 	void remove_change(const WIPSprite& sprite)
 	{
 		//sprite bound changed,we have to search the whole tree
-		_remove_change(&root, world_bound, &sprite);
+		_remove_change(root, world_bound, &sprite);
 	}
-	void _remove_change(WIPQuadTreeNode* root, const RBAABB2D& aabb,  TRefCountPtr<const WIPSprite> id)
+	void _remove_change(WIPQuadTreeNode* root, const RBAABB2D& aabb,  const WIPSprite*  id)
 	{
 		if (root->leaf)
 		{
@@ -340,11 +341,11 @@ public:
 		RBVector2 vert[4];
 		sprite.get_world_position(vert);
 		sprite_bound.include(vert);
-		_remove(&root,sprite_bound,world_aabb,&sprite);
+		_remove(root,sprite_bound,world_aabb,&sprite);
 	}
 	
 	
-	void _remove(WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb,  TRefCountPtr<const WIPSprite> id)
+	void _remove(WIPQuadTreeNode* root, const RBAABB2D& sprite_bound, const RBAABB2D& aabb,  const WIPSprite*  id)
 	{
 		if(root->leaf)
 		{
@@ -378,11 +379,11 @@ public:
 			_remove(root->child[3],sprite_bound,rbb,id);
 		}
 	}
-	void get_all_nodes(std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
+	void get_all_nodes(std::vector< const WIPSprite* >& out_index) const
 	{
-		_get_all_nodes(&root,out_index);
+		_get_all_nodes(root,out_index);
 	}
-	void _get_all_nodes(const WIPQuadTreeNode* root, std::vector< TRefCountPtr<const WIPSprite>>& out_index) const
+	void _get_all_nodes(const WIPQuadTreeNode* root, std::vector< const WIPSprite* >& out_index) const
 	{
 		if(root->leaf)
 		{
@@ -410,24 +411,26 @@ public:
 	}
 	void _release(const WIPQuadTreeNode* root)
 	{
+    
 		if(!root)
 			return;
 		_release(root->child[0]);
 		_release(root->child[1]);
 		_release(root->child[2]);
 		_release(root->child[3]);
-		if (root!=&this->root)
+		//if (root!=&this->root)
 			delete root;
 		
+    //delete root;
 	}
 
 	void compress_world_bound();
 
 	~WIPQuadTree()
 	{
-		_release(&root);
+		_release(root);
 	}
-	WIPQuadTreeNode root;
+	WIPQuadTreeNode* root;
 	int depth;
 	RBAABB2D world_bound;
 	const WIPScene* scene_ref;

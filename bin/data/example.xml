@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<scene version="0.5.0">
+    <info name="A Scene" id="1234dd" keep="false" world_size="20.0 20.0"/>
+    <object>
+        <camera name="MainCam" id="0" active="true" main="true">
+            <position val="5.0 5.0"/>
+            <zoom val="1.0"/>
+            <ratio val="0"/>
+            <viewport val="0 0"/>
+            <clear_color val="0.5 0.5 0.5"/>
+        </camera>
+        <sprite type="Trigger">
+            <ref />
+            <instance />
+        </sprite>
+        <sprite type="SceneTransformer">
+        </sprite>
+        <sprite type="Player" tag="man" type_tag="character">
+            <transform>
+                <position val="8.0 1.0"/>
+                <zorder val="0.4"/>
+                <anchor val="0.5 0.05"/>
+            </transform>
+            <render active="true">
+                <size val="1.8 3.6"/>
+                <render_type val="translucent"/>
+                <texture type="ref" res_id="0"/>
+            </render>
+            <collider active="true" trigger="false">
+                <body val="rigidbody"/>
+                <size val="0.5 0.2"/>
+            </collider>
+            <animation>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+                <clip type="ref" res_id=""/>
+            </animation>
+            <tick_component type="TransformComponent">
+                <callback type="contact">
+                    <event type="A" />
+                </callback>
+            </tick_component>
+        </sprite>
+        <sprite type="NPC_TalkOly">
+        </sprite>
+        <sprite type="NPC_Event">
+        </sprite>
+    </object>
+    <resource>
+        <animation_clip id="0" name="" path=""/>
+        <animation_clip id="1" name="" path=""/>
+        <animation_clip id="2" name="" path=""/>
+        <animation_clip id="3" name="" path=""/>
+        <animation_clip id="4" name="" path=""/>
+        <animation_clip id="5" name="" path=""/>
+        <animation_clip id="6" name="" path=""/>
+        <animation_clip id="7" name="" path=""/>
+        <texture id="8" name="" path=""/>
+        <texture id="9" name="" path=""/>
+        <texture id="10" name="" path=""/>
+        <texture id="11" name="" path=""/>
+    </resource>
+</scene>

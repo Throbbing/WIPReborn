@@ -7,9 +7,12 @@
 #include "Vector3.h"
 #include "Logger.h"
 #include "RefCount.h"
+#include"MemoryManager.h"
 
 class StudioSound : public FRefCountedObject
 {
+public:
+	WIP_MEM_NODEBUG(StudioSound);
 private:
     class DescriptionData
 	{
@@ -43,6 +46,7 @@ private:
     };
 	typedef DescriptionData* DescriptionDataRef;
 public:
+
   /**** Parameter ****/
   FMOD_STUDIO_PARAMETER_DESCRIPTION GetParamDesc(const std::string& param_name);
   void PrintAllParam();

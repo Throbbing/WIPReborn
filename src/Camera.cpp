@@ -9,7 +9,7 @@
 
 
 
-WIPCamera::WIPCamera(f32 w, f32 h, f32 sw, f32 sh, int iww, int iwh)
+WIPCamera::WIPCamera(f32 w, f32 h, f32 px, f32 py, f32 sw, f32 sh, int iww, int iwh)
 {
 	world_x = world_y = 0.f;
 	world_h = h;
@@ -18,7 +18,7 @@ WIPCamera::WIPCamera(f32 w, f32 h, f32 sw, f32 sh, int iww, int iwh)
 	_zoom = 1.f;
 	window_h = iwh;
 	window_w = iww;
-	viewport = g_rhi->RHICreateViewPort(0, 0, sw, sh);
+	viewport = g_rhi->RHICreateViewPort(px, py, sw, sh);
 }
 
 WIPCamera::~WIPCamera()
@@ -51,6 +51,17 @@ RBVector2 WIPCamera::screen_to_world(const RBVector2I& screen_pos) const
 	f32 w1 = world_w*0.5f*_zoom;
 	f32 w2 = world_h*0.5f*_zoom;
 	return RBVector2(ndcx*w1+world_x,ndcy*w2 + world_y);
+}
+
+RBVector2I WIPCamera::world_to_screen(const RBVector2 & world_pos) const
+{
+	RBVector2 newp = world_pos - RBVector2(world_x, world_y);
+	f32 w1 = world_w*0.5f*_zoom;
+	f32 w2 = world_h*0.5f*_zoom;
+	newp.x = (newp.x/w1+1.f)*viewport->w*0.5f+viewport->x;
+	newp.y = (newp.y/w2+1.f)*viewport->h*0.5f+viewport->y;
+
+	return RBVector2I(newp.x+0.5f,newp.y+0.5f);
 }
 
 RBVector2 WIPCamera::screen_to_camera(const RBVector2I& screen_pos) const

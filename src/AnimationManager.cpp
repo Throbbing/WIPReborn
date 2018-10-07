@@ -184,5 +184,5 @@ WIPAnimationManager::~WIPAnimationManager()
 }
 
 
-WIPAnimationManager* g_animation_manager = WIPAnimationManager::instance();
+
 

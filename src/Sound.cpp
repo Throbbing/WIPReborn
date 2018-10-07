@@ -51,7 +51,7 @@ case FMOD_STUDIO_EVENT_CALLBACK_DESTROYED:
 
 StudioSound::~StudioSound(){
   LOG_INFO("[c2]SutdioSound %s:%d Relasesed.Event %d\n",_name.c_str(),this,_inst);
-  //FMOD_CHECK( _inst->release());
+  FMOD_CHECK( _inst->release());
   //c2_log("[c2]Event %d Relasesed.\n", _inst);
   _inst = nullptr;
 }
